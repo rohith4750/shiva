@@ -115,30 +115,30 @@ export default function ConfigurableTable({
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 1200, mx: "auto", my: { xs: 2, md: 3 } }}>
+    <Box sx={{ width: "100%", maxWidth: 1240, mx: "auto", my: 0 }}>
       {/* Metrics Row - Decreased Spacing */}
-      <Grid container spacing={1.5} sx={{ mb: 2 }}>
+      <Grid container spacing={1} sx={{ mb: 1.2 }}>
         <Grid size={{ xs: 12, sm: 4 }}>
           <Paper
             elevation={2}
             sx={{
-              p: 1.6,
+              p: 1.2,
               borderRadius: "6px",
               display: "flex",
               alignItems: "center",
-              gap: 1.5,
+              gap: 1.2,
               background: "linear-gradient(135deg, rgba(17, 26, 46, 0.9), rgba(13, 21, 39, 0.9))",
               border: "1px solid rgba(59, 130, 246, 0.2)",
             }}
           >
-            <Avatar sx={{ bgcolor: "rgba(59, 130, 246, 0.2)", color: "#3B82F6", width: 38, height: 38, borderRadius: "6px" }}>
-              <PersonIcon fontSize="small" />
+            <Avatar sx={{ bgcolor: "rgba(59, 130, 246, 0.2)", color: "#3B82F6", width: 32, height: 32, borderRadius: "6px" }}>
+              <PersonIcon sx={{ fontSize: 18 }} />
             </Avatar>
             <Box>
-              <Typography variant="caption" sx={{ color: "#94A3B8", textTransform: "uppercase", fontWeight: 600, fontSize: "0.72rem" }}>
+              <Typography variant="caption" sx={{ color: "#94A3B8", textTransform: "uppercase", fontWeight: 600, fontSize: "0.68rem" }}>
                 Total Users
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "#F8FAFC", lineHeight: 1.2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#F8FAFC", lineHeight: 1.1 }}>
                 {stats.total}
               </Typography>
             </Box>
@@ -149,23 +149,23 @@ export default function ConfigurableTable({
           <Paper
             elevation={2}
             sx={{
-              p: 1.6,
+              p: 1.2,
               borderRadius: "6px",
               display: "flex",
               alignItems: "center",
-              gap: 1.5,
+              gap: 1.2,
               background: "linear-gradient(135deg, rgba(17, 26, 46, 0.9), rgba(13, 21, 39, 0.9))",
               border: "1px solid rgba(6, 182, 212, 0.2)",
             }}
           >
-            <Avatar sx={{ bgcolor: "rgba(6, 182, 212, 0.2)", color: "#06B6D4", width: 38, height: 38, borderRadius: "6px" }}>
-              <AdminIcon fontSize="small" />
+            <Avatar sx={{ bgcolor: "rgba(6, 182, 212, 0.2)", color: "#06B6D4", width: 32, height: 32, borderRadius: "6px" }}>
+              <AdminIcon sx={{ fontSize: 18 }} />
             </Avatar>
             <Box>
-              <Typography variant="caption" sx={{ color: "#94A3B8", textTransform: "uppercase", fontWeight: 600, fontSize: "0.72rem" }}>
+              <Typography variant="caption" sx={{ color: "#94A3B8", textTransform: "uppercase", fontWeight: 600, fontSize: "0.68rem" }}>
                 Administrators
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "#22D3EE", lineHeight: 1.2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#22D3EE", lineHeight: 1.1 }}>
                 {stats.admins}
               </Typography>
             </Box>
@@ -176,23 +176,23 @@ export default function ConfigurableTable({
           <Paper
             elevation={2}
             sx={{
-              p: 1.6,
+              p: 1.2,
               borderRadius: "6px",
               display: "flex",
               alignItems: "center",
-              gap: 1.5,
+              gap: 1.2,
               background: "linear-gradient(135deg, rgba(17, 26, 46, 0.9), rgba(13, 21, 39, 0.9))",
               border: "1px solid rgba(139, 92, 246, 0.2)",
             }}
           >
-            <Avatar sx={{ bgcolor: "rgba(139, 92, 246, 0.2)", color: "#8B5CF6", width: 38, height: 38, borderRadius: "6px" }}>
-              <VpnKeyIcon fontSize="small" />
+            <Avatar sx={{ bgcolor: "rgba(139, 92, 246, 0.2)", color: "#8B5CF6", width: 32, height: 32, borderRadius: "6px" }}>
+              <VpnKeyIcon sx={{ fontSize: 18 }} />
             </Avatar>
             <Box>
-              <Typography variant="caption" sx={{ color: "#94A3B8", textTransform: "uppercase", fontWeight: 600, fontSize: "0.72rem" }}>
+              <Typography variant="caption" sx={{ color: "#94A3B8", textTransform: "uppercase", fontWeight: 600, fontSize: "0.68rem" }}>
                 Reset Passwords Recorded
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "#A78BFA", lineHeight: 1.2 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#A78BFA", lineHeight: 1.1 }}>
                 {stats.withNewPassword}
               </Typography>
             </Box>
@@ -202,7 +202,7 @@ export default function ConfigurableTable({
 
       {/* Main Table Card */}
       <Card
-        elevation={6}
+        elevation={4}
         sx={{
           borderRadius: "6px", // 6px fixed
           backgroundColor: "#111A2E",
@@ -219,7 +219,7 @@ export default function ConfigurableTable({
           }}
         />
 
-        <CardContent sx={{ p: { xs: 1.8, sm: 2.2 } }}>
+        <CardContent sx={{ p: 1.5, pb: "10px !important" }}>
           {/* Controls Bar: Search, Filters, and Action Buttons */}
           <Box
             sx={{
@@ -227,8 +227,8 @@ export default function ConfigurableTable({
               justifyContent: "space-between",
               alignItems: "center",
               flexWrap: "wrap",
-              gap: 1.5,
-              mb: 2,
+              gap: 1.2,
+              mb: 1.2,
             }}
           >
             {/* Search Input */}

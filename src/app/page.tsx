@@ -40,7 +40,8 @@ import ThemeRegistry from "@/components/ThemeRegistry";
 import Navbar from "@/components/Navbar";
 import ConfigurableForm, { FormFieldConfig } from "@/components/ConfigurableForm";
 import ConfigurableTable from "@/components/ConfigurableTable";
-import RolesAndPermissionsView from "@/components/RolesAndPermissionsView";
+import RolesView from "@/components/RolesView";
+import PermissionsView from "@/components/PermissionsView";
 import NexvantaLogo from "@/components/NexvantaLogo";
 import { User, AuthSession } from "@/types/user";
 
@@ -457,12 +458,14 @@ export default function Home() {
         {/* MAIN BODY */}
         <Container
           component="main"
+          maxWidth="xl"
           sx={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
             justifyContent: currentUser ? "flex-start" : "center",
-            py: { xs: 3, md: currentUser ? 4 : 5 },
+            py: currentUser ? 1.5 : { xs: 3, md: 5 },
+            px: { xs: 1.5, md: 2.5 },
           }}
         >
           {/* ======================================================== */}
@@ -726,89 +729,65 @@ export default function Home() {
             /* ======================================================== */
             <Fade in={Boolean(currentUser)}>
               <Box>
-                {/* Welcome Ribbon Banner - Decreased Spacing and 6px Radius */}
-                <Paper
-                  elevation={3}
+                {/* Ultra-compact session info breadcrumb */}
+                <Box
                   sx={{
-                    p: 1.8,
-                    mb: 2,
-                    borderRadius: "6px", // 6px fixed
-                    background: "linear-gradient(135deg, rgba(17, 26, 46, 0.95), rgba(10, 15, 28, 0.95))",
-                    border: "1px solid rgba(59, 130, 246, 0.25)",
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    flexWrap: "wrap",
-                    gap: 1.5,
+                    mb: 1.2,
+                    px: 0.5,
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Avatar
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        bgcolor: "primary.main",
-                        fontWeight: 800,
-                        borderRadius: "6px", // 6px fixed
-                        boxShadow: "0 2px 10px rgba(59, 130, 246, 0.4)",
-                      }}
-                    >
-                      {currentUser.name.charAt(0).toUpperCase()}
-                    </Avatar>
-                    <Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 800, color: "#F8FAFC", fontSize: "0.95rem" }}>
-                          Welcome, {currentUser.name}
-                        </Typography>
-                        <Chip
-                          label={currentUser.role}
-                          size="small"
-                          sx={{
-                            backgroundColor: "rgba(6, 182, 212, 0.2)",
-                            color: "#22D3EE",
-                            fontWeight: 700,
-                            borderRadius: "6px",
-                            border: "1px solid rgba(6, 182, 212, 0.4)",
-                          }}
-                        />
-                      </Box>
-                      <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.8rem" }}>
-                        Connected as <strong>{currentUser.email}</strong> • Active Session
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Quick Profile Actions inside Banner */}
-                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                    <Button
-                      variant="outlined"
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.82rem" }}>
+                      Authenticated as <strong style={{ color: "#F8FAFC" }}>{currentUser.email}</strong>
+                    </Typography>
+                    <Chip
+                      label={currentUser.role}
                       size="small"
-                      startIcon={<VpnKeyIcon />}
+                      sx={{
+                        height: 20,
+                        backgroundColor: "rgba(6, 182, 212, 0.15)",
+                        color: "#22D3EE",
+                        fontWeight: 700,
+                        fontSize: "0.68rem",
+                        borderRadius: "6px",
+                        border: "1px solid rgba(6, 182, 212, 0.3)",
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button
+                      size="small"
+                      startIcon={<VpnKeyIcon sx={{ fontSize: "14px !important" }} />}
                       onClick={() => setIsChangePasswordOpen(true)}
                       sx={{
+                        height: 26,
+                        fontSize: "0.75rem",
                         borderRadius: "6px",
-                        borderColor: "rgba(139, 92, 246, 0.4)",
                         color: "#C4B5FD",
-                        "&:hover": { borderColor: "#8B5CF6", color: "#F8FAFC" },
+                        "&:hover": { backgroundColor: "rgba(139, 92, 246, 0.1)" },
                       }}
                     >
                       Change Password
                     </Button>
                     <Button
-                      variant="outlined"
                       size="small"
-                      startIcon={<PersonIcon />}
+                      startIcon={<PersonIcon sx={{ fontSize: "14px !important" }} />}
                       onClick={() => setIsProfileOpen(true)}
                       sx={{
+                        height: 26,
+                        fontSize: "0.75rem",
                         borderRadius: "6px",
-                        borderColor: "rgba(59, 130, 246, 0.4)",
                         color: "#60A5FA",
+                        "&:hover": { backgroundColor: "rgba(59, 130, 246, 0.1)" },
                       }}
                     >
                       My Profile
                     </Button>
                   </Box>
-                </Paper>
+                </Box>
 
                 {/* TAB 0: USER MANAGEMENT (CRUD Table + Stats) */}
                 {landingTab === 0 && (
@@ -823,50 +802,55 @@ export default function Home() {
                   />
                 )}
 
-                {/* TAB 1: ROLES & PERMISSIONS ARCHITECTURE (PostgreSQL App DB) */}
+                {/* TAB 1: ROLES ARCHITECTURE */}
                 {landingTab === 1 && (
-                  <RolesAndPermissionsView onShowToast={showToast} />
+                  <RolesView onShowToast={showToast} />
                 )}
 
-                {/* TAB 2: CUSTOMER SERVICES (Future Customer Modules) */}
+                {/* TAB 2: PERMISSIONS ARCHITECTURE (Separate Page) */}
                 {landingTab === 2 && (
-                  <Box sx={{ maxWidth: 1000, mx: "auto", my: 2 }}>
+                  <PermissionsView onShowToast={showToast} />
+                )}
+
+                {/* TAB 3: CUSTOMER SERVICES */}
+                {landingTab === 3 && (
+                  <Box sx={{ maxWidth: 1000, mx: "auto", my: 1.5 }}>
                     <Paper
                       sx={{
-                        p: 4,
+                        p: 3,
                         textAlign: "center",
                         borderRadius: "6px",
                         backgroundColor: "#111A2E",
                         border: "1px solid rgba(59, 130, 246, 0.2)",
                       }}
                     >
-                      <ServicesIcon sx={{ fontSize: 56, color: "#38BDF8", mb: 1.5 }} />
-                      <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC", mb: 1 }}>
+                      <ServicesIcon sx={{ fontSize: 44, color: "#38BDF8", mb: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "#F8FAFC", mb: 0.8 }}>
                         Customer Services Hub
                       </Typography>
-                      <Typography variant="body1" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 3 }}>
+                      <Typography variant="body2" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 2.5 }}>
                         This extensible customer hub connects your enterprise services, API integrations, and client management workflows seamlessly.
                       </Typography>
-                      <Grid container spacing={2}>
+                      <Grid container spacing={1.5}>
                         <Grid size={{ xs: 12, md: 4 }}>
-                          <Paper sx={{ p: 2.5, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(59,130,246,0.15)" }}>
-                            <CheckCircleIcon sx={{ color: "#10B981", mb: 1 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Database: App (PostgreSQL)</Typography>
-                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Direct connection to PostgreSQL App database via Prisma ORM client.</Typography>
+                          <Paper sx={{ p: 2, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(59,130,246,0.15)" }}>
+                            <CheckCircleIcon sx={{ color: "#10B981", mb: 0.5, fontSize: 20 }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Database: App (PostgreSQL)</Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8" }}>Direct connection to PostgreSQL App database via Prisma ORM client.</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                          <Paper sx={{ p: 2.5, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(6,182,212,0.15)" }}>
-                            <SecurityIcon sx={{ color: "#06B6D4", mb: 1 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Roles & Permissions</Typography>
-                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Normalized roles, permissions, and role_permissions relational architecture.</Typography>
+                          <Paper sx={{ p: 2, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(6,182,212,0.15)" }}>
+                            <SecurityIcon sx={{ color: "#06B6D4", mb: 0.5, fontSize: 20 }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Roles & Permissions</Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8" }}>Normalized roles, permissions, and role_permissions relational architecture.</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                          <Paper sx={{ p: 2.5, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(139,92,246,0.15)" }}>
-                            <VpnKeyIcon sx={{ color: "#8B5CF6", mb: 1 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Bcrypt Password Security</Typography>
-                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Secure password_hash hashing and newpassword synchronization.</Typography>
+                          <Paper sx={{ p: 2, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(139,92,246,0.15)" }}>
+                            <VpnKeyIcon sx={{ color: "#8B5CF6", mb: 0.5, fontSize: 20 }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Bcrypt Password Security</Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8" }}>Secure password_hash hashing and newpassword synchronization.</Typography>
                           </Paper>
                         </Grid>
                       </Grid>
@@ -874,26 +858,26 @@ export default function Home() {
                   </Box>
                 )}
 
-                {/* TAB 3: ANALYTICS & ACTIVITY */}
-                {landingTab === 3 && (
-                  <Box sx={{ maxWidth: 1000, mx: "auto", my: 2 }}>
+                {/* TAB 4: ANALYTICS & ACTIVITY */}
+                {landingTab === 4 && (
+                  <Box sx={{ maxWidth: 1000, mx: "auto", my: 1.5 }}>
                     <Paper
                       sx={{
-                        p: 4,
+                        p: 3,
                         textAlign: "center",
                         borderRadius: "6px",
                         backgroundColor: "#111A2E",
                         border: "1px solid rgba(139, 92, 246, 0.2)",
                       }}
                     >
-                      <AnalyticsIcon sx={{ fontSize: 56, color: "#8B5CF6", mb: 1.5 }} />
-                      <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC", mb: 1 }}>
+                      <AnalyticsIcon sx={{ fontSize: 44, color: "#8B5CF6", mb: 1 }} />
+                      <Typography variant="h6" sx={{ fontWeight: 800, color: "#F8FAFC", mb: 0.8 }}>
                         Customer Analytics & Activity Logs
                       </Typography>
-                      <Typography variant="body1" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 3 }}>
+                      <Typography variant="body2" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 2 }}>
                         Monitor active user sign-ins, password updates, and customer CRUD operations across the Nexvanta portal.
                       </Typography>
-                      <Button variant="contained" onClick={() => setLandingTab(0)} sx={{ borderRadius: "6px" }}>
+                      <Button variant="contained" size="small" onClick={() => setLandingTab(0)} sx={{ borderRadius: "6px" }}>
                         View User Records Table
                       </Button>
                     </Paper>

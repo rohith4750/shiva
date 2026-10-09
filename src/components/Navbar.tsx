@@ -54,9 +54,10 @@ export default function Navbar({
 
   const authNavItems = [
     { label: "User Management (CRUD)", icon: <PeopleIcon fontSize="small" />, tab: 0 },
-    { label: "Roles & Permissions", icon: <SecurityIcon fontSize="small" />, tab: 1 },
-    { label: "Customer Services", icon: <ServicesIcon fontSize="small" />, tab: 2 },
-    { label: "Analytics & Activity", icon: <AnalyticsIcon fontSize="small" />, tab: 3 },
+    { label: "Roles", icon: <SecurityIcon fontSize="small" />, tab: 1 },
+    { label: "Permissions", icon: <VpnKeyIcon fontSize="small" />, tab: 2 },
+    { label: "Customer Services", icon: <ServicesIcon fontSize="small" />, tab: 3 },
+    { label: "Analytics & Activity", icon: <AnalyticsIcon fontSize="small" />, tab: 4 },
   ];
 
   return (
