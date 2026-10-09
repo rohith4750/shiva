@@ -112,32 +112,32 @@ export default function Navbar({
         },
       ],
     },
-    {
-      id: "services",
-      label: "Customer Services",
-      icon: <ServicesIcon fontSize="small" sx={{ color: "#34D399" }} />,
-      items: [
-        {
-          label: "Services Hub",
-          description: "Enterprise modules, API integrations & client tools",
-          icon: <ServicesIcon fontSize="small" sx={{ color: "#34D399" }} />,
-          tab: 4,
-        },
-      ],
-    },
-    {
-      id: "analytics",
-      label: "Analytics & Logs",
-      icon: <AnalyticsIcon fontSize="small" sx={{ color: "#F472B6" }} />,
-      items: [
-        {
-          label: "Activity & Logs",
-          description: "Active logins, changes & operations monitoring",
-          icon: <AnalyticsIcon fontSize="small" sx={{ color: "#F472B6" }} />,
-          tab: 5,
-        },
-      ],
-    },
+    // {
+    //   id: "services",
+    //   label: "Customer Services",
+    //   icon: <ServicesIcon fontSize="small" sx={{ color: "#34D399" }} />,
+    //   items: [
+    //     {
+    //       label: "Services Hub",
+    //       description: "Enterprise modules, API integrations & client tools",
+    //       icon: <ServicesIcon fontSize="small" sx={{ color: "#34D399" }} />,
+    //       tab: 4,
+    //     },
+    //   ],
+    // },
+    // {
+    //   id: "analytics",
+    //   label: "Analytics & Logs",
+    //   icon: <AnalyticsIcon fontSize="small" sx={{ color: "#F472B6" }} />,
+    //   items: [
+    //     {
+    //       label: "Activity & Logs",
+    //       description: "Active logins, changes & operations monitoring",
+    //       icon: <AnalyticsIcon fontSize="small" sx={{ color: "#F472B6" }} />,
+    //       tab: 5,
+    //     },
+    //   ],
+    // },
   ];
 
   const handleOpenGroupMenu = (groupId: string, event: React.MouseEvent<HTMLElement>) => {

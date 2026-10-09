@@ -49,6 +49,7 @@ import { User, AuthSession } from "@/types/user";
 export default function Home() {
   // Authentication session state
   const [currentUser, setCurrentUser] = useState<AuthSession | null>(null);
+  const [csrfToken, setCsrfToken] = useState<string>("");
 
   // When logged out: "login" | "forgot" | "reset"
   const [authMode, setAuthMode] = useState<"login" | "forgot" | "reset">("login");
@@ -109,13 +110,47 @@ export default function Home() {
     fetchUsers();
   }, [fetchUsers]);
 
+  // Initialize CSRF token and verify existing session cookie
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const csrfRes = await fetch("/api/auth/csrf");
+        const csrfData = await csrfRes.json();
+        if (csrfData.csrfToken) {
+          setCsrfToken(csrfData.csrfToken);
+        }
+      } catch {
+        // CSRF init silent
+      }
+
+      try {
+        const meRes = await fetch("/api/auth/me");
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (meData.authenticated && meData.user) {
+            setCurrentUser(meData.user);
+            setLandingTab(0);
+          }
+        }
+      } catch {
+        // No active session
+      }
+    };
+
+    initAuth();
+  }, []);
+
   // --- 1. LOGIN SUBMIT ---
   const handleLoginSubmit = async (values: Record<string, any>) => {
     setLoading(true);
     try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (csrfToken) {
+        headers["x-csrf-token"] = csrfToken;
+      }
       const res = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ email: values.email, password: values.password }),
       });
       const data = await res.json();
@@ -124,6 +159,7 @@ export default function Home() {
         setCurrentUser(data.user);
         showToast(`Welcome, ${data.user.name}! Navigating to Customer Portal.`, "success");
         setLandingTab(0); // Navigate straight to Landing Page Dashboard
+        fetchUsers();
       } else {
         showToast(data.error || "Invalid email or password", "error");
       }
@@ -131,6 +167,22 @@ export default function Home() {
       showToast("Server connection error during login", "error");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- LOGOUT SUBMIT (Revokes session in PostgreSQL & clears HttpOnly cookie) ---
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: csrfToken ? { "x-csrf-token": csrfToken } : undefined,
+      });
+    } catch {
+      // Ignored
+    } finally {
+      setCurrentUser(null);
+      setAuthMode("login");
+      showToast("Signed out successfully. Server session revoked.", "info");
     }
   };
 
@@ -446,11 +498,7 @@ export default function Home() {
             currentTab={landingTab}
             onTabChange={(tab) => setLandingTab(tab)}
             currentUser={currentUser}
-            onLogout={() => {
-              setCurrentUser(null);
-              setAuthMode("login");
-              showToast("Signed out successfully. Returned to Login.", "info");
-            }}
+            onLogout={handleLogout}
             onOpenChangePassword={() => setIsChangePasswordOpen(true)}
             onOpenProfile={() => setIsProfileOpen(true)}
           />
