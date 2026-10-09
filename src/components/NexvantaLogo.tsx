@@ -100,7 +100,7 @@ export default function NexvantaLogo({
               fontWeight: 900,
               fontSize: size > 40 ? "1.45rem" : "1.15rem",
               letterSpacing: "0.14em",
-              color: "#F8FAFC",
+              color: "text.primary",
               fontFamily: "'Inter', -apple-system, sans-serif",
               lineHeight: 1.1,
             }}
@@ -110,10 +110,10 @@ export default function NexvantaLogo({
           <Typography
             component="span"
             sx={{
-              fontWeight: 400,
+              fontWeight: 500,
               fontSize: size > 40 ? "0.85rem" : "0.72rem",
               letterSpacing: "0.22em",
-              color: "#06B6D4",
+              color: (theme) => (theme.palette.mode === "dark" ? "#06B6D4" : "#0891B2"),
               textTransform: "uppercase",
               display: { xs: "none", sm: "inline" },
             }}
@@ -131,20 +131,36 @@ export default function NexvantaLogo({
               mt: 0.2,
             }}
           >
-            <Box sx={{ width: 14, height: 1, backgroundColor: "#3B82F6", opacity: 0.6 }} />
+            <Box
+              sx={{
+                width: 14,
+                height: 1,
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark" ? "#3B82F6" : "#2563EB",
+                opacity: 0.6,
+              }}
+            />
             <Typography
               variant="caption"
               sx={{
                 fontSize: "0.64rem",
-                color: "#94A3B8",
+                color: "text.secondary",
                 letterSpacing: "0.15em",
                 textTransform: "uppercase",
-                fontWeight: 500,
+                fontWeight: 600,
               }}
             >
               Build Beyond Boundaries
             </Typography>
-            <Box sx={{ width: 14, height: 1, backgroundColor: "#3B82F6", opacity: 0.6 }} />
+            <Box
+              sx={{
+                width: 14,
+                height: 1,
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark" ? "#3B82F6" : "#2563EB",
+                opacity: 0.6,
+              }}
+            />
           </Box>
         )}
       </Box>

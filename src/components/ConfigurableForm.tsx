@@ -71,6 +71,7 @@ export interface ConfigurableFormProps {
   cardWidth?: number | string;
   initialValues?: Record<string, any>;
   asCard?: boolean;
+  forceDark?: boolean;
 }
 
 export default function ConfigurableForm({
@@ -91,6 +92,7 @@ export default function ConfigurableForm({
   cardWidth = 480,
   initialValues = {},
   asCard = true,
+  forceDark = false,
 }: ConfigurableFormProps) {
   // Initialize values
   const [formData, setFormData] = useState<Record<string, any>>(() => {
@@ -191,13 +193,20 @@ export default function ConfigurableForm({
               fontWeight: 800,
               fontSize: "1.25rem",
               letterSpacing: "-0.01em",
-              color: "#F8FAFC",
+              color: forceDark ? "#F8FAFC" : "text.primary",
             }}
           >
             {title}
           </Typography>
           {subtitle && (
-            <Typography variant="body2" sx={{ color: "#94A3B8", mt: 0.4, fontSize: "0.82rem" }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: forceDark ? "#94A3B8" : "text.secondary",
+                mt: 0.4,
+                fontSize: "0.82rem",
+              }}
+            >
               {subtitle}
             </Typography>
           )}
@@ -254,7 +263,13 @@ export default function ConfigurableForm({
                   />
                 }
                 label={
-                  <Typography variant="body2" sx={{ color: "#CBD5E1", fontSize: "0.82rem" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: forceDark ? "#CBD5E1" : "text.primary",
+                      fontSize: "0.82rem",
+                    }}
+                  >
                     {field.label}
                   </Typography>
                 }
@@ -278,11 +293,40 @@ export default function ConfigurableForm({
               helperText={field.helperText}
               autoComplete={field.autoComplete}
               slotProps={{
+                inputLabel: forceDark
+                  ? {
+                      sx: {
+                        color: "#94A3B8 !important",
+                        "&.Mui-focused": { color: "#38BDF8 !important" },
+                      },
+                    }
+                  : undefined,
                 input: {
-                  sx: { borderRadius: "6px", fontSize: "0.88rem" },
+                  sx: {
+                    borderRadius: "6px",
+                    fontSize: "0.88rem",
+                    ...(forceDark
+                      ? {
+                          backgroundColor: "rgba(10, 15, 28, 0.75) !important",
+                          color: "#F8FAFC !important",
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "rgba(59, 130, 246, 0.3) !important",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#38BDF8 !important",
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#3B82F6 !important",
+                          },
+                          "& input": {
+                            color: "#F8FAFC !important",
+                          },
+                        }
+                      : {}),
+                  },
                   startAdornment: field.startIcon ? (
                     <InputAdornment position="start">
-                      <Box sx={{ color: "#94A3B8", display: "flex", alignItems: "center" }}>
+                      <Box sx={{ color: forceDark ? "#38BDF8" : "primary.main", display: "flex", alignItems: "center" }}>
                         {field.startIcon}
                       </Box>
                     </InputAdornment>
@@ -293,7 +337,7 @@ export default function ConfigurableForm({
                         onClick={() => togglePasswordVisibility(field.name)}
                         edge="end"
                         size="small"
-                        sx={{ color: "#94A3B8" }}
+                        sx={{ color: forceDark ? "#94A3B8" : "text.secondary" }}
                       >
                         {showPass ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                       </IconButton>
@@ -340,12 +384,12 @@ export default function ConfigurableForm({
           sx={{
             mt: 1.2,
             borderRadius: "6px",
-            borderColor: "rgba(59, 130, 246, 0.3)",
-            color: "#94A3B8",
+            borderColor: forceDark ? "rgba(59, 130, 246, 0.3)" : (theme) => theme.palette.divider,
+            color: forceDark ? "#94A3B8" : "text.secondary",
             fontSize: "0.82rem",
             "&:hover": {
-              borderColor: "#3B82F6",
-              color: "#F8FAFC",
+              borderColor: (theme) => theme.palette.primary.main,
+              color: "text.primary",
             },
           }}
         >
@@ -362,7 +406,9 @@ export default function ConfigurableForm({
             alignItems: "center",
             mt: 2,
             pt: 1.5,
-            borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+            borderTop: forceDark
+              ? "1px solid rgba(255, 255, 255, 0.08)"
+              : (theme) => `1px solid ${theme.palette.divider}`,
             flexWrap: "wrap",
             gap: 1,
           }}
@@ -374,11 +420,17 @@ export default function ConfigurableForm({
               startIcon={link.icon}
               onClick={link.onClick}
               sx={{
-                color: "#94A3B8",
+                color: forceDark
+                  ? "#38BDF8"
+                  : (theme) => (theme.palette.mode === "dark" ? "#94A3B8" : "#2563EB"),
                 fontSize: "0.78rem",
                 borderRadius: "6px",
                 p: "4px 8px",
-                "&:hover": { color: "#38BDF8" },
+                "&:hover": {
+                  color: forceDark
+                    ? "#7DD3FC"
+                    : (theme) => (theme.palette.mode === "dark" ? "#38BDF8" : "#1D4ED8"),
+                },
               }}
             >
               {link.label}
@@ -399,9 +451,13 @@ export default function ConfigurableForm({
         elevation={8}
         sx={{
           borderRadius: "6px", // 6px fixed
-          backgroundColor: "#111A2E",
-          border: "1px solid rgba(59, 130, 246, 0.22)",
-          boxShadow: "0 16px 36px rgba(0, 0, 0, 0.55), 0 0 20px rgba(59, 130, 246, 0.08)",
+          backgroundColor: (theme) =>
+            theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          boxShadow: (theme) =>
+            theme.palette.mode === "dark"
+              ? "0 16px 36px rgba(0, 0, 0, 0.55), 0 0 20px rgba(59, 130, 246, 0.08)"
+              : "0 10px 30px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(37, 99, 235, 0.04)",
           overflow: "hidden",
         }}
       >

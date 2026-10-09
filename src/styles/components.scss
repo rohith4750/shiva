@@ -1,0 +1,157 @@
+@use "./variables.scss" as *;
+
+/* ==========================================================================
+   APP REUSABLE COMPONENTS SCSS
+   ==========================================================================
+   Standard styles for Cards, Metric Boxes, Filter Chips, Badges, and Modals
+   ensuring complete design and contrast consistency between Light and Dark.
+   ========================================================================== */
+
+/* Universal Card Shell */
+.app-card {
+  width: 100%;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  .app-card-ribbon {
+    height: 3px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--brand-blue), var(--accent-purple));
+  }
+
+  .app-card-body {
+    padding: var(--card-padding);
+  }
+}
+
+/* Overview Stat Metric Cards (Standardized for Tab 1, 2, 3) */
+.app-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.app-stat-card {
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  transition: transform 0.15s ease, border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--brand-blue);
+  }
+
+  .app-stat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--border-radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .app-stat-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+
+  .app-stat-value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.1;
+    margin-top: 2px;
+  }
+}
+
+/* Role Badges with Light/Dark Adaptive High Contrast */
+.app-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--border-radius);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+
+  &.badge-admin {
+    background-color: var(--badge-admin-bg);
+    color: var(--badge-admin-text);
+    border: 1px solid var(--badge-admin-border);
+  }
+
+  &.badge-super {
+    background-color: var(--badge-super-bg);
+    color: var(--badge-super-text);
+    border: 1px solid var(--badge-super-border);
+  }
+
+  &.badge-manager {
+    background-color: var(--badge-manager-bg);
+    color: var(--badge-manager-text);
+    border: 1px solid var(--badge-manager-border);
+  }
+
+  &.badge-user {
+    background-color: var(--badge-user-bg);
+    color: var(--badge-user-text);
+    border: 1px solid var(--badge-user-border);
+  }
+
+  &.badge-dev {
+    background-color: var(--badge-dev-bg);
+    color: var(--badge-dev-text);
+    border: 1px solid var(--badge-dev-border);
+  }
+}
+
+/* Filter Chips Bar */
+.app-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.app-filter-chip {
+  padding: 3px 10px;
+  border-radius: var(--border-radius);
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: var(--bg-surface-hover);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.15s ease;
+  user-select: none;
+
+  &:hover {
+    color: var(--text-primary);
+    border-color: var(--brand-blue);
+  }
+
+  &.active {
+    background-color: var(--bg-surface-active);
+    color: var(--brand-blue);
+    border-color: var(--brand-blue);
+    font-weight: 700;
+  }
+}

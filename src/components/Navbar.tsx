@@ -19,6 +19,7 @@ import {
   Avatar,
   Divider,
   ListSubheader,
+  Tooltip,
 } from "@mui/material";
 import {
   People as PeopleIcon,
@@ -32,9 +33,12 @@ import {
   KeyboardArrowDown as ArrowDownIcon,
   AdminPanelSettings as AccessIcon,
   Dashboard as DashboardIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import NexvantaLogo from "./NexvantaLogo";
 import { AuthSession } from "@/types/user";
+import { useColorMode } from "./ThemeRegistry";
 
 interface NavSubItem {
   label: string;
@@ -67,6 +71,7 @@ export default function Navbar({
   onOpenChangePassword,
   onOpenProfile,
 }: NavbarProps) {
+  const { mode, toggleColorMode } = useColorMode();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
 
@@ -156,10 +161,10 @@ export default function Navbar({
         sx={{
           top: 0,
           zIndex: 1200,
-          backgroundColor: "rgba(10, 15, 28, 0.96)",
-          backdropFilter: "blur(16px)",
-          borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
+          backgroundColor: mode === "dark" ? "rgba(7, 10, 19, 0.95)" : "rgba(255, 255, 255, 0.96)",
+          backdropFilter: "blur(20px)",
+          borderBottom: mode === "dark" ? "1px solid rgba(59, 130, 246, 0.22)" : "1px solid #E2E8F0",
+          boxShadow: mode === "dark" ? "0 4px 24px rgba(0, 0, 0, 0.5)" : "0 2px 10px rgba(0, 0, 0, 0.05)",
         }}
       >
         <Toolbar
@@ -211,23 +216,43 @@ export default function Navbar({
                         ) : undefined
                       }
                       sx={{
-                        color: isGroupActive ? "#F8FAFC" : "#94A3B8",
+                        color: isGroupActive
+                          ? mode === "dark"
+                            ? "#38BDF8"
+                            : "#2563EB"
+                          : mode === "dark"
+                          ? "#94A3B8"
+                          : "#475569",
                         backgroundColor: isGroupActive
-                          ? "rgba(59, 130, 246, 0.16)"
+                          ? mode === "dark"
+                            ? "rgba(59, 130, 246, 0.18)"
+                            : "#EFF6FF"
                           : "transparent",
                         border: isGroupActive
-                          ? "1px solid rgba(59, 130, 246, 0.4)"
+                          ? mode === "dark"
+                            ? "1px solid rgba(59, 130, 246, 0.4)"
+                            : "1px solid #BFDBFE"
                           : "1px solid transparent",
-                        fontWeight: isGroupActive ? 600 : 500,
+                        fontWeight: isGroupActive ? 700 : 500,
                         fontSize: "0.82rem",
                         px: 1.3,
                         py: 0.5,
                         borderRadius: "6px",
                         "&:hover": {
                           backgroundColor: isGroupActive
-                            ? "rgba(59, 130, 246, 0.24)"
-                            : "rgba(255, 255, 255, 0.05)",
-                          color: "#F8FAFC",
+                            ? mode === "dark"
+                              ? "rgba(59, 130, 246, 0.26)"
+                              : "#DBEAFE"
+                            : mode === "dark"
+                            ? "rgba(255, 255, 255, 0.05)"
+                            : "rgba(37, 99, 235, 0.06)",
+                          color: isGroupActive
+                            ? mode === "dark"
+                              ? "#38BDF8"
+                              : "#2563EB"
+                            : mode === "dark"
+                            ? "#F8FAFC"
+                            : "#0F172A",
                         },
                       }}
                     >
@@ -238,8 +263,9 @@ export default function Navbar({
                           sx={{
                             ml: 0.8,
                             fontSize: "0.68rem",
-                            color: "#38BDF8",
-                            backgroundColor: "rgba(56, 189, 248, 0.12)",
+                            color: mode === "dark" ? "#38BDF8" : "#2563EB",
+                            backgroundColor:
+                              mode === "dark" ? "rgba(56, 189, 248, 0.12)" : "#DBEAFE",
                             px: 0.6,
                             py: 0.1,
                             borderRadius: "4px",
@@ -262,10 +288,16 @@ export default function Navbar({
                             sx: {
                               mt: 1,
                               minWidth: 260,
-                              backgroundColor: "#111A2E",
-                              border: "1px solid rgba(59, 130, 246, 0.25)",
+                              backgroundColor: mode === "dark" ? "#0E162B" : "#FFFFFF",
+                              border:
+                                mode === "dark"
+                                  ? "1px solid rgba(59, 130, 246, 0.25)"
+                                  : "1px solid #E2E8F0",
                               borderRadius: "6px",
-                              boxShadow: "0 12px 32px rgba(0,0,0,0.7)",
+                              boxShadow:
+                                mode === "dark"
+                                  ? "0 12px 32px rgba(0,0,0,0.7)"
+                                  : "0 10px 30px rgba(15, 23, 42, 0.08)",
                               p: 0.5,
                             },
                           },
@@ -287,13 +319,18 @@ export default function Navbar({
                                 px: 1.2,
                                 my: 0.3,
                                 backgroundColor: isSelected
-                                  ? "rgba(59, 130, 246, 0.18) !important"
+                                  ? mode === "dark"
+                                    ? "rgba(59, 130, 246, 0.18) !important"
+                                    : "#EFF6FF !important"
                                   : "transparent",
                                 border: isSelected
-                                  ? "1px solid rgba(59, 130, 246, 0.3)"
+                                  ? mode === "dark"
+                                    ? "1px solid rgba(59, 130, 246, 0.3)"
+                                    : "1px solid #BFDBFE"
                                   : "1px solid transparent",
                                 "&:hover": {
-                                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                  backgroundColor:
+                                    mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "#F1F5F9",
                                 },
                               }}
                             >
@@ -305,7 +342,13 @@ export default function Navbar({
                                   variant="body2"
                                   sx={{
                                     fontWeight: isSelected ? 700 : 600,
-                                    color: isSelected ? "#38BDF8" : "#F8FAFC",
+                                    color: isSelected
+                                      ? mode === "dark"
+                                        ? "#38BDF8"
+                                        : "#2563EB"
+                                      : mode === "dark"
+                                      ? "#F8FAFC"
+                                      : "#0F172A",
                                     fontSize: "0.82rem",
                                   }}
                                 >
@@ -314,7 +357,7 @@ export default function Navbar({
                                 <Typography
                                   variant="caption"
                                   sx={{
-                                    color: "#94A3B8",
+                                    color: mode === "dark" ? "#94A3B8" : "#64748B",
                                     fontSize: "0.7rem",
                                     display: "block",
                                     lineHeight: 1.2,
@@ -334,8 +377,31 @@ export default function Navbar({
             </Box>
           )}
 
-          {/* User Account / Profile Menu */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          {/* Right-Side Actions: Theme Mode Toggle & User Profile */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+            {/* Theme Toggle Button (Dark / Light) */}
+            <Tooltip title={mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+              <IconButton
+                onClick={toggleColorMode}
+                size="small"
+                aria-label="Toggle color theme"
+                sx={{
+                  color: mode === "dark" ? "#F59E0B" : "#2563EB",
+                  backgroundColor: mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(37, 99, 235, 0.08)",
+                  border: mode === "dark" ? "1px solid rgba(245, 158, 11, 0.28)" : "1px solid rgba(37, 99, 235, 0.2)",
+                  borderRadius: "6px",
+                  width: 32,
+                  height: 32,
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: mode === "dark" ? "rgba(245, 158, 11, 0.22)" : "rgba(37, 99, 235, 0.16)",
+                  },
+                }}
+              >
+                {mode === "dark" ? <LightModeIcon sx={{ fontSize: 17 }} /> : <DarkModeIcon sx={{ fontSize: 17 }} />}
+              </IconButton>
+            </Tooltip>
+
             {currentUser && (
               <>
                 <Box
@@ -347,12 +413,12 @@ export default function Navbar({
                     cursor: "pointer",
                     padding: "3px 10px",
                     borderRadius: "6px",
-                    backgroundColor: "rgba(59, 130, 246, 0.12)",
-                    border: "1px solid rgba(59, 130, 246, 0.3)",
+                    backgroundColor: mode === "dark" ? "rgba(59, 130, 246, 0.12)" : "#EFF6FF",
+                    border: mode === "dark" ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #E2E8F0",
                     transition: "all 0.2s ease",
                     "&:hover": {
-                      backgroundColor: "rgba(59, 130, 246, 0.2)",
-                      borderColor: "#3B82F6",
+                      backgroundColor: mode === "dark" ? "rgba(59, 130, 246, 0.2)" : "#DBEAFE",
+                      borderColor: "#2563EB",
                     },
                   }}
                 >
@@ -369,10 +435,25 @@ export default function Navbar({
                     {currentUser.name.charAt(0).toUpperCase()}
                   </Avatar>
                   <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.8rem", lineHeight: 1.1 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        fontSize: "0.8rem",
+                        lineHeight: 1.1,
+                        color: mode === "dark" ? "#F8FAFC" : "#0F172A",
+                      }}
+                    >
                       {currentUser.name}
                     </Typography>
-                    <Typography variant="caption" sx={{ color: "#22D3EE", fontSize: "0.68rem", fontWeight: 600 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: mode === "dark" ? "#22D3EE" : "#0891B2",
+                        fontSize: "0.68rem",
+                        fontWeight: 600,
+                      }}
+                    >
                       {currentUser.role}
                     </Typography>
                   </Box>
@@ -388,32 +469,59 @@ export default function Navbar({
                       sx: {
                         mt: 1,
                         minWidth: 200,
-                        backgroundColor: "#111A2E",
-                        border: "1px solid rgba(59, 130, 246, 0.25)",
+                        backgroundColor: mode === "dark" ? "#0E162B" : "#FFFFFF",
+                        border:
+                          mode === "dark"
+                            ? "1px solid rgba(59, 130, 246, 0.25)"
+                            : "1px solid #E2E8F0",
                         borderRadius: "6px",
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
+                        boxShadow:
+                          mode === "dark"
+                            ? "0 8px 24px rgba(0,0,0,0.6)"
+                            : "0 10px 30px rgba(15, 23, 42, 0.08)",
                       },
                     },
                   }}
                 >
                   <MenuItem disabled sx={{ opacity: "1 !important", py: 1 }}>
                     <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "0.85rem" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 700,
+                          color: mode === "dark" ? "#F8FAFC" : "#0F172A",
+                          fontSize: "0.85rem",
+                        }}
+                      >
                         {currentUser.name}
                       </Typography>
-                      <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>
+                      <Typography
+                        variant="caption"
+                        sx={{ color: mode === "dark" ? "#94A3B8" : "#64748B", fontSize: "0.75rem" }}
+                      >
                         {currentUser.email}
                       </Typography>
                     </Box>
                   </MenuItem>
-                  <Divider sx={{ my: 0.8, borderColor: "rgba(255,255,255,0.08)" }} />
+                  <Divider
+                    sx={{
+                      my: 0.8,
+                      borderColor: mode === "dark" ? "rgba(255,255,255,0.08)" : "#E2E8F0",
+                    }}
+                  />
 
                   <MenuItem
                     onClick={() => {
                       setUserMenuAnchor(null);
                       onOpenProfile();
                     }}
-                    sx={{ fontSize: "0.82rem" }}
+                    sx={{
+                      fontSize: "0.82rem",
+                      color: mode === "dark" ? "#F8FAFC" : "#0F172A",
+                      "&:hover": {
+                        backgroundColor: mode === "dark" ? "rgba(255,255,255,0.05)" : "#EFF6FF",
+                      },
+                    }}
                   >
                     <ListItemIcon>
                       <PersonIcon fontSize="small" sx={{ color: "#38BDF8" }} />
@@ -426,7 +534,13 @@ export default function Navbar({
                       setUserMenuAnchor(null);
                       onOpenChangePassword();
                     }}
-                    sx={{ fontSize: "0.82rem" }}
+                    sx={{
+                      fontSize: "0.82rem",
+                      color: mode === "dark" ? "#F8FAFC" : "#0F172A",
+                      "&:hover": {
+                        backgroundColor: mode === "dark" ? "rgba(255,255,255,0.05)" : "#EFF6FF",
+                      },
+                    }}
                   >
                     <ListItemIcon>
                       <VpnKeyIcon fontSize="small" sx={{ color: "#A78BFA" }} />
@@ -434,7 +548,12 @@ export default function Navbar({
                     Change Password
                   </MenuItem>
 
-                  <Divider sx={{ my: 0.8, borderColor: "rgba(255,255,255,0.08)" }} />
+                  <Divider
+                    sx={{
+                      my: 0.8,
+                      borderColor: mode === "dark" ? "rgba(255,255,255,0.08)" : "#E2E8F0",
+                    }}
+                  />
 
                   <MenuItem
                     onClick={() => {
@@ -456,7 +575,11 @@ export default function Navbar({
               <IconButton
                 edge="end"
                 onClick={() => setDrawerOpen(true)}
-                sx={{ display: { xs: "inline-flex", md: "none" }, color: "#F8FAFC", p: 0.8 }}
+                sx={{
+                  display: { xs: "inline-flex", md: "none" },
+                  color: mode === "dark" ? "#F8FAFC" : "#0F172A",
+                  p: 0.8,
+                }}
               >
                 <MenuIcon fontSize="small" />
               </IconButton>
@@ -474,10 +597,13 @@ export default function Navbar({
           paper: {
             sx: {
               width: 280,
-              backgroundColor: "#0A0F1C",
-              color: "#F8FAFC",
+              backgroundColor: mode === "dark" ? "#070B16" : "#FFFFFF",
+              color: mode === "dark" ? "#F8FAFC" : "#0F172A",
               p: 2,
-              borderLeft: "1px solid rgba(59, 130, 246, 0.2)",
+              borderLeft:
+                mode === "dark"
+                  ? "1px solid rgba(59, 130, 246, 0.2)"
+                  : "1px solid #E2E8F0",
             },
           },
         }}

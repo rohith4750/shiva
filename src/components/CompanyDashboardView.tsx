@@ -68,30 +68,9 @@ export default function CompanyDashboardView({
   ];
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 1240, mx: "auto" }}>
-      {/* SINGLE CONTAINER / SINGLE DIV */}
-      <Paper
-        elevation={4}
-        sx={{
-          p: { xs: 2.5, md: 3 },
-          borderRadius: "6px",
-          background: "linear-gradient(135deg, rgba(17, 26, 46, 0.98), rgba(10, 15, 28, 0.98))",
-          border: "1px solid rgba(59, 130, 246, 0.25)",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* Accent Top Ribbon */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            background: "linear-gradient(90deg, #06B6D4, #3B82F6, #8B5CF6)",
-          }}
-        />
+    <Box className="app-card">
+      <Box className="app-card-ribbon" />
+      <Box className="app-card-body">
 
         {/* 1. Header & Company Description */}
         <Box sx={{ mb: 2 }}>
@@ -103,19 +82,28 @@ export default function CompanyDashboardView({
             variant="h4"
             sx={{
               fontWeight: 900,
-              color: "#F8FAFC",
               fontSize: { xs: "1.35rem", md: "1.75rem" },
               letterSpacing: "-0.02em",
               mb: 0.8,
             }}
           >
-            Build Beyond Boundaries
+            <Box component="span" sx={{ color: "text.primary" }}>
+              Build Beyond{" "}
+            </Box>
+            <Box
+              component="span"
+              sx={{
+                color: (theme) => (theme.palette.mode === "dark" ? "#38BDF8" : "#2563EB"),
+              }}
+            >
+              Boundaries
+            </Box>
           </Typography>
 
           <Typography
             variant="body1"
             sx={{
-              color: "#94A3B8",
+              color: "text.secondary",
               fontSize: "0.88rem",
               lineHeight: 1.55,
               maxWidth: 820,
@@ -140,6 +128,10 @@ export default function CompanyDashboardView({
                 fontWeight: 600,
                 px: 1.5,
                 py: 0.6,
+                boxShadow: (theme) =>
+                  theme.palette.mode === "dark"
+                    ? "0 2px 10px rgba(59, 130, 246, 0.35)"
+                    : "0 2px 8px rgba(37, 99, 235, 0.25)",
               }}
             >
               Go to User Management
@@ -150,14 +142,21 @@ export default function CompanyDashboardView({
               startIcon={<SecurityIcon sx={{ fontSize: "16px !important" }} />}
               onClick={() => onNavigateTab(2)}
               sx={{
-                borderColor: "rgba(59, 130, 246, 0.4)",
-                color: "#60A5FA",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(59, 130, 246, 0.4)" : "#BFDBFE",
+                color: (theme) => (theme.palette.mode === "dark" ? "#60A5FA" : "#2563EB"),
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark" ? "transparent" : "#EFF6FF",
                 borderRadius: "6px",
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 px: 1.5,
                 py: 0.6,
-                "&:hover": { borderColor: "#3B82F6", backgroundColor: "rgba(59, 130, 246, 0.1)" },
+                "&:hover": {
+                  borderColor: "#3B82F6",
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(59, 130, 246, 0.12)" : "#DBEAFE",
+                },
               }}
             >
               Roles Architecture
@@ -168,14 +167,21 @@ export default function CompanyDashboardView({
               startIcon={<VpnKeyIcon sx={{ fontSize: "16px !important" }} />}
               onClick={() => onNavigateTab(3)}
               sx={{
-                borderColor: "rgba(139, 92, 246, 0.4)",
-                color: "#C4B5FD",
+                borderColor: (theme) =>
+                  theme.palette.mode === "dark" ? "rgba(139, 92, 246, 0.4)" : "#DDD6FE",
+                color: (theme) => (theme.palette.mode === "dark" ? "#C4B5FD" : "#7C3AED"),
+                backgroundColor: (theme) =>
+                  theme.palette.mode === "dark" ? "transparent" : "#F5F3FF",
                 borderRadius: "6px",
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 px: 1.5,
                 py: 0.6,
-                "&:hover": { borderColor: "#8B5CF6", backgroundColor: "rgba(139, 92, 246, 0.1)" },
+                "&:hover": {
+                  borderColor: "#8B5CF6",
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(139, 92, 246, 0.12)" : "#EDE9FE",
+                },
               }}
             >
               Permissions Architecture
@@ -183,7 +189,7 @@ export default function CompanyDashboardView({
           </Box>
         </Box>
 
-        <Divider sx={{ my: 2.2, borderColor: "rgba(255, 255, 255, 0.08)" }} />
+        <Divider sx={{ my: 2.2, borderColor: (theme) => theme.palette.divider }} />
 
         {/* 2. Core Pillars inside the same div */}
         <Box>
@@ -191,7 +197,7 @@ export default function CompanyDashboardView({
             variant="subtitle2"
             sx={{
               fontWeight: 800,
-              color: "#94A3B8",
+              color: "text.secondary",
               textTransform: "uppercase",
               letterSpacing: "0.06em",
               mb: 1.5,
@@ -208,15 +214,20 @@ export default function CompanyDashboardView({
                   sx={{
                     p: 1.8,
                     borderRadius: "6px",
-                    backgroundColor: "rgba(10, 15, 28, 0.6)",
-                    border: `1px solid ${pillar.borderColor}`,
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === "dark" ? "rgba(10, 15, 28, 0.6)" : "#EFF6FF",
+                    border: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? `1px solid ${pillar.borderColor}`
+                        : "1px solid #E2E8F0",
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     transition: "all 0.2s ease",
                     "&:hover": {
                       borderColor: "#3B82F6",
-                      backgroundColor: "rgba(10, 15, 28, 0.8)",
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === "dark" ? "rgba(10, 15, 28, 0.8)" : "#DBEAFE",
                     },
                   }}
                 >
@@ -234,13 +245,19 @@ export default function CompanyDashboardView({
                   >
                     {pillar.icon}
                   </Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#F8FAFC", fontSize: "0.92rem", mb: 0.3 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.92rem", mb: 0.3 }}
+                  >
                     {pillar.title}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#38BDF8", fontWeight: 700, mb: 0.8, display: "block", fontSize: "0.7rem" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "#0891B2", fontWeight: 700, mb: 0.8, display: "block", fontSize: "0.7rem" }}
+                  >
                     {pillar.subtitle}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.78rem", lineHeight: 1.45 }}>
+                  <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.78rem", lineHeight: 1.45 }}>
                     {pillar.description}
                   </Typography>
                 </Box>
@@ -248,7 +265,7 @@ export default function CompanyDashboardView({
             ))}
           </Grid>
         </Box>
-      </Paper>
+      </Box>
     </Box>
   );
 }

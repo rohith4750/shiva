@@ -1,0 +1,11 @@
+/* ==========================================================================
+   APP MASTER SCSS BUNDLE
+   ==========================================================================
+   Single entry point for all stylesheets, ensuring design system consistency,
+   proper cascade order, and high contrast typography.
+   ========================================================================== */
+
+@use "./variables.scss";
+@use "./layout.scss";
+@use "./components.scss";
+@use "./table.scss";

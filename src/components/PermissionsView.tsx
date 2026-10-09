@@ -26,7 +26,9 @@ import {
   FormControl,
   InputLabel,
   Grid,
+  Avatar,
 } from "@mui/material";
+import { useColorMode } from "./ThemeRegistry";
 import {
   VpnKey as PermissionIcon,
   Add as AddIcon,
@@ -196,6 +198,8 @@ interface PermissionsViewProps {
 }
 
 export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
+  const { mode } = useColorMode();
+  const isDark = mode === "dark";
   const [permissions, setPermissions] = useState<PermissionItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -270,15 +274,15 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
 
   const filteredPermissions = useMemo(() => {
     return permissions.filter((p) => {
-      if (selectedModuleFilter !== "ALL" && p.module !== selectedModuleFilter) {
+      if (selectedModuleFilter !== "ALL" && (p.module || "") !== selectedModuleFilter) {
         return false;
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
-          p.name.toLowerCase().includes(q) ||
-          p.module.toLowerCase().includes(q) ||
-          p.action.toLowerCase().includes(q) ||
+          (p.name || "").toLowerCase().includes(q) ||
+          (p.module || "").toLowerCase().includes(q) ||
+          (p.action || "").toLowerCase().includes(q) ||
           (p.description && p.description.toLowerCase().includes(q))
         );
       }
@@ -322,73 +326,145 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
     }
   };
 
-  const getModuleStyle = (moduleName: string) => {
+  const getModuleStyle = (moduleName?: string | null) => {
+    const safeMod = (moduleName || "General").toLowerCase();
     const found = NAV_MODULES.find(
-      (m) => m.id.toLowerCase() === moduleName.toLowerCase()
+      (m) => m.id.toLowerCase() === safeMod
     );
-    return (
-      found || {
-        color: "#38BDF8",
-        bg: "rgba(56, 189, 248, 0.12)",
-        border: "rgba(56, 189, 248, 0.25)",
-        icon: <ModuleIcon sx={{ fontSize: 16, color: "#38BDF8" }} />,
-      }
-    );
+    if (!found) {
+      return isDark
+        ? {
+            color: "#38BDF8",
+            bg: "rgba(56, 189, 248, 0.12)",
+            border: "rgba(56, 189, 248, 0.25)",
+            icon: <ModuleIcon sx={{ fontSize: 16, color: "#38BDF8" }} />,
+          }
+        : {
+            color: "#0284C7",
+            bg: "#E0F2FE",
+            border: "#BAE6FD",
+            icon: <ModuleIcon sx={{ fontSize: 16, color: "#0284C7" }} />,
+          };
+    }
+    if (!isDark) {
+      return {
+        ...found,
+        color: found.color === "#38BDF8" ? "#0284C7" : found.color === "#818CF8" ? "#4338CA" : found.color === "#22D3EE" ? "#0E7490" : found.color === "#34D399" ? "#047857" : found.color === "#C084FC" ? "#7E22CE" : found.color === "#FBBF24" ? "#B45309" : found.color === "#F472B6" ? "#BE185D" : "#334155",
+        bg: found.color === "#38BDF8" ? "#E0F2FE" : found.color === "#818CF8" ? "#EEF2FF" : found.color === "#22D3EE" ? "#ECFEFF" : found.color === "#34D399" ? "#ECFDF5" : found.color === "#C084FC" ? "#FAF5FF" : found.color === "#FBBF24" ? "#FEF3C7" : found.color === "#F472B6" ? "#FDF2F8" : "#F1F5F9",
+        border: found.color === "#38BDF8" ? "#BAE6FD" : found.color === "#818CF8" ? "#C7D2FE" : found.color === "#22D3EE" ? "#A5F3FC" : found.color === "#34D399" ? "#A7F3D0" : found.color === "#C084FC" ? "#E9D5FF" : found.color === "#FBBF24" ? "#FDE68A" : found.color === "#F472B6" ? "#FBCFE8" : "#CBD5E1",
+      };
+    }
+    return found;
   };
 
-  const getActionStyle = (actionName: string) => {
+  const getActionStyle = (actionName?: string | null) => {
+    const safeAct = (actionName || "Read").toLowerCase();
     const found = BASIC_ACTIONS.find(
-      (a) => a.id.toLowerCase() === actionName.toLowerCase()
+      (a) => a.id.toLowerCase() === safeAct
     );
-    return (
-      found || {
-        color: "#94A3B8",
-        bg: "rgba(148, 163, 184, 0.15)",
-        border: "rgba(148, 163, 184, 0.3)",
-        icon: <PermissionIcon sx={{ fontSize: 14 }} />,
-      }
-    );
+    if (!found) {
+      return isDark
+        ? {
+            color: "#94A3B8",
+            bg: "rgba(148, 163, 184, 0.15)",
+            border: "rgba(148, 163, 184, 0.3)",
+            icon: <PermissionIcon sx={{ fontSize: 14 }} />,
+          }
+        : {
+            color: "#334155",
+            bg: "#F1F5F9",
+            border: "#CBD5E1",
+            icon: <PermissionIcon sx={{ fontSize: 14, color: "#334155" }} />,
+          };
+    }
+    if (!isDark) {
+      return {
+        ...found,
+        color: found.color === "#38BDF8" ? "#0284C7" : found.color === "#60A5FA" ? "#1D4ED8" : found.color === "#34D399" ? "#047857" : found.color === "#F87171" ? "#B91C1C" : "#6B21A8",
+        bg: found.color === "#38BDF8" ? "#E0F2FE" : found.color === "#60A5FA" ? "#EFF6FF" : found.color === "#34D399" ? "#ECFDF5" : found.color === "#F87171" ? "#FEF2F2" : "#FAF5FF",
+        border: found.color === "#38BDF8" ? "#BAE6FD" : found.color === "#60A5FA" ? "#BFDBFE" : found.color === "#34D399" ? "#A7F3D0" : found.color === "#F87171" ? "#FECACA" : "#E9D5FF",
+      };
+    }
+    return found;
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: "100%", mx: 0 }}>
-      <Card
-        elevation={4}
-        sx={{
-          borderRadius: "6px",
-          backgroundColor: "#111A2E",
-          border: "1px solid rgba(59, 130, 246, 0.2)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Accent Top Line */}
-        <Box
-          sx={{
-            height: 3,
-            width: "100%",
-            background: "linear-gradient(90deg, #06B6D4, #8B5CF6, #3B82F6)",
-          }}
-        />
+    <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: "var(--content-gap)" }}>
+      {/* 1. Standardized Stat Metric Cards Grid */}
+      <Box className="app-stat-grid">
+        <Box className="app-stat-card">
+          <Avatar
+            sx={{
+              bgcolor: isDark ? "rgba(6, 182, 212, 0.2)" : "#CFFAFE",
+              color: isDark ? "#06B6D4" : "#0891B2",
+              width: 32,
+              height: 32,
+              borderRadius: "6px",
+            }}
+          >
+            <PermissionIcon sx={{ fontSize: 18 }} />
+          </Avatar>
+          <Box>
+            <Typography className="app-stat-label">Total Permissions</Typography>
+            <Typography className="app-stat-value">{permissions.length}</Typography>
+          </Box>
+        </Box>
 
-        {/* Compact Integrated Header Bar */}
-        <Box
-          sx={{
-            px: 2,
-            py: 1.2,
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 1.5,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-            backgroundColor: "rgba(10, 15, 28, 0.5)",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <PermissionIcon sx={{ color: "#22D3EE", fontSize: 20 }} />
+        <Box className="app-stat-card">
+          <Avatar
+            sx={{
+              bgcolor: isDark ? "rgba(139, 92, 246, 0.2)" : "#EDE9FE",
+              color: isDark ? "#8B5CF6" : "#7C3AED",
+              width: 32,
+              height: 32,
+              borderRadius: "6px",
+            }}
+          >
+            <SettingsIcon sx={{ fontSize: 18 }} />
+          </Avatar>
+          <Box>
+            <Typography className="app-stat-label">Active Modules</Typography>
+            <Typography className="app-stat-value">{uniqueModules.length}</Typography>
+          </Box>
+        </Box>
+
+        <Box className="app-stat-card">
+          <Avatar
+            sx={{
+              bgcolor: isDark ? "rgba(59, 130, 246, 0.2)" : "#DBEAFE",
+              color: isDark ? "#3B82F6" : "#2563EB",
+              width: 32,
+              height: 32,
+              borderRadius: "6px",
+            }}
+          >
+            <CreateIcon sx={{ fontSize: 18 }} />
+          </Avatar>
+          <Box>
+            <Typography className="app-stat-label">Supported Actions</Typography>
+            <Typography className="app-stat-value">{BASIC_ACTIONS.length}</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* 2. Standardized Table Card */}
+      <Box className="app-table-card">
+        {/* Accent Top Ribbon */}
+        <Box className="app-card-ribbon" />
+
+        {/* Integrated Header Toolbar */}
+        <Box className="app-table-toolbar">
+          <Box className="app-table-toolbar-left">
+            <PermissionIcon
+              sx={{
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? "#22D3EE" : "#0891B2",
+                fontSize: 20,
+              }}
+            />
             <Typography
               variant="subtitle1"
-              sx={{ fontWeight: 800, color: "#F8FAFC", fontSize: "0.95rem" }}
+              sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.95rem" }}
             >
               Permissions Architecture
             </Typography>
@@ -399,15 +475,15 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                 height: 20,
                 fontSize: "0.7rem",
                 fontWeight: 700,
-                backgroundColor: "rgba(6, 182, 212, 0.15)",
-                color: "#22D3EE",
-                border: "1px solid rgba(6, 182, 212, 0.3)",
+                backgroundColor: isDark ? "rgba(6, 182, 212, 0.15)" : "#ECFEFF",
+                color: isDark ? "#22D3EE" : "#0E7490",
+                border: `1px solid ${isDark ? "rgba(6, 182, 212, 0.3)" : "#A5F3FC"}`,
                 borderRadius: "6px",
               }}
             />
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center", flexWrap: "wrap" }}>
+          <Box className="app-table-toolbar-right">
             <TextField
               size="small"
               placeholder="Search key, module, action..."
@@ -421,7 +497,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
-                      <SearchIcon sx={{ color: "#94A3B8", fontSize: 16 }} />
+                      <SearchIcon sx={{ color: isDark ? "#94A3B8" : "#475569", fontSize: 16 }} />
                     </InputAdornment>
                   ),
                 },
@@ -436,8 +512,8 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
               sx={{
                 height: 30,
                 borderRadius: "6px",
-                borderColor: "rgba(59, 130, 246, 0.3)",
-                color: "#94A3B8",
+                borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#CBD5E1",
+                color: isDark ? "#94A3B8" : "#475569",
                 fontSize: "0.78rem",
                 px: 1.2,
               }}
@@ -473,13 +549,13 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
             alignItems: "center",
             gap: 0.8,
             overflowX: "auto",
-            backgroundColor: "rgba(10, 15, 28, 0.3)",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+            backgroundColor: isDark ? "rgba(10, 15, 28, 0.3)" : "#F8FAFC",
+            borderBottom: isDark ? "1px solid rgba(255, 255, 255, 0.05)" : "1px solid #E2E8F0",
           }}
         >
           <Typography
             variant="caption"
-            sx={{ color: "#64748B", fontWeight: 700, mr: 0.5, flexShrink: 0 }}
+            sx={{ color: "text.secondary", fontWeight: 700, mr: 0.5, flexShrink: 0 }}
           >
             FILTER BY MODULE:
           </Typography>
@@ -495,13 +571,17 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
               borderRadius: "6px",
               backgroundColor:
                 selectedModuleFilter === "ALL"
-                  ? "rgba(59, 130, 246, 0.25)"
-                  : "rgba(255, 255, 255, 0.04)",
-              color: selectedModuleFilter === "ALL" ? "#60A5FA" : "#94A3B8",
+                  ? isDark
+                    ? "rgba(59, 130, 246, 0.25)"
+                    : "#EFF6FF"
+                  : isDark
+                  ? "rgba(255, 255, 255, 0.04)"
+                  : "#FFFFFF",
+              color: selectedModuleFilter === "ALL" ? (isDark ? "#60A5FA" : "#2563EB") : (isDark ? "#94A3B8" : "#475569"),
               border:
                 selectedModuleFilter === "ALL"
-                  ? "1px solid rgba(59, 130, 246, 0.5)"
-                  : "1px solid rgba(255, 255, 255, 0.08)",
+                  ? `1px solid ${isDark ? "rgba(59, 130, 246, 0.5)" : "#BFDBFE"}`
+                  : `1px solid ${isDark ? "rgba(255, 255, 255, 0.08)" : "#CBD5E1"}`,
             }}
           />
           {uniqueModules.map((modName) => {
@@ -520,11 +600,11 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                   fontSize: "0.7rem",
                   fontWeight: 600,
                   borderRadius: "6px",
-                  backgroundColor: isSelected ? style.bg : "rgba(255, 255, 255, 0.04)",
-                  color: isSelected ? style.color : "#94A3B8",
+                  backgroundColor: isSelected ? style.bg : (isDark ? "rgba(255, 255, 255, 0.04)" : "#FFFFFF"),
+                  color: isSelected ? style.color : (isDark ? "#94A3B8" : "#475569"),
                   border: isSelected
                     ? `1px solid ${style.border}`
-                    : "1px solid rgba(255, 255, 255, 0.08)",
+                    : `1px solid ${isDark ? "rgba(255, 255, 255, 0.08)" : "#CBD5E1"}`,
                 }}
               />
             );
@@ -532,104 +612,26 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
         </Box>
 
         {/* Permissions Table */}
-        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-          <TableContainer
-            sx={{
-              height: { xs: 440, md: "calc(100vh - 210px)" },
-              maxHeight: "calc(100vh - 210px)",
-              minHeight: 400,
-              overflowY: "auto",
-              overflowX: "auto",
-              backgroundColor: "#0A0F1C",
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(59, 130, 246, 0.4) transparent",
-              "&::-webkit-scrollbar": { width: 4, height: 4 },
-              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "rgba(59, 130, 246, 0.4)",
-                borderRadius: 4,
-                "&:hover": { backgroundColor: "rgba(59, 130, 246, 0.8)" },
-              },
-            }}
-          >
-            <Table stickyHeader size="small">
+        <TableContainer className="app-table-container">
+            <Table stickyHeader size="small" className="app-table">
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 65,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 65 }}>
                     ID
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 170,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 170 }}>
                     MODULE
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 130,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 130 }}>
                     ACTION
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 180,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 180 }}>
                     PERMISSION KEY
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2 }}>
                     DESCRIPTION
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 190,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 190 }}>
                     ASSIGNED TO ROLES
                   </TableCell>
                 </TableRow>
@@ -712,12 +714,13 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                             sx={{
                               fontFamily: "monospace",
                               fontSize: "0.76rem",
-                              color: "#22D3EE",
-                              backgroundColor: "rgba(6, 182, 212, 0.1)",
+                              fontWeight: 600,
+                              color: isDark ? "#22D3EE" : "#0369A1",
+                              backgroundColor: isDark ? "rgba(6, 182, 212, 0.1)" : "#E0F2FE",
                               px: 0.9,
                               py: 0.3,
                               borderRadius: "4px",
-                              border: "1px solid rgba(6, 182, 212, 0.25)",
+                              border: `1px solid ${isDark ? "rgba(6, 182, 212, 0.25)" : "#BAE6FD"}`,
                               display: "inline-block",
                             }}
                           >
@@ -726,17 +729,17 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         </TableCell>
 
                         {/* DESCRIPTION Column */}
-                        <TableCell sx={{ color: "#94A3B8", fontSize: "0.78rem", py: 1 }}>
+                        <TableCell sx={{ color: "text.secondary", fontSize: "0.78rem", py: 1 }}>
                           {p.description || "—"}
                         </TableCell>
 
                         {/* INHERITED BY ROLES Column */}
                         <TableCell sx={{ py: 1 }}>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                            {p.roles.length === 0 ? (
+                            {!p.roles || p.roles.length === 0 ? (
                               <Typography
                                 variant="caption"
-                                sx={{ color: "#64748B", fontStyle: "italic", fontSize: "0.72rem" }}
+                                sx={{ color: "text.secondary", fontStyle: "italic", fontSize: "0.72rem" }}
                               >
                                 None assigned
                               </Typography>
@@ -750,9 +753,9 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                                     height: 20,
                                     fontSize: "0.68rem",
                                     fontWeight: 700,
-                                    backgroundColor: "rgba(168, 85, 247, 0.12)",
-                                    color: "#C084FC",
-                                    border: "1px solid rgba(168, 85, 247, 0.25)",
+                                    backgroundColor: isDark ? "rgba(168, 85, 247, 0.12)" : "#FAF5FF",
+                                    color: isDark ? "#C084FC" : "#6B21A8",
+                                    border: `1px solid ${isDark ? "rgba(168, 85, 247, 0.25)" : "#E9D5FF"}`,
                                     borderRadius: "6px",
                                   }}
                                 />
@@ -769,29 +772,16 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
           </TableContainer>
 
           {/* Fixed Footer Bar */}
-          <Box
-            sx={{
-              px: 2,
-              py: 0.9,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-              backgroundColor: "rgba(10, 15, 28, 0.85)",
-              flexWrap: "wrap",
-              gap: 1,
-            }}
-          >
-            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>
-              Showing <strong style={{ color: "#F8FAFC" }}>{filteredPermissions.length}</strong> of{" "}
-              <strong style={{ color: "#F8FAFC" }}>{permissions.length}</strong> system permissions
+          <Box className="app-table-footer">
+            <Typography variant="caption" sx={{ color: "var(--table-footer-text)", fontSize: "0.75rem" }}>
+              Showing <strong>{filteredPermissions.length}</strong> of{" "}
+              <strong>{permissions.length}</strong> system permissions
             </Typography>
-            <Typography variant="caption" sx={{ color: "#64748B", fontSize: "0.72rem" }}>
+            <Typography variant="caption" sx={{ color: "var(--table-footer-text)", fontSize: "0.72rem" }}>
               • Scroll inside table to view all records • Column headers remain fixed
             </Typography>
           </Box>
-        </CardContent>
-      </Card>
+        </Box>
 
       {/* ================================================================ */}
       {/* ADD NEW PERMISSION MODAL WITH MODULE AND ACTION DROPDOWNS       */}
@@ -804,8 +794,8 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
         slotProps={{
           paper: {
             sx: {
-              backgroundColor: "#111A2E",
-              border: "1px solid rgba(6, 182, 212, 0.3)",
+              backgroundColor: isDark ? "#0E162B" : "#FFFFFF",
+              border: `1px solid ${isDark ? "rgba(6, 182, 212, 0.3)" : "#E2E8F0"}`,
               borderRadius: "6px",
               p: 2,
             },
@@ -819,11 +809,11 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
             gap: 1.2,
             pb: 1.5,
             fontSize: "1.05rem",
-            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
           }}
         >
-          <PermissionIcon sx={{ color: "#22D3EE" }} />
-          <Box component="span" sx={{ fontWeight: 800, color: "#F8FAFC" }}>
+          <PermissionIcon sx={{ color: isDark ? "#22D3EE" : "#0891B2" }} />
+          <Box component="span" sx={{ fontWeight: 800, color: "text.primary" }}>
             Add New System Permission
           </Box>
         </DialogTitle>

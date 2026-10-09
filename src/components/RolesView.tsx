@@ -18,13 +18,17 @@ import {
   DialogTitle,
   DialogContent,
   CircularProgress,
+  Avatar,
 } from "@mui/material";
 import {
   Security as SecurityIcon,
   Add as AddIcon,
   Refresh as RefreshIcon,
+  VpnKey as VpnKeyIcon,
+  People as PeopleIcon,
 } from "@mui/icons-material";
 import ConfigurableForm, { FormFieldConfig } from "./ConfigurableForm";
+import { useColorMode } from "./ThemeRegistry";
 
 interface RoleItem {
   id: number;
@@ -43,6 +47,8 @@ interface RolesViewProps {
 }
 
 export default function RolesView({ onShowToast }: RolesViewProps) {
+  const { mode } = useColorMode();
+  const isDark = mode === "dark";
   const [roles, setRoles] = useState<RoleItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [isAddRoleOpen, setIsAddRoleOpen] = useState<boolean>(false);
@@ -114,57 +120,111 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
   const getRoleBadgeStyle = (name: string) => {
     const n = name.toUpperCase();
     if (n.includes("SUPER_ADMIN")) {
-      return { bg: "rgba(168, 85, 247, 0.2)", text: "#C084FC", border: "rgba(168, 85, 247, 0.4)" };
+      return isDark
+        ? { bg: "rgba(168, 85, 247, 0.2)", text: "#C084FC", border: "rgba(168, 85, 247, 0.4)" }
+        : { bg: "#FAF5FF", text: "#6B21A8", border: "#E9D5FF" };
     }
     if (n.includes("ADMIN")) {
-      return { bg: "rgba(59, 130, 246, 0.2)", text: "#60A5FA", border: "rgba(59, 130, 246, 0.4)" };
+      return isDark
+        ? { bg: "rgba(59, 130, 246, 0.2)", text: "#60A5FA", border: "rgba(59, 130, 246, 0.4)" }
+        : { bg: "#EFF6FF", text: "#1D4ED8", border: "#BFDBFE" };
     }
     if (n.includes("MANAGER")) {
-      return { bg: "rgba(6, 182, 212, 0.2)", text: "#22D3EE", border: "rgba(6, 182, 212, 0.4)" };
+      return isDark
+        ? { bg: "rgba(6, 182, 212, 0.2)", text: "#22D3EE", border: "rgba(6, 182, 212, 0.4)" }
+        : { bg: "#ECFEFF", text: "#0E7490", border: "#A5F3FC" };
     }
     if (n.includes("DEV")) {
-      return { bg: "rgba(139, 92, 246, 0.2)", text: "#A78BFA", border: "rgba(139, 92, 246, 0.4)" };
+      return isDark
+        ? { bg: "rgba(139, 92, 246, 0.2)", text: "#A78BFA", border: "rgba(139, 92, 246, 0.4)" }
+        : { bg: "#F5F3FF", text: "#5B21B6", border: "#DDD6FE" };
     }
-    return { bg: "rgba(148, 163, 184, 0.15)", text: "#94A3B8", border: "rgba(148, 163, 184, 0.3)" };
+    return isDark
+      ? { bg: "rgba(148, 163, 184, 0.15)", text: "#CBD5E1", border: "rgba(148, 163, 184, 0.3)" }
+      : { bg: "#F1F5F9", text: "#334155", border: "#CBD5E1" };
   };
 
-  return (
-    <Box sx={{ width: "100%", maxWidth: "100%", mx: 0 }}>
-      <Card
-        elevation={4}
-        sx={{
-          borderRadius: "6px",
-          backgroundColor: "#111A2E",
-          border: "1px solid rgba(59, 130, 246, 0.2)",
-          overflow: "hidden",
-        }}
-      >
-        {/* Accent Top Line */}
-        <Box
-          sx={{
-            height: 3,
-            width: "100%",
-            background: "linear-gradient(90deg, #3B82F6, #06B6D4)",
-          }}
-        />
+  const totalPermissions = roles.reduce((acc, r) => acc + (r.permissions?.length || 0), 0);
+  const totalAssignedUsers = roles.reduce((acc, r) => acc + (r.user_count || 0), 0);
 
-        {/* Compact Integrated Header Bar */}
-        <Box
-          sx={{
-            px: 2,
-            py: 1.2,
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 1.5,
-            borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
-            backgroundColor: "rgba(10, 15, 28, 0.5)",
-          }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <SecurityIcon sx={{ color: "#38BDF8", fontSize: 20 }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#F8FAFC", fontSize: "0.95rem" }}>
+  return (
+    <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: "var(--content-gap)" }}>
+      {/* 1. Standardized Stat Metric Cards Grid */}
+      <Box className="app-stat-grid">
+        <Box className="app-stat-card">
+          <Avatar
+            sx={{
+              bgcolor: isDark ? "rgba(59, 130, 246, 0.2)" : "#DBEAFE",
+              color: isDark ? "#3B82F6" : "#2563EB",
+              width: 32,
+              height: 32,
+              borderRadius: "6px",
+            }}
+          >
+            <SecurityIcon sx={{ fontSize: 18 }} />
+          </Avatar>
+          <Box>
+            <Typography className="app-stat-label">Defined Roles</Typography>
+            <Typography className="app-stat-value">{roles.length}</Typography>
+          </Box>
+        </Box>
+
+        <Box className="app-stat-card">
+          <Avatar
+            sx={{
+              bgcolor: isDark ? "rgba(6, 182, 212, 0.2)" : "#CFFAFE",
+              color: isDark ? "#06B6D4" : "#0891B2",
+              width: 32,
+              height: 32,
+              borderRadius: "6px",
+            }}
+          >
+            <VpnKeyIcon sx={{ fontSize: 18 }} />
+          </Avatar>
+          <Box>
+            <Typography className="app-stat-label">Bound Permissions</Typography>
+            <Typography className="app-stat-value">{totalPermissions}</Typography>
+          </Box>
+        </Box>
+
+        <Box className="app-stat-card">
+          <Avatar
+            sx={{
+              bgcolor: isDark ? "rgba(139, 92, 246, 0.2)" : "#EDE9FE",
+              color: isDark ? "#8B5CF6" : "#7C3AED",
+              width: 32,
+              height: 32,
+              borderRadius: "6px",
+            }}
+          >
+            <PeopleIcon sx={{ fontSize: 18 }} />
+          </Avatar>
+          <Box>
+            <Typography className="app-stat-label">Assigned Users</Typography>
+            <Typography className="app-stat-value">{totalAssignedUsers}</Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* 2. Standardized Table Card */}
+      <Box className="app-table-card">
+        {/* Accent Top Ribbon */}
+        <Box className="app-card-ribbon" />
+
+        {/* Integrated Header Toolbar */}
+        <Box className="app-table-toolbar">
+          <Box className="app-table-toolbar-left">
+            <SecurityIcon
+              sx={{
+                color: (theme) =>
+                  theme.palette.mode === "dark" ? "#38BDF8" : "#2563EB",
+                fontSize: 20,
+              }}
+            />
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.95rem" }}
+            >
               Roles Management
             </Typography>
             <Chip
@@ -174,15 +234,15 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                 height: 20,
                 fontSize: "0.7rem",
                 fontWeight: 700,
-                backgroundColor: "rgba(59, 130, 246, 0.15)",
-                color: "#60A5FA",
-                border: "1px solid rgba(59, 130, 246, 0.3)",
+                backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
+                color: isDark ? "#60A5FA" : "#2563EB",
+                border: `1px solid ${isDark ? "rgba(59, 130, 246, 0.3)" : "#BFDBFE"}`,
                 borderRadius: "6px",
               }}
             />
           </Box>
 
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box className="app-table-toolbar-right">
             <Button
               size="small"
               variant="outlined"
@@ -192,8 +252,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
               sx={{
                 height: 30,
                 borderRadius: "6px",
-                borderColor: "rgba(59, 130, 246, 0.3)",
-                color: "#94A3B8",
+                borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#CBD5E1",
+                color: isDark ? "#94A3B8" : "#475569",
                 fontSize: "0.78rem",
                 px: 1.2,
               }}
@@ -218,92 +278,23 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
             </Button>
           </Box>
         </Box>
-
-        {/* Roles Table */}
-        <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-          <TableContainer
-            sx={{
-              height: { xs: 440, md: "calc(100vh - 210px)" },
-              maxHeight: "calc(100vh - 210px)",
-              minHeight: 400,
-              overflowY: "auto",
-              overflowX: "auto",
-              backgroundColor: "#0A0F1C",
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(59, 130, 246, 0.4) transparent",
-              "&::-webkit-scrollbar": { width: 4, height: 4 },
-              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "rgba(59, 130, 246, 0.4)",
-                borderRadius: 4,
-                "&:hover": { backgroundColor: "rgba(59, 130, 246, 0.8)" },
-              },
-            }}
-          >
-            <Table stickyHeader size="small">
+          <TableContainer className="app-table-container">
+            <Table stickyHeader size="small" className="app-table">
               <TableHead>
                 <TableRow>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 65,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 65 }}>
                     ROLE ID
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 180,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 180 }}>
                     ROLE NAME
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2 }}>
                     DESCRIPTION
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2 }}>
                     ASSIGNED PERMISSIONS
                   </TableCell>
-                  <TableCell
-                    sx={{
-                      backgroundColor: "#0B1120 !important",
-                      color: "#94A3B8",
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      py: 1.2,
-                      width: 140,
-                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
-                    }}
-                  >
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 140 }}>
                     ASSIGNED USERS
                   </TableCell>
                 </TableRow>
@@ -332,7 +323,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                           borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
                         }}
                       >
-                        <TableCell sx={{ color: "#64748B", fontSize: "0.78rem", fontWeight: 600, py: 0.9 }}>
+                        <TableCell sx={{ color: "text.secondary", fontSize: "0.78rem", fontWeight: 600, py: 0.9 }}>
                           #{r.id}
                         </TableCell>
                         <TableCell sx={{ py: 0.9 }}>
@@ -350,13 +341,13 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                             }}
                           />
                         </TableCell>
-                        <TableCell sx={{ color: "#94A3B8", fontSize: "0.78rem", py: 0.9 }}>
+                        <TableCell sx={{ color: "text.secondary", fontSize: "0.78rem", py: 0.9 }}>
                           {r.description || "—"}
                         </TableCell>
                         <TableCell sx={{ py: 0.9 }}>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.4, maxWidth: 500 }}>
                             {r.permissions.length === 0 ? (
-                              <Typography variant="caption" sx={{ color: "#64748B", fontStyle: "italic" }}>
+                              <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
                                 No permissions assigned
                               </Typography>
                             ) : (
@@ -368,9 +359,10 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                                   sx={{
                                     height: 20,
                                     fontSize: "0.68rem",
-                                    backgroundColor: "rgba(59, 130, 246, 0.1)",
-                                    color: "#38BDF8",
-                                    border: "1px solid rgba(59, 130, 246, 0.25)",
+                                    fontWeight: 600,
+                                    backgroundColor: isDark ? "rgba(59, 130, 246, 0.1)" : "#EFF6FF",
+                                    color: isDark ? "#38BDF8" : "#2563EB",
+                                    border: `1px solid ${isDark ? "rgba(59, 130, 246, 0.25)" : "#BFDBFE"}`,
                                     borderRadius: "6px",
                                   }}
                                 />
@@ -385,8 +377,9 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                             variant="outlined"
                             sx={{
                               height: 20,
-                              borderColor: "rgba(148, 163, 184, 0.25)",
-                              color: "#F8FAFC",
+                              borderColor: isDark ? "rgba(148, 163, 184, 0.25)" : "#CBD5E1",
+                              color: "text.primary",
+                              fontWeight: 600,
                               fontSize: "0.7rem",
                               borderRadius: "6px",
                             }}
@@ -401,28 +394,15 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
           </TableContainer>
 
           {/* Fixed Footer Bar */}
-          <Box
-            sx={{
-              px: 2,
-              py: 0.9,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
-              backgroundColor: "rgba(10, 15, 28, 0.85)",
-              flexWrap: "wrap",
-              gap: 1,
-            }}
-          >
-            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>
-              Total <strong style={{ color: "#F8FAFC" }}>{roles.length}</strong> system roles defined
+          <Box className="app-table-footer">
+            <Typography variant="caption" sx={{ color: "var(--table-footer-text)", fontSize: "0.75rem" }}>
+              Total <strong>{roles.length}</strong> system roles defined
             </Typography>
-            <Typography variant="caption" sx={{ color: "#64748B", fontSize: "0.72rem" }}>
+            <Typography variant="caption" sx={{ color: "var(--table-footer-text)", fontSize: "0.72rem" }}>
               • Scroll within table • Header stays pinned
             </Typography>
           </Box>
-        </CardContent>
-      </Card>
+        </Box>
 
       {/* CREATE ROLE MODAL */}
       <Dialog
@@ -433,8 +413,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
         slotProps={{
           paper: {
             sx: {
-              backgroundColor: "#111A2E",
-              border: "1px solid rgba(59, 130, 246, 0.25)",
+              backgroundColor: isDark ? "#0E162B" : "#FFFFFF",
+              border: `1px solid ${isDark ? "rgba(59, 130, 246, 0.25)" : "#E2E8F0"}`,
               borderRadius: "6px",
               p: 2,
             },
@@ -442,8 +422,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
         }}
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.2, pb: 1, fontSize: "1rem" }}>
-          <SecurityIcon sx={{ color: "#38BDF8" }} />
-          <Box component="span" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+          <SecurityIcon sx={{ color: isDark ? "#38BDF8" : "#2563EB" }} />
+          <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
             Add New Role
           </Box>
         </DialogTitle>
@@ -451,6 +431,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
           <Box sx={{ pt: 1 }}>
             <ConfigurableForm
               asCard={false}
+              forceDark={isDark}
               fields={roleFormFields}
               submitLabel="Create Role"
               loading={formSubmitting}

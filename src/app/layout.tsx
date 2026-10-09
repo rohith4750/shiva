@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "@/styles/main.scss";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   description: "Next.js App with Material UI, Prisma ORM App DB, User CRUD, Login, Forgot & Reset Password",
 };
 
+import ThemeRegistry from "@/components/ThemeRegistry";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -24,7 +27,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+      <body>
+        <ThemeRegistry>{children}</ThemeRegistry>
+      </body>
     </html>
   );
 }
