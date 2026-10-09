@@ -40,6 +40,7 @@ import ThemeRegistry from "@/components/ThemeRegistry";
 import Navbar from "@/components/Navbar";
 import ConfigurableForm, { FormFieldConfig } from "@/components/ConfigurableForm";
 import ConfigurableTable from "@/components/ConfigurableTable";
+import RolesAndPermissionsView from "@/components/RolesAndPermissionsView";
 import NexvantaLogo from "@/components/NexvantaLogo";
 import { User, AuthSession } from "@/types/user";
 
@@ -409,12 +410,13 @@ export default function Home() {
       label: "Role",
       type: "select",
       required: true,
-      defaultValue: "User",
+      defaultValue: "USER",
       options: [
-        { value: "User", label: "User" },
-        { value: "Admin", label: "Admin" },
-        { value: "Manager", label: "Manager" },
-        { value: "Developer", label: "Developer" },
+        { value: "USER", label: "USER" },
+        { value: "ADMIN", label: "ADMIN" },
+        { value: "SUPER_ADMIN", label: "SUPER_ADMIN" },
+        { value: "MANAGER", label: "MANAGER" },
+        { value: "DEVELOPER", label: "DEVELOPER" },
       ],
     },
     {
@@ -821,14 +823,19 @@ export default function Home() {
                   />
                 )}
 
-                {/* TAB 1: CUSTOMER SERVICES (Future Customer Modules) */}
+                {/* TAB 1: ROLES & PERMISSIONS ARCHITECTURE (PostgreSQL App DB) */}
                 {landingTab === 1 && (
+                  <RolesAndPermissionsView onShowToast={showToast} />
+                )}
+
+                {/* TAB 2: CUSTOMER SERVICES (Future Customer Modules) */}
+                {landingTab === 2 && (
                   <Box sx={{ maxWidth: 1000, mx: "auto", my: 2 }}>
                     <Paper
                       sx={{
                         p: 4,
                         textAlign: "center",
-                        borderRadius: 3.5,
+                        borderRadius: "6px",
                         backgroundColor: "#111A2E",
                         border: "1px solid rgba(59, 130, 246, 0.2)",
                       }}
@@ -842,24 +849,24 @@ export default function Home() {
                       </Typography>
                       <Grid container spacing={2}>
                         <Grid size={{ xs: 12, md: 4 }}>
-                          <Paper sx={{ p: 2.5, backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(59,130,246,0.15)" }}>
+                          <Paper sx={{ p: 2.5, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(59,130,246,0.15)" }}>
                             <CheckCircleIcon sx={{ color: "#10B981", mb: 1 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Single-Tenant DB: App</Typography>
-                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Direct connection to SQLite App.db via Prisma ORM client.</Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Database: App (PostgreSQL)</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Direct connection to PostgreSQL App database via Prisma ORM client.</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                          <Paper sx={{ p: 2.5, backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(6,182,212,0.15)" }}>
+                          <Paper sx={{ p: 2.5, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(6,182,212,0.15)" }}>
                             <SecurityIcon sx={{ color: "#06B6D4", mb: 1 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Role-Based Access</Typography>
-                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Granular Admin, Manager, Developer, and User authorization.</Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Roles & Permissions</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Normalized roles, permissions, and role_permissions relational architecture.</Typography>
                           </Paper>
                         </Grid>
                         <Grid size={{ xs: 12, md: 4 }}>
-                          <Paper sx={{ p: 2.5, backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(139,92,246,0.15)" }}>
+                          <Paper sx={{ p: 2.5, borderRadius: "6px", backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(139,92,246,0.15)" }}>
                             <VpnKeyIcon sx={{ color: "#8B5CF6", mb: 1 }} />
-                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Dual Password Tracking</Typography>
-                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Stored fields for password and newpassword recovery synchronization.</Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Bcrypt Password Security</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Secure password_hash hashing and newpassword synchronization.</Typography>
                           </Paper>
                         </Grid>
                       </Grid>
@@ -867,14 +874,14 @@ export default function Home() {
                   </Box>
                 )}
 
-                {/* TAB 2: ANALYTICS & ACTIVITY (Future Customer Analytics) */}
-                {landingTab === 2 && (
+                {/* TAB 3: ANALYTICS & ACTIVITY */}
+                {landingTab === 3 && (
                   <Box sx={{ maxWidth: 1000, mx: "auto", my: 2 }}>
                     <Paper
                       sx={{
                         p: 4,
                         textAlign: "center",
-                        borderRadius: 3.5,
+                        borderRadius: "6px",
                         backgroundColor: "#111A2E",
                         border: "1px solid rgba(139, 92, 246, 0.2)",
                       }}
@@ -886,7 +893,7 @@ export default function Home() {
                       <Typography variant="body1" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 3 }}>
                         Monitor active user sign-ins, password updates, and customer CRUD operations across the Nexvanta portal.
                       </Typography>
-                      <Button variant="contained" onClick={() => setLandingTab(0)}>
+                      <Button variant="contained" onClick={() => setLandingTab(0)} sx={{ borderRadius: "6px" }}>
                         View User Records Table
                       </Button>
                     </Paper>

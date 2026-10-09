@@ -62,10 +62,10 @@ export default function ConfigurableTable({
   const [selectedRole, setSelectedRole] = useState<string>("All");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [visiblePasswords, setVisiblePasswords] = useState<Record<number, boolean>>({});
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string | number, boolean>>({});
 
   // Toggle revealing raw password for a row
-  const togglePassword = (userId: number) => {
+  const togglePassword = (userId: string | number) => {
     setVisiblePasswords((prev) => ({
       ...prev,
       [userId]: !prev[userId],
@@ -78,7 +78,7 @@ export default function ConfigurableTable({
       const matchesSearch =
         u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         u.email.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesRole = selectedRole === "All" || u.role === selectedRole;
+      const matchesRole = selectedRole === "All" || u.role.toLowerCase() === selectedRole.toLowerCase();
       return matchesSearch && matchesRole;
     });
   }, [users, searchQuery, selectedRole]);
@@ -92,22 +92,26 @@ export default function ConfigurableTable({
   // Statistics
   const stats = useMemo(() => {
     const total = users.length;
-    const admins = users.filter((u) => u.role.toLowerCase() === "admin").length;
+    const admins = users.filter((u) => u.role.toLowerCase().includes("admin")).length;
     const withNewPassword = users.filter((u) => Boolean(u.newpassword)).length;
     return { total, admins, withNewPassword };
   }, [users]);
 
   const getRoleColor = (role: string) => {
-    switch (role.toLowerCase()) {
-      case "admin":
-        return { bg: "rgba(59, 130, 246, 0.2)", text: "#60A5FA", border: "rgba(59, 130, 246, 0.4)" };
-      case "manager":
-        return { bg: "rgba(6, 182, 212, 0.2)", text: "#22D3EE", border: "rgba(6, 182, 212, 0.4)" };
-      case "developer":
-        return { bg: "rgba(139, 92, 246, 0.2)", text: "#A78BFA", border: "rgba(139, 92, 246, 0.4)" };
-      default:
-        return { bg: "rgba(148, 163, 184, 0.15)", text: "#CBD5E1", border: "rgba(148, 163, 184, 0.3)" };
+    const r = role.toLowerCase();
+    if (r.includes("super_admin")) {
+      return { bg: "rgba(168, 85, 247, 0.2)", text: "#C084FC", border: "rgba(168, 85, 247, 0.4)" };
     }
+    if (r.includes("admin")) {
+      return { bg: "rgba(59, 130, 246, 0.2)", text: "#60A5FA", border: "rgba(59, 130, 246, 0.4)" };
+    }
+    if (r.includes("manager")) {
+      return { bg: "rgba(6, 182, 212, 0.2)", text: "#22D3EE", border: "rgba(6, 182, 212, 0.4)" };
+    }
+    if (r.includes("dev")) {
+      return { bg: "rgba(139, 92, 246, 0.2)", text: "#A78BFA", border: "rgba(139, 92, 246, 0.4)" };
+    }
+    return { bg: "rgba(148, 163, 184, 0.15)", text: "#CBD5E1", border: "rgba(148, 163, 184, 0.3)" };
   };
 
   return (
@@ -247,21 +251,22 @@ export default function ConfigurableTable({
 
             {/* Role Filter Chips */}
             <Box sx={{ display: "flex", gap: 0.8, alignItems: "center", flexWrap: "wrap" }}>
-              {["All", "Admin", "User", "Manager"].map((role) => (
+              {["All", "Super_Admin", "Admin", "Manager", "User", "Developer"].map((role) => (
                 <Chip
                   key={role}
-                  label={role}
+                  label={role.replace("_", " ")}
                   size="small"
                   clickable
                   onClick={() => setSelectedRole(role)}
                   sx={{
+                    borderRadius: "6px",
                     backgroundColor:
-                      selectedRole === role
+                      selectedRole.toLowerCase() === role.toLowerCase()
                         ? "rgba(59, 130, 246, 0.3)"
                         : "rgba(255, 255, 255, 0.05)",
-                    color: selectedRole === role ? "#60A5FA" : "#94A3B8",
+                    color: selectedRole.toLowerCase() === role.toLowerCase() ? "#60A5FA" : "#94A3B8",
                     border:
-                      selectedRole === role
+                      selectedRole.toLowerCase() === role.toLowerCase()
                         ? "1px solid #3B82F6"
                         : "1px solid rgba(255, 255, 255, 0.08)",
                   }}
@@ -271,7 +276,7 @@ export default function ConfigurableTable({
 
             {/* Action Buttons */}
             <Box sx={{ display: "flex", gap: 1.2, alignItems: "center", ml: "auto" }}>
-              <Tooltip title="Reset Initial Demo Users">
+              <Tooltip title="Synchronize PostgreSQL App Database">
                 <Button
                   size="small"
                   variant="outlined"
@@ -372,8 +377,8 @@ export default function ConfigurableTable({
                         }}
                       >
                         {/* ID */}
-                        <TableCell sx={{ color: "#64748B", fontWeight: 700 }}>
-                          #{u.id}
+                        <TableCell sx={{ color: "#64748B", fontWeight: 700, fontSize: "0.76rem" }}>
+                          #{typeof u.id === "string" && u.id.length > 8 ? u.id.slice(0, 8) + "..." : u.id}
                         </TableCell>
 
                         {/* User Name & Email */}
@@ -428,7 +433,7 @@ export default function ConfigurableTable({
                                 fontSize: "0.85rem",
                               }}
                             >
-                              {isPasswordRevealed ? u.password : "••••••••"}
+                              {isPasswordRevealed ? (u.password || u.newpassword || "•••••••• (Hashed)") : "••••••••"}
                             </Typography>
                             <IconButton
                               size="small"
@@ -467,7 +472,11 @@ export default function ConfigurableTable({
 
                         {/* Updated At */}
                         <TableCell sx={{ color: "#94A3B8", fontSize: "0.8rem" }}>
-                          {new Date(u.updatedAt).toLocaleDateString()}
+                          {u.updated_at || u.updatedAt || u.created_at || u.createdAt
+                            ? new Date(
+                                (u.updated_at || u.updatedAt || u.created_at || u.createdAt) as string
+                              ).toLocaleDateString()
+                            : "Active"}
                         </TableCell>
 
                         {/* Actions */}

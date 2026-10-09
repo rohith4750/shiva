@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
@@ -20,8 +21,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.users.findUnique({
+      where: { email: cleanEmail },
     });
 
     if (!user) {
@@ -31,10 +33,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { email: email.trim().toLowerCase() },
+    const hashedPassword = await bcrypt.hash(newpassword, 10);
+
+    const updatedUser = await prisma.users.update({
+      where: { email: cleanEmail },
       data: {
-        password: newpassword,
+        password_hash: hashedPassword,
         newpassword: newpassword,
       },
     });

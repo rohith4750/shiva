@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
@@ -20,11 +21,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find by userId or email
+    // Find by userId (string) or email
     const user = userId
-      ? await prisma.user.findUnique({ where: { id: Number(userId) } })
+      ? await prisma.users.findUnique({ where: { id: String(userId) } })
       : email
-      ? await prisma.user.findUnique({ where: { email: email.trim().toLowerCase() } })
+      ? await prisma.users.findUnique({ where: { email: email.trim().toLowerCase() } })
       : null;
 
     if (!user) {
@@ -35,27 +36,44 @@ export async function POST(request: Request) {
     }
 
     // Verify current password if provided
-    if (currentPassword && user.password !== currentPassword) {
-      return NextResponse.json(
-        { success: false, error: "Current password is incorrect" },
-        { status: 401 }
-      );
+    if (currentPassword) {
+      let isMatch = false;
+      if (user.password_hash) {
+        isMatch = await bcrypt.compare(currentPassword, user.password_hash).catch(() => false);
+      }
+      if (!isMatch && user.newpassword) {
+        isMatch = user.newpassword === currentPassword;
+      }
+      if (!isMatch && user.password_hash === currentPassword) {
+        isMatch = true;
+      }
+
+      if (!isMatch) {
+        return NextResponse.json(
+          { success: false, error: "Current password is incorrect" },
+          { status: 401 }
+        );
+      }
     }
 
-    const updated = await prisma.user.update({
+    const hashedPassword = await bcrypt.hash(newpassword, 10);
+
+    const updated = await prisma.users.update({
       where: { id: user.id },
       data: {
-        password: newpassword,
+        password_hash: hashedPassword,
         newpassword: newpassword,
       },
     });
 
+    const fullName = `${updated.first_name || ""} ${updated.last_name || ""}`.trim() || updated.email;
+
     return NextResponse.json({
       success: true,
-      message: "Password updated successfully in App.db!",
+      message: "Password updated successfully in PostgreSQL App database!",
       user: {
         id: updated.id,
-        name: updated.name,
+        name: fullName,
         email: updated.email,
         role: updated.role,
       },

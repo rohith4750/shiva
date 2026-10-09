@@ -27,6 +27,7 @@ import {
   BusinessCenter as ServicesIcon,
   Insights as AnalyticsIcon,
   Menu as MenuIcon,
+  Security as SecurityIcon,
 } from "@mui/icons-material";
 import NexvantaLogo from "./NexvantaLogo";
 import { AuthSession } from "@/types/user";
@@ -53,8 +54,9 @@ export default function Navbar({
 
   const authNavItems = [
     { label: "User Management (CRUD)", icon: <PeopleIcon fontSize="small" />, tab: 0 },
-    { label: "Customer Services", icon: <ServicesIcon fontSize="small" />, tab: 1 },
-    { label: "Analytics & Activity", icon: <AnalyticsIcon fontSize="small" />, tab: 2 },
+    { label: "Roles & Permissions", icon: <SecurityIcon fontSize="small" />, tab: 1 },
+    { label: "Customer Services", icon: <ServicesIcon fontSize="small" />, tab: 2 },
+    { label: "Analytics & Activity", icon: <AnalyticsIcon fontSize="small" />, tab: 3 },
   ];
 
   return (

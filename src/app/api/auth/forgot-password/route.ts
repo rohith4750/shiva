@@ -13,8 +13,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.users.findUnique({
+      where: { email: cleanEmail },
     });
 
     if (!user) {

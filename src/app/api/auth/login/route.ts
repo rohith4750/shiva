@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { ensureSeedUsers } from "@/lib/seed";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   try {
-    await ensureSeedUsers();
     const body = await request.json();
     const { email, password } = body;
 
@@ -15,25 +14,64 @@ export async function POST(request: Request) {
       );
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: email.trim().toLowerCase() },
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await prisma.users.findUnique({
+      where: { email: cleanEmail },
+      include: {
+        roles: {
+          include: {
+            role_permissions: {
+              include: { permissions: true },
+            },
+          },
+        },
+      },
     });
 
-    if (!user || user.password !== password) {
+    if (!user) {
       return NextResponse.json(
         { success: false, error: "Invalid email or password" },
         { status: 401 }
       );
     }
 
+    // Verify password via bcrypt or match newpassword/raw
+    let isMatch = false;
+    if (user.password_hash) {
+      isMatch = await bcrypt.compare(password, user.password_hash).catch(() => false);
+    }
+    if (!isMatch && user.newpassword) {
+      isMatch = (user.newpassword === password) || (await bcrypt.compare(password, user.newpassword).catch(() => false));
+    }
+    if (!isMatch && (user.password_hash === password)) {
+      isMatch = true;
+    }
+
+    if (!isMatch) {
+      return NextResponse.json(
+        { success: false, error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    const roleName = user.roles?.name || user.role || "USER";
+    const userPermissions =
+      user.roles?.role_permissions?.map((rp) => rp.permissions.name) ||
+      user.permissions ||
+      [];
+
+    const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.email;
+
     return NextResponse.json({
       success: true,
       message: "Login successful",
       user: {
         id: user.id,
-        name: user.name,
+        name: fullName,
         email: user.email,
-        role: user.role,
+        role: roleName,
+        role_id: user.role_id,
+        permissions: userPermissions,
       },
     });
   } catch (error: unknown) {
