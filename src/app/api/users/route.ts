@@ -59,9 +59,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, email, password, role, newpassword, department } = body;
 
-    if (!name || !email || !password) {
+    if (!name || !email) {
       return NextResponse.json(
-        { success: false, error: "Name, email, and password are required" },
+        { success: false, error: "Name and email are required" },
         { status: 400 }
       );
     }
@@ -94,7 +94,8 @@ export async function POST(request: Request) {
       },
     });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const rawPassword = password || "Nexvanta@2026";
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
     const id = randomUUID();
 
     const newUser = await prisma.users.create({
@@ -104,7 +105,7 @@ export async function POST(request: Request) {
         last_name,
         email: cleanEmail,
         password_hash: hashedPassword,
-        newpassword: newpassword || password,
+        newpassword: newpassword || rawPassword,
         role: foundRole?.name || targetRoleName,
         role_id: foundRole?.id || null,
         department: department || "Operations",
