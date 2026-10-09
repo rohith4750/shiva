@@ -40,18 +40,23 @@ a {
   text-decoration: none;
 }
 
-/* Custom modern scrollbars */
+/* Custom sleek ultra-thin scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.35) transparent;
+}
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #0A0F1C;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
+  background: rgba(59, 130, 246, 0.35);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3B82F6;
+  background: rgba(59, 130, 246, 0.7);
 }

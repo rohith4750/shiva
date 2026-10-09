@@ -154,7 +154,9 @@ export default function Navbar({
         position="sticky"
         elevation={0}
         sx={{
-          backgroundColor: "rgba(10, 15, 28, 0.94)",
+          top: 0,
+          zIndex: 1200,
+          backgroundColor: "rgba(10, 15, 28, 0.96)",
           backdropFilter: "blur(16px)",
           borderBottom: "1px solid rgba(59, 130, 246, 0.2)",
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",

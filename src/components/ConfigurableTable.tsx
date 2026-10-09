@@ -326,18 +326,29 @@ export default function ConfigurableTable({
               borderRadius: "6px", // 6px fixed
               border: "1px solid rgba(59, 130, 246, 0.12)",
               backgroundColor: "rgba(10, 15, 28, 0.5)",
+              maxHeight: "calc(100vh - 250px)",
+              overflowY: "auto",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(59, 130, 246, 0.4) transparent",
+              "&::-webkit-scrollbar": { width: 4, height: 4 },
+              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "rgba(59, 130, 246, 0.4)",
+                borderRadius: 4,
+                "&:hover": { backgroundColor: "rgba(59, 130, 246, 0.8)" },
+              },
             }}
           >
-            <Table>
+            <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell width="60">ID</TableCell>
-                  <TableCell>User</TableCell>
-                  <TableCell>Role</TableCell>
-                  <TableCell>Password</TableCell>
-                  <TableCell>New Password</TableCell>
-                  <TableCell>Updated</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell width="60" sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>ID</TableCell>
+                  <TableCell sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>User</TableCell>
+                  <TableCell sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>Role</TableCell>
+                  <TableCell sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>Password</TableCell>
+                  <TableCell sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>New Password</TableCell>
+                  <TableCell sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>Updated</TableCell>
+                  <TableCell align="right" sx={{ backgroundColor: "#0B1120 !important", color: "#94A3B8", fontWeight: 700, py: 1.2 }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

@@ -507,14 +507,16 @@ export default function Home() {
         {/* MAIN BODY */}
         <Container
           component="main"
-          maxWidth="xl"
+          maxWidth={false}
           sx={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
             justifyContent: currentUser ? "flex-start" : "center",
-            py: currentUser ? 1.5 : { xs: 3, md: 5 },
-            px: { xs: 1.5, md: 2.5 },
+            py: currentUser ? 1 : { xs: 3, md: 5 },
+            px: currentUser ? { xs: 1, sm: 2, md: 2.5 } : { xs: 1.5, md: 2.5 },
+            width: "100%",
+            maxWidth: currentUser ? "100% !important" : "xl",
           }}
         >
           {/* ======================================================== */}

@@ -351,7 +351,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 1240, mx: "auto" }}>
+    <Box sx={{ width: "100%", maxWidth: "100%", mx: 0 }}>
       <Card
         elevation={4}
         sx={{
@@ -533,37 +533,102 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
 
         {/* Permissions Table */}
         <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
-          <TableContainer>
-            <Table size="small">
-              <TableHead sx={{ backgroundColor: "rgba(10, 15, 28, 0.7)" }}>
+          <TableContainer
+            sx={{
+              height: { xs: 440, md: "calc(100vh - 210px)" },
+              maxHeight: "calc(100vh - 210px)",
+              minHeight: 400,
+              overflowY: "auto",
+              overflowX: "auto",
+              backgroundColor: "#0A0F1C",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(59, 130, 246, 0.4) transparent",
+              "&::-webkit-scrollbar": { width: 4, height: 4 },
+              "&::-webkit-scrollbar-track": { backgroundColor: "transparent" },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "rgba(59, 130, 246, 0.4)",
+                borderRadius: 4,
+                "&:hover": { backgroundColor: "rgba(59, 130, 246, 0.8)" },
+              },
+            }}
+          >
+            <Table stickyHeader size="small">
+              <TableHead>
                 <TableRow>
                   <TableCell
-                    sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.75rem", py: 1, width: 65 }}
+                    sx={{
+                      backgroundColor: "#0B1120 !important",
+                      color: "#94A3B8",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      py: 1.2,
+                      width: 65,
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
+                    }}
                   >
                     ID
                   </TableCell>
                   <TableCell
-                    sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.75rem", py: 1, width: 170 }}
+                    sx={{
+                      backgroundColor: "#0B1120 !important",
+                      color: "#94A3B8",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      py: 1.2,
+                      width: 170,
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
+                    }}
                   >
                     MODULE
                   </TableCell>
                   <TableCell
-                    sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.75rem", py: 1, width: 130 }}
+                    sx={{
+                      backgroundColor: "#0B1120 !important",
+                      color: "#94A3B8",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      py: 1.2,
+                      width: 130,
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
+                    }}
                   >
                     ACTION
                   </TableCell>
                   <TableCell
-                    sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.75rem", py: 1, width: 180 }}
+                    sx={{
+                      backgroundColor: "#0B1120 !important",
+                      color: "#94A3B8",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      py: 1.2,
+                      width: 180,
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
+                    }}
                   >
                     PERMISSION KEY
                   </TableCell>
                   <TableCell
-                    sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.75rem", py: 1 }}
+                    sx={{
+                      backgroundColor: "#0B1120 !important",
+                      color: "#94A3B8",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      py: 1.2,
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
+                    }}
                   >
                     DESCRIPTION
                   </TableCell>
                   <TableCell
-                    sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.75rem", py: 1, width: 190 }}
+                    sx={{
+                      backgroundColor: "#0B1120 !important",
+                      color: "#94A3B8",
+                      fontWeight: 700,
+                      fontSize: "0.75rem",
+                      py: 1.2,
+                      width: 190,
+                      borderBottom: "1px solid rgba(59, 130, 246, 0.25)",
+                    }}
                   >
                     ASSIGNED TO ROLES
                   </TableCell>
@@ -702,6 +767,29 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Fixed Footer Bar */}
+          <Box
+            sx={{
+              px: 2,
+              py: 0.9,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              backgroundColor: "rgba(10, 15, 28, 0.85)",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
+            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.75rem" }}>
+              Showing <strong style={{ color: "#F8FAFC" }}>{filteredPermissions.length}</strong> of{" "}
+              <strong style={{ color: "#F8FAFC" }}>{permissions.length}</strong> system permissions
+            </Typography>
+            <Typography variant="caption" sx={{ color: "#64748B", fontSize: "0.72rem" }}>
+              • Scroll inside table to view all records • Column headers remain fixed
+            </Typography>
+          </Box>
         </CardContent>
       </Card>
 
