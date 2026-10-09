@@ -1,0 +1,1192 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Box,
+  Container,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Button,
+  Snackbar,
+  Alert,
+  Fade,
+  Paper,
+  Grid,
+  Chip,
+  Avatar,
+  Divider,
+} from "@mui/material";
+import {
+  Login as LoginIcon,
+  LockReset as LockResetIcon,
+  VpnKey as VpnKeyIcon,
+  PersonAdd as PersonAddIcon,
+  Edit as EditIcon,
+  WarningAmber as WarningIcon,
+  Person as PersonIcon,
+  BusinessCenter as ServicesIcon,
+  Insights as AnalyticsIcon,
+  CheckCircle as CheckCircleIcon,
+  Security as SecurityIcon,
+  RocketLaunch as RocketLaunchIcon,
+  People as PeopleGroupIcon,
+  SettingsSuggest as SettingsSuggestIcon,
+  VerifiedUser as VerifiedUserIcon,
+} from "@mui/icons-material";
+import ThemeRegistry from "@/components/ThemeRegistry";
+import Navbar from "@/components/Navbar";
+import ConfigurableForm, { FormFieldConfig } from "@/components/ConfigurableForm";
+import ConfigurableTable from "@/components/ConfigurableTable";
+import NexvantaLogo from "@/components/NexvantaLogo";
+import { User, AuthSession } from "@/types/user";
+
+export default function Home() {
+  // Authentication session state
+  const [currentUser, setCurrentUser] = useState<AuthSession | null>(null);
+
+  // When logged out: "login" | "forgot" | "reset"
+  const [authMode, setAuthMode] = useState<"login" | "forgot" | "reset">("login");
+  const [sharedEmail, setSharedEmail] = useState("");
+
+  // When logged in: landing tabs (0: User Management CRUD, 1: Customer Services, 2: Analytics)
+  const [landingTab, setLandingTab] = useState(0);
+
+  // User CRUD data state
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Modal dialog states
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [deletingUser, setDeletingUser] = useState<User | null>(null);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [formSubmitting, setFormSubmitting] = useState(false);
+
+  // Global toast alerts
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const showToast = (
+    message: string,
+    severity: "success" | "error" | "info" | "warning" = "success"
+  ) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  // Fetch users from Prisma API
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.users)) {
+        setUsers(data.users);
+      } else {
+        showToast(data.error || "Failed to load users", "error");
+      }
+    } catch {
+      showToast("Error connecting to App database API", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // --- 1. LOGIN SUBMIT ---
+  const handleLoginSubmit = async (values: Record<string, any>) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: values.email, password: values.password }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setCurrentUser(data.user);
+        showToast(`Welcome, ${data.user.name}! Navigating to Customer Portal.`, "success");
+        setLandingTab(0); // Navigate straight to Landing Page Dashboard
+      } else {
+        showToast(data.error || "Invalid email or password", "error");
+      }
+    } catch {
+      showToast("Server connection error during login", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- 2. FORGOT PASSWORD SUBMIT ---
+  const handleForgotPasswordSubmit = async (values: Record<string, any>) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: values.email }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast(data.message || "User verified in App database! Proceed to set new password.", "success");
+        setSharedEmail(values.email);
+        setAuthMode("reset"); // Switch to Reset view
+      } else {
+        showToast(data.error || "Email not found in database", "error");
+      }
+    } catch {
+      showToast("Error processing forgot password", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- 3. RESET PASSWORD SUBMIT ---
+  const handleResetPasswordSubmit = async (values: Record<string, any>) => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: values.email,
+          newpassword: values.newpassword,
+          confirmPassword: values.confirmPassword,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast("Password updated in App.db successfully! Please sign in with your new credentials.", "success");
+        fetchUsers();
+        setAuthMode("login"); // Return to login
+      } else {
+        showToast(data.error || "Failed to reset password", "error");
+      }
+    } catch {
+      showToast("Error updating password in database", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- 4. PROFILE CHANGE PASSWORD SUBMIT (Requested: Inside Profile) ---
+  const handleChangePasswordSubmit = async (values: Record<string, any>) => {
+    if (!currentUser) return;
+    setFormSubmitting(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          currentPassword: values.currentPassword,
+          newpassword: values.newpassword,
+          confirmPassword: values.confirmPassword,
+        }),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast("Password changed successfully in App.db!", "success");
+        setIsChangePasswordOpen(false);
+        fetchUsers();
+      } else {
+        showToast(data.error || "Failed to change password", "error");
+      }
+    } catch {
+      showToast("Error updating password", "error");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  // --- 5. USER CRUD HANDLERS ---
+  const handleCreateUser = async (values: Record<string, any>) => {
+    setFormSubmitting(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast(`User ${data.user.name} created in App.db!`, "success");
+        setIsAddUserOpen(false);
+        fetchUsers();
+      } else {
+        showToast(data.error || "Failed to create user", "error");
+      }
+    } catch {
+      showToast("Error saving user to database", "error");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const handleUpdateUser = async (values: Record<string, any>) => {
+    if (!editingUser) return;
+    setFormSubmitting(true);
+    try {
+      const res = await fetch(`/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast(`User #${editingUser.id} updated successfully!`, "success");
+        setEditingUser(null);
+        fetchUsers();
+      } else {
+        showToast(data.error || "Failed to update user", "error");
+      }
+    } catch {
+      showToast("Error updating user in database", "error");
+    } finally {
+      setFormSubmitting(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+    try {
+      const res = await fetch(`/api/users/${deletingUser.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast(`User "${deletingUser.name}" deleted from App.db.`, "info");
+        setDeletingUser(null);
+        fetchUsers();
+      } else {
+        showToast(data.error || "Failed to delete user", "error");
+      }
+    } catch {
+      showToast("Error deleting user from database", "error");
+    }
+  };
+
+  const handleResetSeed = async () => {
+    try {
+      const res = await fetch("/api/seed", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        showToast("App.db seeded with initial demo users!", "success");
+        fetchUsers();
+      }
+    } catch {
+      showToast("Error resetting demo database", "error");
+    }
+  };
+
+  // --- FORM FIELD CONFIGURATIONS ---
+
+  const loginFields: FormFieldConfig[] = [
+    {
+      name: "email",
+      label: "Email Address",
+      type: "email",
+      placeholder: "name@company.com",
+      required: true,
+      autoComplete: "email",
+    },
+    {
+      name: "password",
+      label: "Password",
+      type: "password",
+      placeholder: "••••••••",
+      required: true,
+      autoComplete: "current-password",
+    },
+    {
+      name: "rememberMe",
+      label: "Remember this session",
+      type: "checkbox",
+      defaultValue: true,
+    },
+  ];
+
+  const forgotPasswordFields: FormFieldConfig[] = [
+    {
+      name: "email",
+      label: "Registered Email",
+      type: "email",
+      placeholder: "e.g. admin@app.com",
+      required: true,
+      defaultValue: sharedEmail,
+    },
+  ];
+
+  const resetPasswordFields: FormFieldConfig[] = [
+    {
+      name: "email",
+      label: "Registered Email",
+      type: "email",
+      placeholder: "e.g. admin@app.com",
+      required: true,
+      defaultValue: sharedEmail,
+    },
+    {
+      name: "newpassword",
+      label: "New Password",
+      type: "password",
+      placeholder: "Enter new password",
+      required: true,
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm New Password",
+      type: "password",
+      placeholder: "Re-enter new password",
+      required: true,
+      matchField: "newpassword",
+    },
+  ];
+
+  // In-Profile Change Password form config (requires current password verification)
+  const profileChangePasswordFields: FormFieldConfig[] = [
+    {
+      name: "currentPassword",
+      label: "Current Password",
+      type: "password",
+      placeholder: "Enter your existing password",
+      required: true,
+    },
+    {
+      name: "newpassword",
+      label: "New Password",
+      type: "password",
+      placeholder: "Enter strong new password",
+      required: true,
+    },
+    {
+      name: "confirmPassword",
+      label: "Confirm New Password",
+      type: "password",
+      placeholder: "Re-enter new password",
+      required: true,
+      matchField: "newpassword",
+    },
+  ];
+
+  // User CRUD modal fields
+  const userModalFields: FormFieldConfig[] = [
+    {
+      name: "name",
+      label: "Full Name",
+      placeholder: "e.g. Sarah Connor",
+      required: true,
+    },
+    {
+      name: "email",
+      label: "Email Address",
+      type: "email",
+      placeholder: "e.g. sarah@app.com",
+      required: true,
+    },
+    {
+      name: "role",
+      label: "Role",
+      type: "select",
+      required: true,
+      defaultValue: "User",
+      options: [
+        { value: "User", label: "User" },
+        { value: "Admin", label: "Admin" },
+        { value: "Manager", label: "Manager" },
+        { value: "Developer", label: "Developer" },
+      ],
+    },
+    {
+      name: "password",
+      label: "Password",
+      type: "password",
+      placeholder: "••••••••",
+      required: true,
+    },
+    {
+      name: "newpassword",
+      label: "New Password (Optional)",
+      type: "password",
+      placeholder: "Optional pre-staged new password",
+      helperText: "Saved in App.db newpassword column",
+    },
+  ];
+
+  return (
+    <ThemeRegistry>
+      <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        {/* Navigation Toolbar - ONLY renders after login */}
+        {currentUser && (
+          <Navbar
+            currentTab={landingTab}
+            onTabChange={(tab) => setLandingTab(tab)}
+            currentUser={currentUser}
+            onLogout={() => {
+              setCurrentUser(null);
+              setAuthMode("login");
+              showToast("Signed out successfully. Returned to Login.", "info");
+            }}
+            onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+            onOpenProfile={() => setIsProfileOpen(true)}
+          />
+        )}
+
+        {/* MAIN BODY */}
+        <Container
+          component="main"
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: currentUser ? "flex-start" : "center",
+            py: { xs: 3, md: currentUser ? 4 : 5 },
+          }}
+        >
+          {/* ======================================================== */}
+          {/* FLOW A: NOT LOGGED IN -> SPLIT-LAYOUT LOGIN (NO NAVBAR)   */}
+          {/* ======================================================== */}
+          {!currentUser ? (
+            <Fade in={!currentUser}>
+              <Box
+                sx={{
+                  maxWidth: 960,
+                  width: "100%",
+                  mx: "auto",
+                  my: "auto",
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  borderRadius: "6px", // 6px fixed
+                  overflow: "hidden",
+                  backgroundColor: "#111A2E",
+                  border: "1px solid rgba(59, 130, 246, 0.22)",
+                  boxShadow: "0 20px 48px rgba(0, 0, 0, 0.6), 0 0 24px rgba(59, 130, 246, 0.1)",
+                }}
+              >
+                {/* LEFT SIDE: Information & Brand Showcase */}
+                <Box
+                  sx={{
+                    flex: 1.15,
+                    p: { xs: 3, md: 3.5 },
+                    background: "linear-gradient(145deg, #0A0F1C 0%, #0F172A 100%)",
+                    borderRight: { md: "1px solid rgba(59, 130, 246, 0.18)" },
+                    borderBottom: { xs: "1px solid rgba(59, 130, 246, 0.18)", md: "none" },
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Box>
+                    <NexvantaLogo size={36} showTagline={true} />
+                    <Box sx={{ mt: 2.5 }}>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 900,
+                          fontSize: { xs: "1.3rem", md: "1.55rem" },
+                          color: "#F8FAFC",
+                          letterSpacing: "-0.02em",
+                          lineHeight: 1.2,
+                          mb: 0.8,
+                        }}
+                      >
+                        Build Beyond Boundaries
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.82rem", lineHeight: 1.45, mb: 2.5 }}>
+                        We design and build modern web applications, scalable enterprise systems, and client-centric digital products.
+                      </Typography>
+
+                      {/* Information Pillars from reference image */}
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.2 }}>
+                          <Box
+                            sx={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "6px",
+                              bgcolor: "rgba(59, 130, 246, 0.15)",
+                              color: "#3B82F6",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <RocketLaunchIcon sx={{ fontSize: 16 }} />
+                          </Box>
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "0.82rem" }}>
+                              Modern Solutions
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.72rem" }}>
+                              For Today and Tomorrow
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.2 }}>
+                          <Box
+                            sx={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "6px",
+                              bgcolor: "rgba(6, 182, 212, 0.15)",
+                              color: "#06B6D4",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <PeopleGroupIcon sx={{ fontSize: 16 }} />
+                          </Box>
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "0.82rem" }}>
+                              Client Focused
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.72rem" }}>
+                              Your Goals, Our Commitment
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.2 }}>
+                          <Box
+                            sx={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "6px",
+                              bgcolor: "rgba(139, 92, 246, 0.15)",
+                              color: "#8B5CF6",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <SettingsSuggestIcon sx={{ fontSize: 16 }} />
+                          </Box>
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "0.82rem" }}>
+                              Scalable Architecture
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.72rem" }}>
+                              Built for Growth
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.2 }}>
+                          <Box
+                            sx={{
+                              width: 30,
+                              height: 30,
+                              borderRadius: "6px",
+                              bgcolor: "rgba(16, 185, 129, 0.15)",
+                              color: "#10B981",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                            }}
+                          >
+                            <VerifiedUserIcon sx={{ fontSize: 16 }} />
+                          </Box>
+                          <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "0.82rem" }}>
+                              Reliable & Transparent
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: "#94A3B8", fontSize: "0.72rem" }}>
+                              A Partner You Can Trust
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ pt: 2, display: "flex", alignItems: "center", gap: 0.8 }}>
+                    <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "#10B981" }} />
+                    <Typography variant="caption" sx={{ color: "#64748B", fontSize: "0.7rem" }}>
+                      Nexvanta Technologies Portal • Secure Client Access
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* RIGHT SIDE: Login / Forgot Password / Reset Password Form */}
+                <Box
+                  sx={{
+                    flex: 1,
+                    p: { xs: 2.5, md: 3.5 },
+                    backgroundColor: "#111A2E",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                  }}
+                >
+                  {authMode === "login" && (
+                    <ConfigurableForm
+                      asCard={false}
+                      title="Sign In"
+                      subtitle="Enter your work email and password to continue"
+                      icon={<LoginIcon sx={{ color: "#38BDF8", fontSize: 22 }} />}
+                      fields={loginFields}
+                      submitLabel="Sign In"
+                      submitIcon={<LoginIcon fontSize="small" />}
+                      loading={loading}
+                      onSubmit={handleLoginSubmit}
+                      links={[
+                        {
+                          label: "Forgot Password?",
+                          icon: <LockResetIcon fontSize="small" />,
+                          onClick: () => setAuthMode("forgot"),
+                        },
+                        {
+                          label: "Reset Password",
+                          icon: <VpnKeyIcon fontSize="small" />,
+                          onClick: () => setAuthMode("reset"),
+                        },
+                      ]}
+                    />
+                  )}
+
+                  {authMode === "forgot" && (
+                    <ConfigurableForm
+                      asCard={false}
+                      title="Forgot Password"
+                      subtitle="Enter your registered email to receive password reset instructions"
+                      icon={<LockResetIcon sx={{ color: "#22D3EE", fontSize: 22 }} />}
+                      fields={forgotPasswordFields}
+                      submitLabel="Send Reset Link"
+                      submitIcon={<LockResetIcon fontSize="small" />}
+                      loading={loading}
+                      initialValues={{ email: sharedEmail }}
+                      onSubmit={handleForgotPasswordSubmit}
+                      links={[
+                        {
+                          label: "← Back to Sign In",
+                          onClick: () => setAuthMode("login"),
+                        },
+                        {
+                          label: "Direct Reset Password →",
+                          onClick: () => setAuthMode("reset"),
+                        },
+                      ]}
+                    />
+                  )}
+
+                  {authMode === "reset" && (
+                    <ConfigurableForm
+                      asCard={false}
+                      title="Reset Password"
+                      subtitle="Set your new password to regain account access"
+                      icon={<VpnKeyIcon sx={{ color: "#A78BFA", fontSize: 22 }} />}
+                      fields={resetPasswordFields}
+                      submitLabel="Update Password"
+                      submitIcon={<VpnKeyIcon fontSize="small" />}
+                      loading={loading}
+                      initialValues={{ email: sharedEmail }}
+                      onSubmit={handleResetPasswordSubmit}
+                      links={[
+                        {
+                          label: "← Back to Sign In",
+                          onClick: () => setAuthMode("login"),
+                        },
+                      ]}
+                    />
+                  )}
+                </Box>
+              </Box>
+            </Fade>
+          ) : (
+            /* ======================================================== */
+            /* FLOW B: LOGGED IN -> LANDING PAGE / CUSTOMER DASHBOARD   */
+            /* ======================================================== */
+            <Fade in={Boolean(currentUser)}>
+              <Box>
+                {/* Welcome Ribbon Banner - Decreased Spacing and 6px Radius */}
+                <Paper
+                  elevation={3}
+                  sx={{
+                    p: 1.8,
+                    mb: 2,
+                    borderRadius: "6px", // 6px fixed
+                    background: "linear-gradient(135deg, rgba(17, 26, 46, 0.95), rgba(10, 15, 28, 0.95))",
+                    border: "1px solid rgba(59, 130, 246, 0.25)",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 1.5,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Avatar
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: "primary.main",
+                        fontWeight: 800,
+                        borderRadius: "6px", // 6px fixed
+                        boxShadow: "0 2px 10px rgba(59, 130, 246, 0.4)",
+                      }}
+                    >
+                      {currentUser.name.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "#F8FAFC", fontSize: "0.95rem" }}>
+                          Welcome, {currentUser.name}
+                        </Typography>
+                        <Chip
+                          label={currentUser.role}
+                          size="small"
+                          sx={{
+                            backgroundColor: "rgba(6, 182, 212, 0.2)",
+                            color: "#22D3EE",
+                            fontWeight: 700,
+                            borderRadius: "6px",
+                            border: "1px solid rgba(6, 182, 212, 0.4)",
+                          }}
+                        />
+                      </Box>
+                      <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.8rem" }}>
+                        Connected as <strong>{currentUser.email}</strong> • Active Session
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Quick Profile Actions inside Banner */}
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<VpnKeyIcon />}
+                      onClick={() => setIsChangePasswordOpen(true)}
+                      sx={{
+                        borderRadius: "6px",
+                        borderColor: "rgba(139, 92, 246, 0.4)",
+                        color: "#C4B5FD",
+                        "&:hover": { borderColor: "#8B5CF6", color: "#F8FAFC" },
+                      }}
+                    >
+                      Change Password
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<PersonIcon />}
+                      onClick={() => setIsProfileOpen(true)}
+                      sx={{
+                        borderRadius: "6px",
+                        borderColor: "rgba(59, 130, 246, 0.4)",
+                        color: "#60A5FA",
+                      }}
+                    >
+                      My Profile
+                    </Button>
+                  </Box>
+                </Paper>
+
+                {/* TAB 0: USER MANAGEMENT (CRUD Table + Stats) */}
+                {landingTab === 0 && (
+                  <ConfigurableTable
+                    users={users}
+                    loading={loading}
+                    onRefresh={fetchUsers}
+                    onAddUser={() => setIsAddUserOpen(true)}
+                    onEditUser={(user) => setEditingUser(user)}
+                    onDeleteUser={(user) => setDeletingUser(user)}
+                    onResetSeed={handleResetSeed}
+                  />
+                )}
+
+                {/* TAB 1: CUSTOMER SERVICES (Future Customer Modules) */}
+                {landingTab === 1 && (
+                  <Box sx={{ maxWidth: 1000, mx: "auto", my: 2 }}>
+                    <Paper
+                      sx={{
+                        p: 4,
+                        textAlign: "center",
+                        borderRadius: 3.5,
+                        backgroundColor: "#111A2E",
+                        border: "1px solid rgba(59, 130, 246, 0.2)",
+                      }}
+                    >
+                      <ServicesIcon sx={{ fontSize: 56, color: "#38BDF8", mb: 1.5 }} />
+                      <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC", mb: 1 }}>
+                        Customer Services Hub
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 3 }}>
+                        This extensible customer hub connects your enterprise services, API integrations, and client management workflows seamlessly.
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <Paper sx={{ p: 2.5, backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(59,130,246,0.15)" }}>
+                            <CheckCircleIcon sx={{ color: "#10B981", mb: 1 }} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Single-Tenant DB: App</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Direct connection to SQLite App.db via Prisma ORM client.</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <Paper sx={{ p: 2.5, backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(6,182,212,0.15)" }}>
+                            <SecurityIcon sx={{ color: "#06B6D4", mb: 1 }} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Role-Based Access</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Granular Admin, Manager, Developer, and User authorization.</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 4 }}>
+                          <Paper sx={{ p: 2.5, backgroundColor: "rgba(10, 15, 28, 0.6)", border: "1px solid rgba(139,92,246,0.15)" }}>
+                            <VpnKeyIcon sx={{ color: "#8B5CF6", mb: 1 }} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Dual Password Tracking</Typography>
+                            <Typography variant="body2" sx={{ color: "#94A3B8" }}>Stored fields for password and newpassword recovery synchronization.</Typography>
+                          </Paper>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Box>
+                )}
+
+                {/* TAB 2: ANALYTICS & ACTIVITY (Future Customer Analytics) */}
+                {landingTab === 2 && (
+                  <Box sx={{ maxWidth: 1000, mx: "auto", my: 2 }}>
+                    <Paper
+                      sx={{
+                        p: 4,
+                        textAlign: "center",
+                        borderRadius: 3.5,
+                        backgroundColor: "#111A2E",
+                        border: "1px solid rgba(139, 92, 246, 0.2)",
+                      }}
+                    >
+                      <AnalyticsIcon sx={{ fontSize: 56, color: "#8B5CF6", mb: 1.5 }} />
+                      <Typography variant="h5" sx={{ fontWeight: 800, color: "#F8FAFC", mb: 1 }}>
+                        Customer Analytics & Activity Logs
+                      </Typography>
+                      <Typography variant="body1" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 3 }}>
+                        Monitor active user sign-ins, password updates, and customer CRUD operations across the Nexvanta portal.
+                      </Typography>
+                      <Button variant="contained" onClick={() => setLandingTab(0)}>
+                        View User Records Table
+                      </Button>
+                    </Paper>
+                  </Box>
+                )}
+              </Box>
+            </Fade>
+          )}
+        </Container>
+
+        {/* ======================================================== */}
+        {/* MODAL: PROFILE DETAILS                                   */}
+        {/* ======================================================== */}
+        <Dialog
+          open={isProfileOpen}
+          onClose={() => setIsProfileOpen(false)}
+          maxWidth="xs"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: "#111A2E",
+                border: "1px solid rgba(59, 130, 246, 0.25)",
+                borderRadius: "6px", // 6px fixed
+                p: 2,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+            <PersonIcon sx={{ color: "#38BDF8" }} />
+            <Box component="span" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+              User Profile
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            {currentUser && (
+              <Box sx={{ pt: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ textAlign: "center", py: 1 }}>
+                  <Avatar
+                    sx={{
+                      width: 56,
+                      height: 56,
+                      bgcolor: "primary.main",
+                      fontSize: "1.3rem",
+                      fontWeight: 700,
+                      borderRadius: "6px", // 6px fixed
+                      mx: "auto",
+                      mb: 1.2,
+                    }}
+                  >
+                    {currentUser.name.charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "0.95rem" }}>
+                    {currentUser.name}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#94A3B8", fontSize: "0.8rem" }}>
+                    {currentUser.email}
+                  </Typography>
+                  <Chip
+                    label={`Role: ${currentUser.role}`}
+                    color="primary"
+                    size="small"
+                    sx={{ mt: 1, fontWeight: 700, borderRadius: "6px" }}
+                  />
+                </Box>
+                <Divider sx={{ borderColor: "rgba(255, 255, 255, 0.08)" }} />
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="caption" sx={{ color: "#94A3B8" }}>Account ID:</Typography>
+                  <Typography variant="caption" sx={{ color: "#F8FAFC", fontWeight: 700 }}>#{currentUser.id}</Typography>
+                </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography variant="caption" sx={{ color: "#94A3B8" }}>Access Level:</Typography>
+                  <Typography variant="caption" sx={{ color: "#38BDF8", fontWeight: 700 }}>Verified User</Typography>
+                </Box>
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 2.5, pb: 2, display: "flex", justifyContent: "space-between" }}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<VpnKeyIcon />}
+              onClick={() => {
+                setIsProfileOpen(false);
+                setIsChangePasswordOpen(true);
+              }}
+              sx={{ borderColor: "rgba(139, 92, 246, 0.4)", color: "#C4B5FD", borderRadius: "6px" }}
+            >
+              Change Password
+            </Button>
+            <Button onClick={() => setIsProfileOpen(false)} sx={{ color: "#94A3B8", borderRadius: "6px" }}>
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* ======================================================== */}
+        {/* MODAL: CHANGE PASSWORD (In Profile, User Request)         */}
+        {/* ======================================================== */}
+        <Dialog
+          open={isChangePasswordOpen}
+          onClose={() => setIsChangePasswordOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: "#111A2E",
+                border: "1px solid rgba(139, 92, 246, 0.3)",
+                borderRadius: "6px", // 6px fixed
+                p: 2,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+            <VpnKeyIcon sx={{ color: "#A78BFA" }} />
+            <Box component="span" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+              Change Password ({currentUser?.email})
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1 }}>
+              <ConfigurableForm
+                asCard={false}
+                fields={profileChangePasswordFields}
+                submitLabel="Update Password"
+                loading={formSubmitting}
+                onSubmit={handleChangePasswordSubmit}
+                secondaryButton={{
+                  label: "Cancel",
+                  onClick: () => setIsChangePasswordOpen(false),
+                }}
+              />
+            </Box>
+          </DialogContent>
+        </Dialog>
+
+        {/* ======================================================== */}
+        {/* MODAL: ADD USER DIALOG                                   */}
+        {/* ======================================================== */}
+        <Dialog
+          open={isAddUserOpen}
+          onClose={() => setIsAddUserOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: "#111A2E",
+                border: "1px solid rgba(59, 130, 246, 0.25)",
+                borderRadius: "6px", // 6px fixed
+                p: 2,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+            <PersonAddIcon sx={{ color: "#38BDF8" }} />
+            <Box component="span" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+              Add New User
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1 }}>
+              <ConfigurableForm
+                asCard={false}
+                fields={userModalFields}
+                submitLabel="Create User"
+                loading={formSubmitting}
+                onSubmit={handleCreateUser}
+                secondaryButton={{
+                  label: "Cancel",
+                  onClick: () => setIsAddUserOpen(false),
+                }}
+              />
+            </Box>
+          </DialogContent>
+        </Dialog>
+
+        {/* ======================================================== */}
+        {/* MODAL: EDIT USER DIALOG                                  */}
+        {/* ======================================================== */}
+        <Dialog
+          open={Boolean(editingUser)}
+          onClose={() => setEditingUser(null)}
+          maxWidth="sm"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: "#111A2E",
+                border: "1px solid rgba(6, 182, 212, 0.25)",
+                borderRadius: "6px", // 6px fixed
+                p: 2,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+            <EditIcon sx={{ color: "#22D3EE" }} />
+            <Box component="span" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+              Edit User #{editingUser?.id}
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            {editingUser && (
+              <Box sx={{ pt: 1 }}>
+                <ConfigurableForm
+                  asCard={false}
+                  fields={userModalFields}
+                  submitLabel="Save Changes"
+                  loading={formSubmitting}
+                  initialValues={{
+                    name: editingUser.name,
+                    email: editingUser.email,
+                    role: editingUser.role,
+                    password: editingUser.password,
+                    newpassword: editingUser.newpassword || "",
+                  }}
+                  onSubmit={handleUpdateUser}
+                  secondaryButton={{
+                    label: "Cancel",
+                    onClick: () => setEditingUser(null),
+                  }}
+                />
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ======================================================== */}
+        {/* MODAL: DELETE CONFIRMATION DIALOG                        */}
+        {/* ======================================================== */}
+        <Dialog
+          open={Boolean(deletingUser)}
+          onClose={() => setDeletingUser(null)}
+          maxWidth="xs"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                backgroundColor: "#111A2E",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                borderRadius: "6px", // 6px fixed
+                p: 2,
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "error.main" }}>
+            <WarningIcon />
+            <Box component="span" sx={{ fontWeight: 700 }}>Confirm Deletion</Box>
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" sx={{ color: "#F8FAFC", fontSize: "0.9rem" }}>
+              Are you sure you want to permanently delete user{" "}
+              <strong>{deletingUser?.name}</strong> ({deletingUser?.email})?
+            </Typography>
+            <Typography variant="caption" sx={{ color: "#94A3B8", display: "block", mt: 1 }}>
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 2.5, pb: 2 }}>
+            <Button onClick={() => setDeletingUser(null)} sx={{ color: "#94A3B8", borderRadius: "6px" }}>
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDeleteUser}
+              sx={{ fontWeight: 700, borderRadius: "6px" }}
+            >
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* GLOBAL TOAST NOTIFICATIONS */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            severity={snackbar.severity}
+            onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+            sx={{
+              borderRadius: "6px", // 6px fixed
+              fontWeight: 600,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </ThemeRegistry>
+  );
+}
