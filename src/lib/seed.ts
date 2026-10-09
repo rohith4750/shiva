@@ -3,23 +3,23 @@ import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
 export async function ensureSeedUsers() {
-  const adminExists = await prisma.users.findUnique({
-    where: { email: "admin@nexvanta.com" },
+  const superAdminExists = await prisma.users.findUnique({
+    where: { email: "rohithtelidevara@gmail.com" },
   });
 
-  if (!adminExists) {
+  if (!superAdminExists) {
     const superAdminRole = await prisma.roles.findFirst({
       where: { name: "SUPER_ADMIN" },
     });
-    const hash = await bcrypt.hash("Password123!", 10);
+    const hash = await bcrypt.hash("Rohith@143", 10);
     await prisma.users.create({
       data: {
         id: randomUUID(),
-        first_name: "Admin",
-        last_name: "Nexvanta",
-        email: "admin@nexvanta.com",
+        first_name: "Rohith",
+        last_name: "Telidevara",
+        email: "rohithtelidevara@gmail.com",
         password_hash: hash,
-        newpassword: "Password123!",
+        newpassword: "Rohith@143",
         role: "SUPER_ADMIN",
         role_id: superAdminRole?.id || null,
         department: "Executive",

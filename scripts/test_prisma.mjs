@@ -4,37 +4,31 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  const admin = await prisma.users.findFirst({
-    where: {
-      OR: [
-        { role: 'SUPER_ADMIN' },
-        { role: 'ADMIN' }
-      ]
-    }
-  });
-
-  if (admin) {
-    console.log('Found Admin User:', {
-      id: admin.id,
-      email: admin.email,
-      name: `${admin.first_name} ${admin.last_name}`,
-      role: admin.role,
-      hash: admin.password_hash
-    });
-    // Test common passwords
-    for (const testPass of ['admin123', 'Admin@123', 'password', 'Password123!', '123456']) {
-      const match = await bcrypt.compare(testPass, admin.password_hash);
-      if (match) {
-        console.log(`Password matches: "${testPass}"`);
+  const users = await prisma.users.findMany({
+    include: {
+      roles: {
+        include: {
+          role_permissions: {
+            include: { permissions: true }
+          }
+        }
       }
     }
-  }
-
-  // Also check if admin@nexvanta.com or admin@app.com exists
-  const nexvantaUser = await prisma.users.findUnique({
-    where: { email: 'admin@nexvanta.com' }
   });
-  console.log('admin@nexvanta.com exists?', !!nexvantaUser);
+
+  console.log('Total users in database:', users.length);
+  for (const u of users) {
+    const isMatch = await bcrypt.compare('Rohith@143', u.password_hash);
+    console.log({
+      id: u.id,
+      email: u.email,
+      name: `${u.first_name} ${u.last_name}`,
+      role: u.roles?.name || u.role,
+      passwordMatches: isMatch,
+      newpassword: u.newpassword,
+      permissionsCount: u.roles?.role_permissions?.length || 0
+    });
+  }
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());
