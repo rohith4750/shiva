@@ -3,9 +3,11 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
 
+const db = prisma as any;
+
 export async function GET() {
   try {
-    const dbUsers = await prisma.users.findMany({
+    const dbUsers = await db.users.findMany({
       orderBy: { created_at: "desc" },
       include: {
         roles: {
@@ -20,11 +22,11 @@ export async function GET() {
       },
     });
 
-    const users = dbUsers.map((u) => {
+    const users = dbUsers.map((u: any) => {
       const fullName = `${u.first_name || ""} ${u.last_name || ""}`.trim() || u.email;
       const roleName = u.roles?.name || u.role || "USER";
       const permissions =
-        u.roles?.role_permissions?.map((rp) => rp.permissions.name) ||
+        u.roles?.role_permissions?.map((rp: any) => rp.permissions?.name) ||
         u.permissions ||
         [];
 
@@ -67,7 +69,7 @@ export async function POST(request: Request) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const existingUser = await prisma.users.findUnique({
+    const existingUser = await db.users.findUnique({
       where: { email: cleanEmail },
     });
 
@@ -85,7 +87,7 @@ export async function POST(request: Request) {
 
     // Determine role and role_id
     const targetRoleName = role ? role.toUpperCase() : "USER";
-    const foundRole = await prisma.roles.findFirst({
+    const foundRole = await db.roles.findFirst({
       where: {
         OR: [
           { name: targetRoleName },
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
     const id = randomUUID();
 
-    const newUser = await prisma.users.create({
+    const newUser = await db.users.create({
       data: {
         id,
         first_name,

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+const db = prisma as any;
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -12,7 +14,7 @@ export async function GET(
       return NextResponse.json({ success: false, error: "Invalid user ID" }, { status: 400 });
     }
 
-    const user = await prisma.users.findUnique({
+    const user = await db.users.findUnique({
       where: { id: String(id) },
       include: {
         roles: {
@@ -42,7 +44,7 @@ export async function GET(
         role: user.roles?.name || user.role,
         role_id: user.role_id,
         permissions:
-          user.roles?.role_permissions?.map((rp) => rp.permissions.name) ||
+          user.roles?.role_permissions?.map((rp: any) => rp.permissions?.name) ||
           user.permissions ||
           [],
         department: user.department,
@@ -83,7 +85,7 @@ export async function PUT(
 
     if (role !== undefined) {
       const targetRoleName = String(role).toUpperCase();
-      const foundRole = await prisma.roles.findFirst({
+      const foundRole = await db.roles.findFirst({
         where: {
           OR: [{ name: targetRoleName }, { name: String(role) }],
         },
@@ -105,7 +107,7 @@ export async function PUT(
     if (department !== undefined) dataToUpdate.department = department;
     if (is_active !== undefined) dataToUpdate.is_active = Boolean(is_active);
 
-    const updatedUser = await prisma.users.update({
+    const updatedUser = await db.users.update({
       where: { id: String(id) },
       data: dataToUpdate,
       include: {
@@ -143,7 +145,7 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: "Invalid user ID" }, { status: 400 });
     }
 
-    await prisma.users.delete({
+    await db.users.delete({
       where: { id: String(id) },
     });
 
