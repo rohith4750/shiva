@@ -790,14 +790,10 @@ export default function Home() {
                   </Box>
                 </Box>
 
-                {/* TAB 0: COMPANY OVERVIEW & DASHBOARD HOMEPAGE */}
+                {/* TAB 0: COMPANY OVERVIEW & INFORMATION HOMEPAGE */}
                 {landingTab === 0 && (
                   <CompanyDashboardView
-                    currentUser={currentUser}
                     onNavigateTab={(tab) => setLandingTab(tab)}
-                    userCount={users.length}
-                    rolesCount={5}
-                    permissionsCount={7}
                   />
                 )}
 
