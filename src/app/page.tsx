@@ -42,6 +42,7 @@ import ConfigurableForm, { FormFieldConfig } from "@/components/ConfigurableForm
 import ConfigurableTable from "@/components/ConfigurableTable";
 import RolesView from "@/components/RolesView";
 import PermissionsView from "@/components/PermissionsView";
+import CompanyDashboardView from "@/components/CompanyDashboardView";
 import NexvantaLogo from "@/components/NexvantaLogo";
 import { User, AuthSession } from "@/types/user";
 
@@ -789,8 +790,19 @@ export default function Home() {
                   </Box>
                 </Box>
 
-                {/* TAB 0: USER MANAGEMENT (CRUD Table + Stats) */}
+                {/* TAB 0: COMPANY OVERVIEW & DASHBOARD HOMEPAGE */}
                 {landingTab === 0 && (
+                  <CompanyDashboardView
+                    currentUser={currentUser}
+                    onNavigateTab={(tab) => setLandingTab(tab)}
+                    userCount={users.length}
+                    rolesCount={5}
+                    permissionsCount={7}
+                  />
+                )}
+
+                {/* TAB 1: USER MANAGEMENT (CRUD Table + Stats) */}
+                {landingTab === 1 && (
                   <ConfigurableTable
                     users={users}
                     loading={loading}
@@ -802,18 +814,18 @@ export default function Home() {
                   />
                 )}
 
-                {/* TAB 1: ROLES ARCHITECTURE */}
-                {landingTab === 1 && (
+                {/* TAB 2: ROLES ARCHITECTURE */}
+                {landingTab === 2 && (
                   <RolesView onShowToast={showToast} />
                 )}
 
-                {/* TAB 2: PERMISSIONS ARCHITECTURE (Separate Page) */}
-                {landingTab === 2 && (
+                {/* TAB 3: PERMISSIONS ARCHITECTURE (Separate Page) */}
+                {landingTab === 3 && (
                   <PermissionsView onShowToast={showToast} />
                 )}
 
-                {/* TAB 3: CUSTOMER SERVICES */}
-                {landingTab === 3 && (
+                {/* TAB 4: CUSTOMER SERVICES */}
+                {landingTab === 4 && (
                   <Box sx={{ maxWidth: 1000, mx: "auto", my: 1.5 }}>
                     <Paper
                       sx={{
@@ -858,8 +870,8 @@ export default function Home() {
                   </Box>
                 )}
 
-                {/* TAB 4: ANALYTICS & ACTIVITY */}
-                {landingTab === 4 && (
+                {/* TAB 5: ANALYTICS & ACTIVITY */}
+                {landingTab === 5 && (
                   <Box sx={{ maxWidth: 1000, mx: "auto", my: 1.5 }}>
                     <Paper
                       sx={{
@@ -877,7 +889,7 @@ export default function Home() {
                       <Typography variant="body2" sx={{ color: "#94A3B8", maxWidth: 600, mx: "auto", mb: 2 }}>
                         Monitor active user sign-ins, password updates, and customer CRUD operations across the Nexvanta portal.
                       </Typography>
-                      <Button variant="contained" size="small" onClick={() => setLandingTab(0)} sx={{ borderRadius: "6px" }}>
+                      <Button variant="contained" size="small" onClick={() => setLandingTab(1)} sx={{ borderRadius: "6px" }}>
                         View User Records Table
                       </Button>
                     </Paper>

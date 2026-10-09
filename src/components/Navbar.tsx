@@ -18,6 +18,7 @@ import {
   ListItemText,
   Avatar,
   Divider,
+  ListSubheader,
 } from "@mui/material";
 import {
   People as PeopleIcon,
@@ -28,9 +29,26 @@ import {
   Insights as AnalyticsIcon,
   Menu as MenuIcon,
   Security as SecurityIcon,
+  KeyboardArrowDown as ArrowDownIcon,
+  AdminPanelSettings as AccessIcon,
+  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
 import NexvantaLogo from "./NexvantaLogo";
 import { AuthSession } from "@/types/user";
+
+interface NavSubItem {
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  tab: number;
+}
+
+interface NavGroup {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  items: NavSubItem[];
+}
 
 interface NavbarProps {
   currentTab: number;
@@ -52,13 +70,83 @@ export default function Navbar({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuAnchor, setUserMenuAnchor] = useState<null | HTMLElement>(null);
 
-  const authNavItems = [
-    { label: "User Management (CRUD)", icon: <PeopleIcon fontSize="small" />, tab: 0 },
-    { label: "Roles", icon: <SecurityIcon fontSize="small" />, tab: 1 },
-    { label: "Permissions", icon: <VpnKeyIcon fontSize="small" />, tab: 2 },
-    { label: "Customer Services", icon: <ServicesIcon fontSize="small" />, tab: 3 },
-    { label: "Analytics & Activity", icon: <AnalyticsIcon fontSize="small" />, tab: 4 },
+  // Grouped menu anchors: group ID -> HTMLElement
+  const [groupAnchors, setGroupAnchors] = useState<Record<string, HTMLElement | null>>({});
+
+  const navGroups: NavGroup[] = [
+    {
+      id: "dashboard",
+      label: "Home / Overview",
+      icon: <DashboardIcon fontSize="small" sx={{ color: "#38BDF8" }} />,
+      items: [
+        {
+          label: "Company Overview",
+          description: "Nexvanta system overview, vitals & launchpad",
+          icon: <DashboardIcon fontSize="small" sx={{ color: "#38BDF8" }} />,
+          tab: 0,
+        },
+      ],
+    },
+    {
+      id: "access",
+      label: "Access & Security",
+      icon: <AccessIcon fontSize="small" sx={{ color: "#818CF8" }} />,
+      items: [
+        {
+          label: "User Management (CRUD)",
+          description: "Manage users, profiles, and password tracking",
+          icon: <PeopleIcon fontSize="small" sx={{ color: "#38BDF8" }} />,
+          tab: 1,
+        },
+        {
+          label: "Roles Architecture",
+          description: "System roles, hierarchy and assignments",
+          icon: <SecurityIcon fontSize="small" sx={{ color: "#60A5FA" }} />,
+          tab: 2,
+        },
+        {
+          label: "Permissions Architecture",
+          description: "Granular capability keys & role associations",
+          icon: <VpnKeyIcon fontSize="small" sx={{ color: "#A78BFA" }} />,
+          tab: 3,
+        },
+      ],
+    },
+    {
+      id: "services",
+      label: "Customer Services",
+      icon: <ServicesIcon fontSize="small" sx={{ color: "#34D399" }} />,
+      items: [
+        {
+          label: "Services Hub",
+          description: "Enterprise modules, API integrations & client tools",
+          icon: <ServicesIcon fontSize="small" sx={{ color: "#34D399" }} />,
+          tab: 4,
+        },
+      ],
+    },
+    {
+      id: "analytics",
+      label: "Analytics & Logs",
+      icon: <AnalyticsIcon fontSize="small" sx={{ color: "#F472B6" }} />,
+      items: [
+        {
+          label: "Activity & Logs",
+          description: "Active logins, changes & operations monitoring",
+          icon: <AnalyticsIcon fontSize="small" sx={{ color: "#F472B6" }} />,
+          tab: 5,
+        },
+      ],
+    },
   ];
+
+  const handleOpenGroupMenu = (groupId: string, event: React.MouseEvent<HTMLElement>) => {
+    setGroupAnchors((prev) => ({ ...prev, [groupId]: event.currentTarget }));
+  };
+
+  const handleCloseGroupMenu = (groupId: string) => {
+    setGroupAnchors((prev) => ({ ...prev, [groupId]: null }));
+  };
 
   return (
     <>
@@ -72,43 +160,173 @@ export default function Navbar({
           boxShadow: "0 4px 20px rgba(0, 0, 0, 0.4)",
         }}
       >
-        <Toolbar sx={{ display: "flex", justifyContent: "space-between", px: { xs: 2, md: 3 }, py: 0.4, minHeight: "56px" }}>
-          {/* Nexvanta Brand Logo */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <NexvantaLogo size={32} showTagline={true} />
+        <Toolbar
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            px: { xs: 2, md: 3 },
+            py: 0.3,
+            minHeight: "52px !important",
+          }}
+        >
+          {/* Brand Logo - click takes to Home */}
+          <Box
+            onClick={() => onTabChange(0)}
+            sx={{ display: "flex", alignItems: "center", gap: 1.5, cursor: "pointer" }}
+          >
+            <NexvantaLogo size={30} showTagline={true} />
           </Box>
 
-          {/* When Logged In: Customer & Management Toolbar Navigation Tabs */}
+          {/* Grouped Top Navigation */}
           {currentUser && (
             <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 0.8 }}>
-              {authNavItems.map((item) => {
-                const isActive = currentTab === item.tab;
+              {navGroups.map((group) => {
+                const isGroupActive = group.items.some((item) => item.tab === currentTab);
+                const activeSubItem = group.items.find((item) => item.tab === currentTab);
+                const anchorEl = groupAnchors[group.id] || null;
+                const hasMultiple = group.items.length > 1;
+
                 return (
-                  <Button
-                    key={item.tab}
-                    onClick={() => onTabChange(item.tab)}
-                    startIcon={item.icon}
-                    sx={{
-                      color: isActive ? "#F8FAFC" : "#94A3B8",
-                      backgroundColor: isActive ? "rgba(59, 130, 246, 0.16)" : "transparent",
-                      border: isActive
-                        ? "1px solid rgba(59, 130, 246, 0.4)"
-                        : "1px solid transparent",
-                      fontWeight: isActive ? 600 : 500,
-                      fontSize: "0.82rem",
-                      px: 1.4,
-                      py: 0.6,
-                      borderRadius: "6px",
-                      "&:hover": {
-                        backgroundColor: isActive
-                          ? "rgba(59, 130, 246, 0.24)"
-                          : "rgba(255, 255, 255, 0.05)",
-                        color: "#F8FAFC",
-                      },
-                    }}
-                  >
-                    {item.label}
-                  </Button>
+                  <Box key={group.id}>
+                    <Button
+                      onClick={(e) => {
+                        if (hasMultiple) {
+                          handleOpenGroupMenu(group.id, e);
+                        } else {
+                          onTabChange(group.items[0].tab);
+                        }
+                      }}
+                      startIcon={group.icon}
+                      endIcon={
+                        hasMultiple ? (
+                          <ArrowDownIcon
+                            sx={{
+                              fontSize: "16px !important",
+                              transform: Boolean(anchorEl) ? "rotate(180deg)" : "rotate(0deg)",
+                              transition: "transform 0.2s ease",
+                            }}
+                          />
+                        ) : undefined
+                      }
+                      sx={{
+                        color: isGroupActive ? "#F8FAFC" : "#94A3B8",
+                        backgroundColor: isGroupActive
+                          ? "rgba(59, 130, 246, 0.16)"
+                          : "transparent",
+                        border: isGroupActive
+                          ? "1px solid rgba(59, 130, 246, 0.4)"
+                          : "1px solid transparent",
+                        fontWeight: isGroupActive ? 600 : 500,
+                        fontSize: "0.82rem",
+                        px: 1.3,
+                        py: 0.5,
+                        borderRadius: "6px",
+                        "&:hover": {
+                          backgroundColor: isGroupActive
+                            ? "rgba(59, 130, 246, 0.24)"
+                            : "rgba(255, 255, 255, 0.05)",
+                          color: "#F8FAFC",
+                        },
+                      }}
+                    >
+                      {group.label}
+                      {hasMultiple && activeSubItem && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 0.8,
+                            fontSize: "0.68rem",
+                            color: "#38BDF8",
+                            backgroundColor: "rgba(56, 189, 248, 0.12)",
+                            px: 0.6,
+                            py: 0.1,
+                            borderRadius: "4px",
+                            fontWeight: 700,
+                          }}
+                        >
+                          {activeSubItem.label.split(" ")[0]}
+                        </Box>
+                      )}
+                    </Button>
+
+                    {/* Dropdown Menu for Group with multiple items */}
+                    {hasMultiple && (
+                      <Menu
+                        anchorEl={anchorEl}
+                        open={Boolean(anchorEl)}
+                        onClose={() => handleCloseGroupMenu(group.id)}
+                        slotProps={{
+                          paper: {
+                            sx: {
+                              mt: 1,
+                              minWidth: 260,
+                              backgroundColor: "#111A2E",
+                              border: "1px solid rgba(59, 130, 246, 0.25)",
+                              borderRadius: "6px",
+                              boxShadow: "0 12px 32px rgba(0,0,0,0.7)",
+                              p: 0.5,
+                            },
+                          },
+                        }}
+                      >
+                        {group.items.map((subItem) => {
+                          const isSelected = currentTab === subItem.tab;
+                          return (
+                            <MenuItem
+                              key={subItem.tab}
+                              selected={isSelected}
+                              onClick={() => {
+                                onTabChange(subItem.tab);
+                                handleCloseGroupMenu(group.id);
+                              }}
+                              sx={{
+                                borderRadius: "6px",
+                                py: 0.9,
+                                px: 1.2,
+                                my: 0.3,
+                                backgroundColor: isSelected
+                                  ? "rgba(59, 130, 246, 0.18) !important"
+                                  : "transparent",
+                                border: isSelected
+                                  ? "1px solid rgba(59, 130, 246, 0.3)"
+                                  : "1px solid transparent",
+                                "&:hover": {
+                                  backgroundColor: "rgba(255, 255, 255, 0.05)",
+                                },
+                              }}
+                            >
+                              <ListItemIcon sx={{ minWidth: 32 }}>
+                                {subItem.icon}
+                              </ListItemIcon>
+                              <Box>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    fontWeight: isSelected ? 700 : 600,
+                                    color: isSelected ? "#38BDF8" : "#F8FAFC",
+                                    fontSize: "0.82rem",
+                                  }}
+                                >
+                                  {subItem.label}
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    color: "#94A3B8",
+                                    fontSize: "0.7rem",
+                                    display: "block",
+                                    lineHeight: 1.2,
+                                  }}
+                                >
+                                  {subItem.description}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          );
+                        })}
+                      </Menu>
+                    )}
+                  </Box>
                 );
               })}
             </Box>
@@ -245,7 +463,7 @@ export default function Navbar({
         </Toolbar>
       </AppBar>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer with Sectioned Groups */}
       <Drawer
         anchor="right"
         open={drawerOpen}
@@ -253,7 +471,7 @@ export default function Navbar({
         slotProps={{
           paper: {
             sx: {
-              width: 270,
+              width: 280,
               backgroundColor: "#0A0F1C",
               color: "#F8FAFC",
               p: 2,
@@ -262,35 +480,54 @@ export default function Navbar({
           },
         }}
       >
-        <Box sx={{ mb: 2.5 }}>
+        <Box sx={{ mb: 2 }}>
           <NexvantaLogo size={28} showTagline={false} />
         </Box>
-        <List dense>
-          {authNavItems.map((item) => (
-            <ListItem key={item.tab} disablePadding sx={{ mb: 0.8 }}>
-              <ListItemButton
-                selected={currentTab === item.tab}
-                onClick={() => {
-                  onTabChange(item.tab);
-                  setDrawerOpen(false);
-                }}
+        <List dense sx={{ p: 0 }}>
+          {navGroups.map((group) => (
+            <Box key={group.id} sx={{ mb: 1.5 }}>
+              <ListSubheader
                 sx={{
-                  borderRadius: "6px",
-                  "&.Mui-selected": {
-                    backgroundColor: "rgba(59, 130, 246, 0.2)",
-                    border: "1px solid rgba(59, 130, 246, 0.4)",
-                  },
+                  backgroundColor: "transparent",
+                  color: "#64748B",
+                  fontSize: "0.7rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  lineHeight: "26px",
+                  px: 1,
                 }}
               >
-                <ListItemIcon sx={{ color: currentTab === item.tab ? "#60A5FA" : "#94A3B8", minWidth: 36 }}>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  slotProps={{ primary: { sx: { fontSize: "0.85rem" } } }}
-                />
-              </ListItemButton>
-            </ListItem>
+                {group.label}
+              </ListSubheader>
+              {group.items.map((subItem) => (
+                <ListItem key={subItem.tab} disablePadding sx={{ mb: 0.4 }}>
+                  <ListItemButton
+                    selected={currentTab === subItem.tab}
+                    onClick={() => {
+                      onTabChange(subItem.tab);
+                      setDrawerOpen(false);
+                    }}
+                    sx={{
+                      borderRadius: "6px",
+                      py: 0.6,
+                      "&.Mui-selected": {
+                        backgroundColor: "rgba(59, 130, 246, 0.2)",
+                        border: "1px solid rgba(59, 130, 246, 0.4)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 32 }}>
+                      {subItem.icon}
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={subItem.label}
+                      slotProps={{ primary: { sx: { fontSize: "0.82rem", fontWeight: 600 } } }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </Box>
           ))}
         </List>
         {currentUser && (
