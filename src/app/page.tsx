@@ -46,11 +46,24 @@ import Navbar from "@/components/Navbar";
 import AppLayout from "@/components/AppLayout";
 import ConfigurableForm, { FormFieldConfig } from "@/components/ConfigurableForm";
 import ConfigurableTable from "@/components/ConfigurableTable";
+import VirtualizedUserTable from "@/components/VirtualizedUserTable";
 import RolesView from "@/components/RolesView";
 import PermissionsView from "@/components/PermissionsView";
 import CompanyDashboardView from "@/components/CompanyDashboardView";
 import NexvantaLogo from "@/components/NexvantaLogo";
 import { User, AuthSession } from "@/types/user";
+import {
+  useUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useResetSeedMutation,
+} from "@/hooks/useUsers";
+import { useUserStore } from "@/store/useUserStore";
+import {
+  ElectricBolt as BoltIcon,
+  TableRows as TableRowsIcon,
+} from "@mui/icons-material";
 
 // Mapping between tab indices and clean URL hash slugs
 const TAB_MAP: Record<string, number> = {
@@ -105,8 +118,28 @@ export default function Home() {
   // Active view tab state (persisted across page refresh via localStorage & URL hash)
   const [landingTab, setLandingTab] = useState<number>(0);
 
-  // User CRUD data state
-  const [users, setUsers] = useState<User[]>([]);
+  // --- TanStack Query: Caching, Invalidation, Optimistic Updates ---
+  const {
+    data: users = [],
+    isLoading: isUsersLoading,
+    isFetching,
+    refetch: fetchUsers,
+  } = useUsersQuery();
+
+  const createUserMutation = useCreateUserMutation();
+  const updateUserMutation = useUpdateUserMutation();
+  const deleteUserMutation = useDeleteUserMutation();
+  const resetSeedMutation = useResetSeedMutation();
+
+  // --- Zustand Store: UI preferences, view mode, modals ---
+  const viewMode = useUserStore((s) => s.viewMode);
+  const setViewMode = useUserStore((s) => s.setViewMode);
+  const activeModal = useUserStore((s) => s.activeModal);
+  const targetUser = useUserStore((s) => s.targetUser);
+  const openModal = useUserStore((s) => s.openModal);
+  const closeModal = useUserStore((s) => s.closeModal);
+
+  // Auth & form loading state
   const [loading, setLoading] = useState(false);
 
   // Modal dialog states
@@ -148,28 +181,6 @@ export default function Home() {
       }
     }
   }, []);
-
-  // Fetch users from Prisma API
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/users");
-      const data = await res.json();
-      if (data.success && Array.isArray(data.users)) {
-        setUsers(data.users);
-      } else {
-        showToast(data.error || "Failed to load users", "error");
-      }
-    } catch {
-      showToast("Error connecting to App database API", "error");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
 
   // Synchronize initial tab from URL hash / localStorage and listen for browser back/forward
   useEffect(() => {
@@ -372,86 +383,60 @@ export default function Home() {
     }
   };
 
-  // --- 5. USER CRUD HANDLERS ---
+  // --- 5. USER CRUD HANDLERS (TanStack Query Mutations with Optimistic Updates) ---
   const handleCreateUser = async (values: Record<string, any>) => {
     setFormSubmitting(true);
     try {
-      const res = await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        showToast(`User ${data.user.name} created in App.db!`, "success");
-        setIsAddUserOpen(false);
-        fetchUsers();
-      } else {
-        showToast(data.error || "Failed to create user", "error");
-      }
-    } catch {
-      showToast("Error saving user to database", "error");
+      const created = await createUserMutation.mutateAsync(values);
+      showToast(`User ${created.name} created successfully!`, "success");
+      setIsAddUserOpen(false);
+      closeModal();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to create user";
+      showToast(msg, "error");
     } finally {
       setFormSubmitting(false);
     }
   };
 
   const handleUpdateUser = async (values: Record<string, any>) => {
-    if (!editingUser) return;
+    const userToEdit = editingUser || targetUser;
+    if (!userToEdit) return;
     setFormSubmitting(true);
     try {
-      const res = await fetch(`/api/users/${editingUser.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        showToast(`User #${editingUser.id} updated successfully!`, "success");
-        setEditingUser(null);
-        fetchUsers();
-      } else {
-        showToast(data.error || "Failed to update user", "error");
-      }
-    } catch {
-      showToast("Error updating user in database", "error");
+      await updateUserMutation.mutateAsync({ id: userToEdit.id, data: values });
+      showToast(`User #${userToEdit.id} updated successfully!`, "success");
+      setEditingUser(null);
+      closeModal();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update user";
+      showToast(msg, "error");
     } finally {
       setFormSubmitting(false);
     }
   };
 
   const handleDeleteUser = async () => {
-    if (!deletingUser) return;
+    const userToDelete = deletingUser || targetUser;
+    if (!userToDelete) return;
     try {
-      const res = await fetch(`/api/users/${deletingUser.id}`, {
-        method: "DELETE",
-      });
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        showToast(`User "${deletingUser.name}" deleted from App.db.`, "info");
-        setDeletingUser(null);
-        fetchUsers();
-      } else {
-        showToast(data.error || "Failed to delete user", "error");
-      }
-    } catch {
-      showToast("Error deleting user from database", "error");
+      await deleteUserMutation.mutateAsync(userToDelete.id);
+      showToast(`User "${userToDelete.name}" deleted from database.`, "info");
+      setDeletingUser(null);
+      closeModal();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to delete user";
+      showToast(msg, "error");
     }
   };
 
   const handleResetSeed = async () => {
     try {
-      const res = await fetch("/api/seed", { method: "POST" });
-      const data = await res.json();
-      if (data.success) {
-        showToast("App.db seeded with initial demo users!", "success");
-        fetchUsers();
-      }
-    } catch {
-      showToast("Error resetting demo database", "error");
+      await resetSeedMutation.mutateAsync();
+      showToast("App.db seeded with initial demo users!", "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Error resetting demo database";
+      showToast(msg, "error");
     }
   };
 
@@ -545,8 +530,8 @@ export default function Home() {
     },
   ];
 
-  // User CRUD modal fields
-  const userModalFields: FormFieldConfig[] = [
+  // User Creation fields (includes Password)
+  const createUserModalFields: FormFieldConfig[] = [
     {
       name: "name",
       label: "Full Name",
@@ -559,6 +544,14 @@ export default function Home() {
       type: "email",
       placeholder: "e.g. sarah@app.com",
       required: true,
+    },
+    {
+      name: "password",
+      label: "Password",
+      type: "password",
+      placeholder: "•••••••• (defaults to Nexvanta@2026 if blank)",
+      required: false,
+      helperText: "Initial password (or leave blank for default: Nexvanta@2026)",
     },
     {
       name: "role",
@@ -581,6 +574,52 @@ export default function Home() {
       required: false,
     },
   ];
+
+  // User Edit modal fields
+  const editUserModalFields: FormFieldConfig[] = [
+    {
+      name: "name",
+      label: "Full Name",
+      placeholder: "e.g. Sarah Connor",
+      required: true,
+    },
+    {
+      name: "email",
+      label: "Email Address",
+      type: "email",
+      placeholder: "e.g. sarah@app.com",
+      required: true,
+    },
+    {
+      name: "password",
+      label: "Reset Password (Optional)",
+      type: "password",
+      placeholder: "Leave empty to keep current password",
+      required: false,
+      helperText: "Only enter if you wish to reset this user's password",
+    },
+    {
+      name: "role",
+      label: "Role",
+      type: "select",
+      required: true,
+      options: [
+        { value: "USER", label: "USER" },
+        { value: "ADMIN", label: "ADMIN" },
+        { value: "SUPER_ADMIN", label: "SUPER_ADMIN" },
+        { value: "MANAGER", label: "MANAGER" },
+        { value: "DEVELOPER", label: "DEVELOPER" },
+      ],
+    },
+    {
+      name: "department",
+      label: "Department",
+      placeholder: "e.g. Engineering",
+      required: false,
+    },
+  ];
+
+  const userModalFields = createUserModalFields;
 
   // 1. Initial auth verification splash screen - prevents login screen flicker on refresh
   if (authChecking) {
@@ -1099,17 +1138,161 @@ export default function Home() {
             />
           )}
 
-          {/* TAB 1: USER MANAGEMENT (CRUD Table + Stats) */}
+          {/* TAB 1: USER MANAGEMENT (TanStack Virtualized / Standard Table) */}
           {landingTab === 1 && (
-            <ConfigurableTable
-              users={users}
-              loading={loading}
-              onRefresh={fetchUsers}
-              onAddUser={() => setIsAddUserOpen(true)}
-              onEditUser={(user) => setEditingUser(user)}
-              onDeleteUser={(user) => setDeletingUser(user)}
-              onResetSeed={handleResetSeed}
-            />
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Segmented View Mode Toggle Bar */}
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  flexWrap: "wrap",
+                  gap: 1.5,
+                  p: 1.2,
+                  borderRadius: "6px",
+                  bgcolor: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "rgba(11, 18, 38, 0.7)"
+                      : "#FFFFFF",
+                  border: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "1px solid rgba(59, 130, 246, 0.2)"
+                      : "1px solid #E2E8F0",
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? "#94A3B8" : "#64748B",
+                      mr: 1,
+                    }}
+                  >
+                    Engine:
+                  </Typography>
+
+                  <Button
+                    size="small"
+                    variant={viewMode === "virtualized" ? "contained" : "text"}
+                    startIcon={<BoltIcon />}
+                    onClick={() => setViewMode("virtualized")}
+                    sx={{
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      borderRadius: "6px",
+                      bgcolor:
+                        viewMode === "virtualized"
+                          ? "#2563EB"
+                          : "transparent",
+                      color:
+                        viewMode === "virtualized"
+                          ? "#FFFFFF"
+                          : (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "#94A3B8"
+                                : "#475569",
+                      "&:hover": {
+                        bgcolor:
+                          viewMode === "virtualized"
+                            ? "#1D4ED8"
+                            : "rgba(59, 130, 246, 0.08)",
+                      },
+                    }}
+                  >
+                    TanStack Virtualized (60fps)
+                  </Button>
+
+                  <Button
+                    size="small"
+                    variant={viewMode === "standard" ? "contained" : "text"}
+                    startIcon={<TableRowsIcon />}
+                    onClick={() => setViewMode("standard")}
+                    sx={{
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      borderRadius: "6px",
+                      bgcolor:
+                        viewMode === "standard"
+                          ? "#2563EB"
+                          : "transparent",
+                      color:
+                        viewMode === "standard"
+                          ? "#FFFFFF"
+                          : (theme) =>
+                              theme.palette.mode === "dark"
+                                ? "#94A3B8"
+                                : "#475569",
+                      "&:hover": {
+                        bgcolor:
+                          viewMode === "standard"
+                            ? "#1D4ED8"
+                            : "rgba(59, 130, 246, 0.08)",
+                      },
+                    }}
+                  >
+                    Standard Paginated
+                  </Button>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Chip
+                    label={`TanStack Query: ${users.length} Cached`}
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.7rem",
+                      height: 22,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(59, 130, 246, 0.15)"
+                          : "#EFF6FF",
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? "#60A5FA" : "#1D4ED8",
+                    }}
+                  />
+                  <Chip
+                    label="Zustand Store Active"
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: "0.7rem",
+                      height: 22,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? "rgba(16, 185, 129, 0.15)"
+                          : "#ECFDF5",
+                      color: (theme) =>
+                        theme.palette.mode === "dark" ? "#34D399" : "#047857",
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              {viewMode === "virtualized" ? (
+                <VirtualizedUserTable
+                  users={users}
+                  isLoading={isUsersLoading}
+                  isFetching={isFetching}
+                  onRefresh={fetchUsers}
+                  onResetSeed={handleResetSeed}
+                />
+              ) : (
+                <ConfigurableTable
+                  users={users}
+                  loading={isUsersLoading}
+                  onRefresh={fetchUsers}
+                  onAddUser={() => openModal("add")}
+                  onEditUser={(user) => openModal("edit", user)}
+                  onDeleteUser={(user) => openModal("delete", user)}
+                  onResetSeed={handleResetSeed}
+                />
+              )}
+            </Box>
           )}
 
           {/* TAB 2: ROLES ARCHITECTURE */}
@@ -1439,11 +1622,14 @@ export default function Home() {
       </Dialog>
 
       {/* ======================================================== */}
-      {/* MODAL: ADD USER DIALOG                                   */}
+      {/* MODAL: ADD USER DIALOG (Local & Zustand Store Supported)  */}
       {/* ======================================================== */}
       <Dialog
-        open={isAddUserOpen}
-        onClose={() => setIsAddUserOpen(false)}
+        open={isAddUserOpen || activeModal === "add"}
+        onClose={() => {
+          setIsAddUserOpen(false);
+          closeModal();
+        }}
         maxWidth="sm"
         fullWidth
         slotProps={{
@@ -1477,13 +1663,16 @@ export default function Home() {
             <ConfigurableForm
               asCard={false}
               forceDark={mode === "dark"}
-              fields={userModalFields}
+              fields={createUserModalFields}
               submitLabel="Create User"
               loading={formSubmitting}
               onSubmit={handleCreateUser}
               secondaryButton={{
                 label: "Cancel",
-                onClick: () => setIsAddUserOpen(false),
+                onClick: () => {
+                  setIsAddUserOpen(false);
+                  closeModal();
+                },
               }}
             />
           </Box>
@@ -1493,113 +1682,138 @@ export default function Home() {
       {/* ======================================================== */}
       {/* MODAL: EDIT USER DIALOG                                  */}
       {/* ======================================================== */}
-      <Dialog
-        open={Boolean(editingUser)}
-        onClose={() => setEditingUser(null)}
-        maxWidth="sm"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
-              border: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "1px solid rgba(6, 182, 212, 0.25)"
-                  : "1px solid #E2E8F0",
-              borderRadius: "6px", // 6px fixed
-              p: 2,
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
-          <EditIcon
-            sx={{
-              color: (theme) =>
-                theme.palette.mode === "dark" ? "#22D3EE" : "#0891B2",
+      {(() => {
+        const currentEditing = editingUser || (activeModal === "edit" ? targetUser : null);
+        return (
+          <Dialog
+            open={Boolean(currentEditing)}
+            onClose={() => {
+              setEditingUser(null);
+              closeModal();
             }}
-          />
-          <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
-            Edit User #{editingUser?.id}
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {editingUser && (
-            <Box sx={{ pt: 1 }}>
-              <ConfigurableForm
-                asCard={false}
-                forceDark={mode === "dark"}
-                fields={userModalFields}
-                submitLabel="Save Changes"
-                loading={formSubmitting}
-                initialValues={{
-                  name: editingUser.name,
-                  email: editingUser.email,
-                  role: editingUser.role,
-                  department: editingUser.department || "Operations",
-                }}
-                onSubmit={handleUpdateUser}
-                secondaryButton={{
-                  label: "Cancel",
-                  onClick: () => setEditingUser(null),
+            maxWidth="sm"
+            fullWidth
+            slotProps={{
+              paper: {
+                sx: {
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                  border: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "1px solid rgba(6, 182, 212, 0.25)"
+                      : "1px solid #E2E8F0",
+                  borderRadius: "6px", // 6px fixed
+                  p: 2,
+                },
+              },
+            }}
+          >
+            <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+              <EditIcon
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === "dark" ? "#22D3EE" : "#0891B2",
                 }}
               />
-            </Box>
-          )}
-        </DialogContent>
-      </Dialog>
+              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+                Edit User #{currentEditing?.id}
+              </Box>
+            </DialogTitle>
+            <DialogContent>
+              {currentEditing && (
+                <Box sx={{ pt: 1 }}>
+                  <ConfigurableForm
+                    asCard={false}
+                    forceDark={mode === "dark"}
+                    fields={editUserModalFields}
+                    submitLabel="Save Changes"
+                    loading={formSubmitting}
+                    initialValues={{
+                      name: currentEditing.name,
+                      email: currentEditing.email,
+                      role: currentEditing.role,
+                      department: currentEditing.department || "Operations",
+                    }}
+                    onSubmit={handleUpdateUser}
+                    secondaryButton={{
+                      label: "Cancel",
+                      onClick: () => {
+                        setEditingUser(null);
+                        closeModal();
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
 
       {/* ======================================================== */}
       {/* MODAL: DELETE CONFIRMATION DIALOG                        */}
       {/* ======================================================== */}
-      <Dialog
-        open={Boolean(deletingUser)}
-        onClose={() => setDeletingUser(null)}
-        maxWidth="xs"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
-              border: (theme) =>
-                theme.palette.mode === "dark"
-                  ? "1px solid rgba(239, 68, 68, 0.3)"
-                  : "1px solid #FCA5A5",
-              borderRadius: "6px", // 6px fixed
-              p: 2,
-            },
-          },
-        }}
-      >
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "error.main" }}>
-          <WarningIcon />
-          <Box component="span" sx={{ fontWeight: 700 }}>Confirm Deletion</Box>
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="body1" sx={{ color: "text.primary", fontSize: "0.9rem" }}>
-            Are you sure you want to permanently delete user{" "}
-            <strong>{deletingUser?.name}</strong> ({deletingUser?.email})?
-          </Typography>
-          <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 1 }}>
-            This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setDeletingUser(null)} sx={{ color: "text.secondary", borderRadius: "6px" }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDeleteUser}
-            sx={{ fontWeight: 700, borderRadius: "6px" }}
+      {(() => {
+        const currentDeleting = deletingUser || (activeModal === "delete" ? targetUser : null);
+        return (
+          <Dialog
+            open={Boolean(currentDeleting)}
+            onClose={() => {
+              setDeletingUser(null);
+              closeModal();
+            }}
+            maxWidth="xs"
+            fullWidth
+            slotProps={{
+              paper: {
+                sx: {
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                  border: (theme) =>
+                    theme.palette.mode === "dark"
+                      ? "1px solid rgba(239, 68, 68, 0.3)"
+                      : "1px solid #FCA5A5",
+                  borderRadius: "6px", // 6px fixed
+                  p: 2,
+                },
+              },
+            }}
           >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "error.main" }}>
+              <WarningIcon />
+              <Box component="span" sx={{ fontWeight: 700 }}>Confirm Deletion</Box>
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="body1" sx={{ color: "text.primary", fontSize: "0.9rem" }}>
+                Are you sure you want to permanently delete user{" "}
+                <strong>{currentDeleting?.name}</strong> ({currentDeleting?.email})?
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 1 }}>
+                This action cannot be undone.
+              </Typography>
+            </DialogContent>
+            <DialogActions sx={{ px: 2.5, pb: 2 }}>
+              <Button
+                onClick={() => {
+                  setDeletingUser(null);
+                  closeModal();
+                }}
+                sx={{ color: "text.secondary", borderRadius: "6px" }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleDeleteUser}
+                sx={{ fontWeight: 700, borderRadius: "6px" }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+        );
+      })()}
 
       <Snackbar
         open={snackbar.open}

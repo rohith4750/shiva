@@ -15,13 +15,16 @@
     "@mui/icons-material": "^9.5.0",
     "@mui/material": "^9.5.0",
     "@prisma/client": "^6.19.3",
+    "@tanstack/react-query": "^5.104.1",
+    "@tanstack/react-virtual": "^3.14.14",
     "@types/pg": "^8.23.1",
     "bcryptjs": "^3.0.3",
     "next": "16.4.0",
     "pg": "^8.23.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.5",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
