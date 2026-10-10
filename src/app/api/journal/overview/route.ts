@@ -31,14 +31,16 @@ export async function GET(request: NextRequest) {
     let tradeQuery = `
       SELECT 
         t.id, t.user_id, t.account_id, t.strategy_id, s.name as strategy_name,
-        t.symbol, t.direction, t.status, t.opened_at, t.closed_at,
+        t.trade_num, t.market, t.session, t.symbol, t.direction, t.status, t.opened_at, t.closed_at,
         t.entry_price::float, t.exit_price::float, t.stop_loss::float, t.take_profit::float,
+        t.sl_points::float, t.tp_points::float, t.market_condition, t.result,
         t.volume::float, t.planned_risk_amount::float, t.planned_reward_amount::float,
         t.planned_rr_ratio::float, t.actual_r::float, t.gross_pnl::float,
         t.commission::float, t.swap::float, t.fees::float, t.net_pnl::float,
         t.pnl_percentage::float, t.notes,
-        j.emotion_before, j.emotion_after, j.discipline_rating, j.rule_adherence,
-        j.mistakes, j.lessons_learned
+        j.entry_reason, j.exit_reason, j.emotion_before, j.emotion_during, j.emotion_after,
+        j.confidence_rating, j.discipline_rating, j.rule_adherence,
+        j.mistake_flag, j.mistake_type, j.mistakes, j.lessons_learned
       FROM trades t
       LEFT JOIN strategies s ON t.strategy_id = s.id
       LEFT JOIN trade_journals j ON t.id = j.trade_id

@@ -26,11 +26,22 @@ export interface TradeRecord {
   notes?: string | null;
   entry_reason?: string | null;
   exit_reason?: string | null;
+  trade_num?: number | null;
+  market?: string | null;
+  session?: string | null;
+  sl_points?: number | null;
+  tp_points?: number | null;
+  result?: string | null;
+  market_condition?: string | null;
   // Journal fields if joined
   emotion_before?: string | null;
+  emotion_during?: string | null;
   emotion_after?: string | null;
+  confidence_rating?: number | null;
   discipline_rating?: number | null;
   rule_adherence?: boolean | null;
+  mistake_flag?: boolean | null;
+  mistake_type?: string | null;
   mistakes?: string | null;
   lessons_learned?: string | null;
 }
