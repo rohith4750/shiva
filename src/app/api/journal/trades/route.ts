@@ -58,6 +58,33 @@ export async function POST(request: Request) {
     const tradeId = `trd-${randomUUID().slice(0, 8)}`;
     const userId = "usr-001"; // Current authorized user
 
+    // Handle Custom Strategy creation/lookup if selected "Other"
+    let finalStrategyId = strategyId && strategyId !== "other" ? strategyId : null;
+    if (body.customStrategy && body.customStrategy.trim()) {
+      const stratName = body.customStrategy.trim();
+      const existing = await tradePool.query(
+        `SELECT id FROM strategies WHERE user_id = $1 AND LOWER(name) = LOWER($2)`,
+        [userId, stratName]
+      );
+      if (existing.rows.length > 0) {
+        finalStrategyId = existing.rows[0].id;
+      } else {
+        const newStratId = `strat-${randomUUID().slice(0, 8)}`;
+        await tradePool.query(
+          `INSERT INTO strategies (id, user_id, name, color) VALUES ($1, $2, $3, '#3B82F6')`,
+          [newStratId, userId, stratName]
+        );
+        finalStrategyId = newStratId;
+      }
+    }
+
+    const finalMistakeType = body.customMistake && body.customMistake.trim()
+      ? body.customMistake.trim()
+      : (mistakeType || (mistakeFlag ? "Other" : "None"));
+    const finalMistakes = body.customMistake && body.customMistake.trim()
+      ? body.customMistake.trim()
+      : (mistakes || null);
+
     // Sequence Trade Number if not provided
     let finalTradeNum = tradeNum ? Number(tradeNum) : null;
     if (!finalTradeNum) {
@@ -126,7 +153,7 @@ export async function POST(request: Request) {
         tradeId,
         userId,
         accountId,
-        strategyId || null,
+        finalStrategyId,
         symbol.toUpperCase().trim(),
         direction.toUpperCase(),
         tradeStatus,
@@ -152,7 +179,7 @@ export async function POST(request: Request) {
         finalNetPnl,
         notes || null,
         finalTradeNum,
-        market || "Indian Indices",
+        market || null,
         session || "Morning Opening (9:15-11:00)",
         computedSLPoints,
         computedTPPoints,
@@ -179,14 +206,14 @@ export async function POST(request: Request) {
         entryReason || null,
         exitReason || null,
         emotionBefore || "Calm",
-        emotionDuring || "Focused",
+        emotionDuring || null,
         emotionAfter || "Satisfied",
-        confidenceRating ? Number(confidenceRating) : 8,
-        disciplineRating ? Number(disciplineRating) : 8,
+        confidenceRating ? Math.min(5, Math.max(1, Number(confidenceRating))) : 5,
+        disciplineRating ? Math.min(5, Math.max(1, Number(disciplineRating))) : 5,
         ruleAdherence !== undefined ? Boolean(ruleAdherence) : true,
         mistakeFlag !== undefined ? Boolean(mistakeFlag) : false,
-        mistakeType || (mistakeFlag ? "Early Entry" : "None"),
-        mistakes || null,
+        finalMistakeType,
+        finalMistakes,
         lessonsLearned || null,
         marketCondition || null,
       ]
