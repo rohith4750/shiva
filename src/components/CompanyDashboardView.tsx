@@ -17,6 +17,7 @@ import {
   Speed as SpeedIcon,
   ArrowForward as ArrowForwardIcon,
   CheckCircle as CheckCircleIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
 import NexvantaLogo from "./NexvantaLogo";
 
@@ -115,6 +116,25 @@ export default function CompanyDashboardView({
 
           {/* Quick Action Navigation Buttons */}
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<TimelineIcon sx={{ fontSize: "16px !important" }} />}
+              endIcon={<ArrowForwardIcon sx={{ fontSize: "14px !important" }} />}
+              onClick={() => onNavigateTab(6)}
+              sx={{
+                backgroundColor: "#10B981",
+                "&:hover": { backgroundColor: "#059669" },
+                borderRadius: "6px",
+                fontSize: "0.78rem",
+                fontWeight: 700,
+                px: 1.8,
+                py: 0.6,
+                boxShadow: "0 2px 10px rgba(16, 185, 129, 0.35)",
+              }}
+            >
+              Manual Trading Journal
+            </Button>
             <Button
               variant="contained"
               size="small"
@@ -264,6 +284,144 @@ export default function CompanyDashboardView({
               </Grid>
             ))}
           </Grid>
+        </Box>
+
+        {/* ============================================================== */}
+        {/* MANUAL TRADING JOURNAL PLATFORM FEATURE SHOWCASE BANNER         */}
+        {/* ============================================================== */}
+        <Box
+          sx={{
+            mt: 3.5,
+            p: 2.5,
+            borderRadius: "8px",
+            background: (theme) =>
+              theme.palette.mode === "dark"
+                ? "linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(14, 22, 43, 0.8) 100%)"
+                : "linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)",
+            border: (theme) =>
+              theme.palette.mode === "dark"
+                ? "1px solid rgba(16, 185, 129, 0.3)"
+                : "1px solid #A7F3D0",
+            display: "flex",
+            flexDirection: { xs: "column", lg: "row" },
+            alignItems: { xs: "flex-start", lg: "center" },
+            justifyContent: "space-between",
+            gap: 2.5,
+          }}
+        >
+          <Box sx={{ maxWidth: 700 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.8 }}>
+              <TimelineIcon sx={{ color: "#10B981", fontSize: 24 }} />
+              <Typography variant="h6" sx={{ fontWeight: 800, color: "text.primary", fontSize: "1.05rem" }}>
+                Manual Trading Journal Platform
+              </Typography>
+              <Box
+                component="span"
+                sx={{
+                  px: 0.8,
+                  py: 0.2,
+                  borderRadius: "4px",
+                  fontSize: "0.68rem",
+                  fontWeight: 700,
+                  bgcolor: "rgba(16, 185, 129, 0.2)",
+                  color: "#10B981",
+                  border: "1px solid rgba(16, 185, 129, 0.4)",
+                }}
+              >
+                LIVE ENGINE
+              </Box>
+            </Box>
+            <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.82rem", lineHeight: 1.5, mb: 1.5 }}>
+              Strict Section 7 mathematical performance calculations (Decisive Win Rate, Gross Profit/Loss, Profit Factor, Average Actual R, Expectancy, and peak-to-trough Drawdown curve). Record trades in a 3-stage manual workflow, analyze psychological discipline, and review daily P&L heatmaps.
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<TimelineIcon sx={{ fontSize: "15px !important" }} />}
+                onClick={() => onNavigateTab(6)}
+                sx={{
+                  backgroundColor: "#10B981",
+                  color: "#FFFFFF",
+                  fontWeight: 700,
+                  fontSize: "0.78rem",
+                  borderRadius: "6px",
+                  px: 2,
+                  py: 0.6,
+                  "&:hover": { backgroundColor: "#059669" },
+                }}
+              >
+                Open Trading Journal
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => onNavigateTab(6)}
+                sx={{
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(16, 185, 129, 0.4)" : "#6EE7B7",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#6EE7B7" : "#047857"),
+                  fontWeight: 600,
+                  fontSize: "0.76rem",
+                  borderRadius: "6px",
+                  px: 1.5,
+                }}
+              >
+                3-Stage Trade Entry
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => onNavigateTab(6)}
+                sx={{
+                  borderColor: (theme) =>
+                    theme.palette.mode === "dark" ? "rgba(59, 130, 246, 0.4)" : "#BFDBFE",
+                  color: (theme) => (theme.palette.mode === "dark" ? "#60A5FA" : "#2563EB"),
+                  fontWeight: 600,
+                  fontSize: "0.76rem",
+                  borderRadius: "6px",
+                  px: 1.5,
+                }}
+              >
+                Performance Calendar & Analytics
+              </Button>
+            </Box>
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "row", sm: "column" },
+              gap: 1.2,
+              minWidth: { sm: 220 },
+              bgcolor: (theme) =>
+                theme.palette.mode === "dark" ? "rgba(11, 18, 38, 0.8)" : "#FFFFFF",
+              p: 1.5,
+              borderRadius: "6px",
+              border: (theme) =>
+                theme.palette.mode === "dark"
+                  ? "1px solid rgba(59, 130, 246, 0.2)"
+                  : "1px solid #E2E8F0",
+            }}
+          >
+            <Box>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, display: "block", fontSize: "0.68rem" }}>
+                POSTGRESQL DATABASE:
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 800, color: "#10B981", fontSize: "0.82rem" }}>
+                trade @ localhost:5432
+              </Typography>
+            </Box>
+            <Divider sx={{ my: 0.3 }} />
+            <Box>
+              <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 700, display: "block", fontSize: "0.68rem" }}>
+                ACTIVE PORTFOLIO:
+              </Typography>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: "text.primary", fontSize: "0.82rem" }}>
+                3 Accounts • 5 Verified Trades
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </Box>
     </Box>

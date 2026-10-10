@@ -119,6 +119,19 @@ export default function Navbar({
         },
       ],
     },
+    {
+      id: "trading",
+      label: "Trading Journal",
+      icon: <TimelineIcon fontSize="small" sx={{ color: "#10B981" }} />,
+      items: [
+        {
+          label: "Trading Journal Platform",
+          description: "6 KPIs, Equity Curve, 3-Stage Entry, Calendar & Analytics",
+          icon: <TimelineIcon fontSize="small" sx={{ color: "#10B981" }} />,
+          tab: 6,
+        },
+      ],
+    },
     // {
     //   id: "services",
     //   label: "Customer Services",
@@ -405,29 +418,28 @@ export default function Navbar({
             </Tooltip>
 
             {/* Quick Link to Manual Trading Journal Platform */}
-            <Link href="/journal" style={{ textDecoration: "none" }}>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<TimelineIcon sx={{ fontSize: 16 }} />}
-                sx={{
-                  borderColor: mode === "dark" ? "rgba(59, 130, 246, 0.4)" : "#BFDBFE",
-                  color: mode === "dark" ? "#38BDF8" : "#2563EB",
-                  fontSize: "0.75rem",
-                  fontWeight: 700,
-                  height: 32,
-                  px: 1.2,
-                  borderRadius: "6px",
-                  display: { xs: "none", sm: "inline-flex" },
-                  "&:hover": {
-                    borderColor: "#38BDF8",
-                    backgroundColor: mode === "dark" ? "rgba(56, 189, 248, 0.1)" : "#EFF6FF",
-                  },
-                }}
-              >
-                Trading Journal
-              </Button>
-            </Link>
+            <Button
+              onClick={() => onTabChange(6)}
+              size="small"
+              variant="contained"
+              startIcon={<TimelineIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                backgroundColor: "#10B981",
+                color: "#FFFFFF",
+                fontSize: "0.75rem",
+                fontWeight: 700,
+                height: 32,
+                px: 1.5,
+                borderRadius: "6px",
+                display: { xs: "none", sm: "inline-flex" },
+                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.35)",
+                "&:hover": {
+                  backgroundColor: "#059669",
+                },
+              }}
+            >
+              Trading Journal
+            </Button>
 
             {currentUser && (
               <>

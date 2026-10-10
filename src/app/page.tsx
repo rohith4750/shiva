@@ -64,6 +64,7 @@ import {
   ElectricBolt as BoltIcon,
   TableRows as TableRowsIcon,
 } from "@mui/icons-material";
+import TradingJournalView from "@/components/TradingJournalView";
 
 // Mapping between tab indices and clean URL hash slugs
 const TAB_MAP: Record<string, number> = {
@@ -73,6 +74,8 @@ const TAB_MAP: Record<string, number> = {
   permissions: 3,
   services: 4,
   analytics: 5,
+  journal: 6,
+  trading: 6,
 };
 
 const TAB_TO_HASH: Record<number, string> = {
@@ -82,6 +85,7 @@ const TAB_TO_HASH: Record<number, string> = {
   3: "permissions",
   4: "services",
   5: "analytics",
+  6: "journal",
 };
 
 const getInitialTab = (): number => {
@@ -94,7 +98,7 @@ const getInitialTab = (): number => {
     const saved = localStorage.getItem("nexvanta_active_tab");
     if (saved !== null) {
       const parsed = parseInt(saved, 10);
-      if (!isNaN(parsed) && parsed >= 0 && parsed <= 5) {
+      if (!isNaN(parsed) && parsed >= 0 && parsed <= 6) {
         return parsed;
       }
     }
@@ -1459,6 +1463,13 @@ export default function Home() {
                   View User Records Table
                 </Button>
               </Box>
+            </Box>
+          )}
+
+          {/* TAB 6: MANUAL TRADING JOURNAL PLATFORM */}
+          {landingTab === 6 && (
+            <Box sx={{ width: "100%", mt: -1 }}>
+              <TradingJournalView onBackToHome={() => handleTabChange(0)} />
             </Box>
           )}
         </Box>
