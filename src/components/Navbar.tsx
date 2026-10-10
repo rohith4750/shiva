@@ -35,7 +35,9 @@ import {
   Dashboard as DashboardIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
+  Timeline as TimelineIcon,
 } from "@mui/icons-material";
+import Link from "next/link";
 import NexvantaLogo from "./NexvantaLogo";
 import { AuthSession } from "@/types/user";
 import { useColorMode } from "./ThemeRegistry";
@@ -401,6 +403,31 @@ export default function Navbar({
                 {mode === "dark" ? <LightModeIcon sx={{ fontSize: 17 }} /> : <DarkModeIcon sx={{ fontSize: 17 }} />}
               </IconButton>
             </Tooltip>
+
+            {/* Quick Link to Manual Trading Journal Platform */}
+            <Link href="/journal" style={{ textDecoration: "none" }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<TimelineIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderColor: mode === "dark" ? "rgba(59, 130, 246, 0.4)" : "#BFDBFE",
+                  color: mode === "dark" ? "#38BDF8" : "#2563EB",
+                  fontSize: "0.75rem",
+                  fontWeight: 700,
+                  height: 32,
+                  px: 1.2,
+                  borderRadius: "6px",
+                  display: { xs: "none", sm: "inline-flex" },
+                  "&:hover": {
+                    borderColor: "#38BDF8",
+                    backgroundColor: mode === "dark" ? "rgba(56, 189, 248, 0.1)" : "#EFF6FF",
+                  },
+                }}
+              >
+                Trading Journal
+              </Button>
+            </Link>
 
             {currentUser && (
               <>
