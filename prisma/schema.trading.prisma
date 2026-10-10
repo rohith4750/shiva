@@ -1,0 +1,219 @@
+// ========================================================================
+// MANUAL TRADING JOURNAL PLATFORM - PRISMA SCHEMA
+// Database: trade (PostgreSQL localhost:5432)
+// ========================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model users {
+  id               String             @id @default(uuid()) @db.VarChar(36)
+  email            String             @unique @db.VarChar(255)
+  password_hash    String             @db.VarChar(255)
+  first_name       String             @db.VarChar(100)
+  last_name        String             @db.VarChar(100)
+  timezone         String             @default("UTC") @db.VarChar(50)
+  avatar_url       String?            @db.Text
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime           @default(now()) @updatedAt @db.Timestamptz(6)
+
+  sessions         sessions[]
+  trading_accounts trading_accounts[]
+  strategies       strategies[]
+  tags             tags[]
+  trades           trades[]
+  trade_journals   trade_journals[]
+  trade_screenshots trade_screenshots[]
+  daily_reviews    daily_reviews[]
+
+  @@index([email], map: "idx_users_email")
+}
+
+model sessions {
+  id           String    @id @default(uuid()) @db.VarChar(36)
+  user_id      String    @db.VarChar(36)
+  token_hash   String    @unique @db.VarChar(255)
+  expires_at   DateTime  @db.Timestamptz(6)
+  revoked_at   DateTime? @db.Timestamptz(6)
+  last_seen_at DateTime  @default(now()) @db.Timestamptz(6)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  user         users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, expires_at], map: "idx_sessions_user_expires")
+  @@index([token_hash], map: "idx_sessions_token_hash")
+}
+
+model trading_accounts {
+  id               String          @id @default(uuid()) @db.VarChar(36)
+  user_id          String          @db.VarChar(36)
+  name             String          @db.VarChar(100)
+  account_type     String          @default("demo") @db.VarChar(30) // 'demo', 'live', 'backtest', 'funded'
+  currency         String          @default("USD") @db.VarChar(10)
+  starting_balance Decimal         @default(10000.0000) @db.Decimal(18, 4)
+  current_balance  Decimal         @default(10000.0000) @db.Decimal(18, 4)
+  description      String?         @db.Text
+  is_archived      Boolean         @default(false)
+  archived_at      DateTime?       @db.Timestamptz(6)
+  created_at       DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime        @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user             users           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trades           trades[]
+  daily_reviews    daily_reviews[]
+
+  @@index([user_id], map: "idx_trading_accounts_user")
+  @@index([user_id, account_type], map: "idx_trading_accounts_type")
+}
+
+model strategies {
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  user_id     String    @db.VarChar(36)
+  name        String    @db.VarChar(100)
+  description String?   @db.Text
+  color       String?   @default("#3B82F6") @db.VarChar(20)
+  is_active   Boolean   @default(true)
+  archived_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user        users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trades      trades[]
+
+  @@unique([user_id, name], map: "uq_user_strategy_name")
+  @@index([user_id], map: "idx_strategies_user")
+}
+
+model tags {
+  id         String      @id @default(uuid()) @db.VarChar(36)
+  user_id    String      @db.VarChar(36)
+  name       String      @db.VarChar(50)
+  color      String?     @default("#06B6D4") @db.VarChar(20)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+
+  user       users       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trade_tags trade_tags[]
+
+  @@unique([user_id, name], map: "uq_user_tag_name")
+  @@index([user_id], map: "idx_tags_user")
+}
+
+model trades {
+  id                   String              @id @default(uuid()) @db.VarChar(36)
+  user_id              String              @db.VarChar(36)
+  account_id           String              @db.VarChar(36)
+  strategy_id          String?             @db.VarChar(36)
+  symbol               String              @db.VarChar(50)
+  direction            String              @db.VarChar(10) // 'BUY', 'SELL', 'LONG', 'SHORT'
+  status               String              @default("CLOSED") @db.VarChar(10) // 'OPEN', 'CLOSED'
+  opened_at            DateTime            @db.Timestamptz(6)
+  closed_at            DateTime?           @db.Timestamptz(6)
+  entry_price          Decimal             @db.Decimal(18, 6)
+  exit_price           Decimal?            @db.Decimal(18, 6)
+  stop_loss            Decimal?            @db.Decimal(18, 6)
+  take_profit          Decimal?            @db.Decimal(18, 6)
+  volume               Decimal?            @db.Decimal(18, 4)
+  planned_risk_amount  Decimal?            @db.Decimal(18, 4)
+  planned_reward_amount Decimal?           @db.Decimal(18, 4)
+  planned_rr_ratio     Decimal?            @db.Decimal(10, 2)
+  actual_r             Decimal?            @db.Decimal(10, 2)
+  gross_pnl            Decimal?            @db.Decimal(18, 4)
+  commission           Decimal             @default(0.0000) @db.Decimal(18, 4)
+  swap                 Decimal             @default(0.0000) @db.Decimal(18, 4)
+  fees                 Decimal             @default(0.0000) @db.Decimal(18, 4)
+  net_pnl              Decimal?            @db.Decimal(18, 4)
+  pnl_percentage       Decimal?            @db.Decimal(10, 4)
+  notes                String?             @db.Text
+  created_at           DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime            @default(now()) @updatedAt @db.Timestamptz(6)
+  deleted_at           DateTime?           @db.Timestamptz(6)
+
+  user                 users               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  account              trading_accounts    @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  strategy             strategies?         @relation(fields: [strategy_id], references: [id], onDelete: SetNull)
+  trade_journal        trade_journals?
+  trade_tags           trade_tags[]
+  trade_screenshots    trade_screenshots[]
+
+  @@index([user_id, account_id], map: "idx_trades_user_account")
+  @@index([user_id, status], map: "idx_trades_user_status")
+  @@index([user_id, opened_at], map: "idx_trades_user_opened")
+  @@index([user_id, symbol], map: "idx_trades_user_symbol")
+  @@index([strategy_id], map: "idx_trades_strategy")
+}
+
+model trade_tags {
+  trade_id String @db.VarChar(36)
+  tag_id   String @db.VarChar(36)
+
+  trade    trades @relation(fields: [trade_id], references: [id], onDelete: Cascade)
+  tag      tags   @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@primaryKey([trade_id, tag_id])
+  @@index([tag_id], map: "idx_trade_tags_tag")
+}
+
+model trade_journals {
+  id                String    @id @default(uuid()) @db.VarChar(36)
+  user_id           String    @db.VarChar(36)
+  trade_id          String    @unique @db.VarChar(36)
+  entry_reason      String?   @db.Text
+  exit_reason       String?   @db.Text
+  emotion_before    String?   @db.VarChar(50)
+  emotion_after     String?   @db.VarChar(50)
+  discipline_rating Int?
+  rule_adherence    Boolean?  @default(true)
+  mistakes          String?   @db.Text
+  lessons_learned   String?   @db.Text
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user              users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trade             trades    @relation(fields: [trade_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id], map: "idx_trade_journals_user")
+}
+
+model trade_screenshots {
+  id                String   @id @default(uuid()) @db.VarChar(36)
+  user_id           String   @db.VarChar(36)
+  trade_id          String   @db.VarChar(36)
+  storage_key       String   @db.VarChar(255)
+  original_filename String   @db.VarChar(255)
+  content_type      String   @default("image/png") @db.VarChar(100)
+  size_bytes        BigInt?
+  caption           String?  @db.VarChar(255)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+
+  user              users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  trade             trades   @relation(fields: [trade_id], references: [id], onDelete: Cascade)
+
+  @@index([trade_id], map: "idx_trade_screenshots_trade")
+}
+
+model daily_reviews {
+  id               String            @id @default(uuid()) @db.VarChar(36)
+  user_id          String            @db.VarChar(36)
+  account_id       String?           @db.VarChar(36)
+  review_date      DateTime          @db.Date
+  what_went_well   String?           @db.Text
+  what_went_wrong  String?           @db.Text
+  lessons          String?           @db.Text
+  next_session_plan String?          @db.Text
+  market_condition String?           @db.VarChar(100)
+  daily_rating     Int?
+  created_at       DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime          @default(now()) @updatedAt @db.Timestamptz(6)
+
+  user             users             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  account          trading_accounts? @relation(fields: [account_id], references: [id], onDelete: SetNull)
+
+  @@unique([user_id, account_id, review_date], map: "uq_user_account_review_date")
+  @@index([user_id, review_date], map: "idx_daily_reviews_user_date")
+}
