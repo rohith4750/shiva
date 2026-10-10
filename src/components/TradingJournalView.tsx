@@ -461,7 +461,7 @@ export default function TradingJournalView({
         minHeight: "100vh",
         bgcolor: isDark ? "#070A13" : "#F8FAFC",
         color: isDark ? "#F8FAFC" : "#0F172A",
-        pb: 8,
+        pb: 2,
       }}
     >
       {/* ============================================================== */}
@@ -469,18 +469,18 @@ export default function TradingJournalView({
       {/* ============================================================== */}
       <Box
         sx={{
-          py: 2,
-          px: { xs: 2, md: 4 },
+          py: 1,
+          px: { xs: 1.5, md: 2.5 },
           bgcolor: isDark ? "#0B1226" : "#FFFFFF",
           borderBottom: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           alignItems: { xs: "flex-start", md: "center" },
           justifyContent: "space-between",
-          gap: 2,
+          gap: 1.2,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
           {onBackToHome ? (
             <Button
               size="small"
@@ -490,7 +490,8 @@ export default function TradingJournalView({
                 color: isDark ? "#94A3B8" : "#64748B",
                 textTransform: "none",
                 fontWeight: 600,
-                fontSize: "0.82rem",
+                fontSize: "0.8rem",
+                py: 0.2,
               }}
             >
               Back to Overview
@@ -504,7 +505,8 @@ export default function TradingJournalView({
                   color: isDark ? "#94A3B8" : "#64748B",
                   textTransform: "none",
                   fontWeight: 600,
-                  fontSize: "0.82rem",
+                  fontSize: "0.8rem",
+                  py: 0.2,
                 }}
               >
                 Auth & User Portal
@@ -513,8 +515,8 @@ export default function TradingJournalView({
           )}
           <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
           <Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.15rem", letterSpacing: "-0.01em" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.01em" }}>
                 Manual Trading Journal
               </Typography>
               <Chip
@@ -525,26 +527,26 @@ export default function TradingJournalView({
                   color: isDark ? "#34D399" : "#059669",
                   border: isDark ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid #A7F3D0",
                   fontWeight: 700,
-                  fontSize: "0.68rem",
-                  height: 20,
+                  fontSize: "0.65rem",
+                  height: 18,
                 }}
               />
             </Box>
-            <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+            <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: "0.7rem", lineHeight: 1 }}>
               Independent multi-user trading platform. Zero MT5 or broker dependency.
             </Typography>
           </Box>
         </Box>
 
         {/* Account Selector, Refresh & Primary Add Trade Action */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-          <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel sx={{ fontSize: "0.82rem" }}>Active Account</InputLabel>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <InputLabel sx={{ fontSize: "0.78rem" }}>Active Account</InputLabel>
             <Select
               value={selectedAccountId}
               label="Active Account"
               onChange={(e) => setSelectedAccountId(e.target.value)}
-              sx={{ fontSize: "0.82rem", height: 36, bgcolor: isDark ? "#0E162B" : "#FFFFFF" }}
+              sx={{ fontSize: "0.78rem", height: 32, bgcolor: isDark ? "#0E162B" : "#FFFFFF" }}
             >
               <MenuItem value="all">All Accounts ({accounts.length})</MenuItem>
               {accounts.map((acc) => (
@@ -563,18 +565,18 @@ export default function TradingJournalView({
               sx={{
                 border: isDark ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #CBD5E1",
                 borderRadius: "6px",
-                width: 36,
-                height: 36,
+                width: 32,
+                height: 32,
               }}
             >
-              <RefreshIcon sx={{ fontSize: 18 }} />
+              <RefreshIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
 
           <Button
             variant="contained"
             size="small"
-            startIcon={<AddTradeIcon />}
+            startIcon={<AddTradeIcon sx={{ fontSize: 16 }} />}
             onClick={() => {
               if (accounts.length > 0 && !tradeForm.accountId) {
                 setTradeForm((prev) => ({ ...prev, accountId: accounts[0].id }));
@@ -584,10 +586,10 @@ export default function TradingJournalView({
             sx={{
               bgcolor: "#2563EB",
               fontWeight: 700,
-              fontSize: "0.82rem",
+              fontSize: "0.78rem",
               borderRadius: "6px",
-              height: 36,
-              px: 2,
+              height: 32,
+              px: 1.8,
               "&:hover": { bgcolor: "#1D4ED8" },
             }}
           >
@@ -601,7 +603,7 @@ export default function TradingJournalView({
       {/* ============================================================== */}
       <Box
         sx={{
-          px: { xs: 2, md: 4 },
+          px: { xs: 1.5, md: 2.5 },
           bgcolor: isDark ? "#0A0F1D" : "#F1F5F9",
           borderBottom: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0",
         }}
@@ -612,10 +614,12 @@ export default function TradingJournalView({
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            minHeight: 46,
+            minHeight: 38,
             "& .MuiTab-root": {
-              minHeight: 46,
-              fontSize: "0.82rem",
+              minHeight: 38,
+              py: 0.5,
+              px: 1.5,
+              fontSize: "0.78rem",
               fontWeight: 700,
               textTransform: "none",
               color: isDark ? "#94A3B8" : "#64748B",
@@ -625,50 +629,51 @@ export default function TradingJournalView({
             },
             "& .MuiTabs-indicator": {
               bgcolor: isDark ? "#38BDF8" : "#2563EB",
-              height: 3,
+              height: 2.5,
             },
           }}
         >
-          <Tab icon={<DashboardIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Overview" />
-          <Tab icon={<AddTradeIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Add Trade Workflow" />
-          <Tab icon={<HistoryIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Trade History (${trades.length})`} />
-          <Tab icon={<CalendarIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Trading Calendar" />
-          <Tab icon={<AnalyticsIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Analytics & Algorithms" />
-          <Tab icon={<PsychologyIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Journal & Psychology" />
-          <Tab icon={<AccountsIcon sx={{ fontSize: 18 }} />} iconPosition="start" label={`Accounts (${accounts.length})`} />
+          <Tab icon={<DashboardIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Overview" />
+          <Tab icon={<AddTradeIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Add Trade (31 Fields)" />
+          <Tab icon={<HistoryIcon sx={{ fontSize: 16 }} />} iconPosition="start" label={`Trade History (${trades.length})`} />
+          <Tab icon={<CalendarIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Trading Calendar" />
+          <Tab icon={<AnalyticsIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Analytics & Algorithms" />
+          <Tab icon={<PsychologyIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Journal & Psychology" />
+          <Tab icon={<AccountsIcon sx={{ fontSize: 16 }} />} iconPosition="start" label={`Accounts (${accounts.length})`} />
         </Tabs>
       </Box>
 
       {/* ============================================================== */}
-      {/* MAIN VIEW CONTAINER                                            */}
+      {/* MAIN VIEW CONTAINER (100% FULL-WIDTH COMPACT VIEWPORT)         */}
       {/* ============================================================== */}
-      <Container maxWidth="xl" sx={{ mt: 3, px: { xs: 2, md: 4 } }}>
-        {loading && <LinearProgress sx={{ mb: 2, borderRadius: 1 }} />}
+      <Box sx={{ width: "100%", mt: 0.8, px: { xs: 0.8, sm: 1.2, md: 1.5 }, pb: 1.5 }}>
+        {loading && <LinearProgress sx={{ mb: 1, borderRadius: 1 }} />}
 
         {/* ============================================================ */}
         {/* TAB 0: OVERVIEW (DASHBOARD)                                  */}
         {/* ============================================================ */}
         {activeTab === 0 && analytics && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
             {/* Top 6 KPI Performance Cards */}
-            <Grid container spacing={2}>
+            <Grid container spacing={1.2}>
               {/* Card 1: Net Realized P&L */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                <Card sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+                <Card sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
                     Net Realized P&L
                   </Typography>
                   <Typography
-                    variant="h5"
+                    variant="h6"
                     sx={{
                       fontWeight: 800,
-                      mt: 0.5,
+                      mt: 0.3,
+                      fontSize: "1.1rem",
                       color: analytics.netPnl >= 0 ? "#10B981" : "#EF4444",
                     }}
                   >
                     {analytics.netPnl >= 0 ? `+$${analytics.netPnl.toLocaleString()}` : `-$${Math.abs(analytics.netPnl).toLocaleString()}`}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.2, fontSize: "0.68rem" }}>
                     Closed Trades Only
                   </Typography>
                 </Card>
@@ -676,14 +681,14 @@ export default function TradingJournalView({
 
               {/* Card 2: Win Rate */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                <Card sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+                <Card sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
                     Win Rate
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: isDark ? "#F8FAFC" : "#0F172A" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.3, fontSize: "1.1rem", color: isDark ? "#F8FAFC" : "#0F172A" }}>
                     {analytics.winRate !== null ? `${analytics.winRate}%` : "N/A"}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.2, fontSize: "0.68rem" }}>
                     {analytics.winningTrades}W / {analytics.losingTrades}L ({analytics.breakEvenTrades} BE)
                   </Typography>
                 </Card>
@@ -691,14 +696,14 @@ export default function TradingJournalView({
 
               {/* Card 3: Profit Factor */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                <Card sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+                <Card sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
                     Profit Factor
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: "#3B82F6" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.3, fontSize: "1.1rem", color: "#3B82F6" }}>
                     {analytics.profitFactor !== null ? analytics.profitFactor : (analytics.grossProfit > 0 ? "∞" : "N/A")}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.2, fontSize: "0.68rem" }}>
                     ${analytics.grossProfit} / ${analytics.grossLoss}
                   </Typography>
                 </Card>
@@ -706,14 +711,14 @@ export default function TradingJournalView({
 
               {/* Card 4: Total Closed Trades */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                <Card sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+                <Card sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
                     Closed Trades
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: isDark ? "#F8FAFC" : "#0F172A" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.3, fontSize: "1.1rem", color: isDark ? "#F8FAFC" : "#0F172A" }}>
                     {analytics.totalClosedTrades}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "#F59E0B", display: "block", mt: 0.5, fontWeight: 600 }}>
+                  <Typography variant="caption" sx={{ color: "#F59E0B", display: "block", mt: 0.2, fontWeight: 600, fontSize: "0.68rem" }}>
                     {analytics.openTradesCount} Active Open
                   </Typography>
                 </Card>
@@ -721,14 +726,14 @@ export default function TradingJournalView({
 
               {/* Card 5: Average Actual R */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                <Card sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+                <Card sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
                     Average R
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: "#8B5CF6" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.3, fontSize: "1.1rem", color: "#8B5CF6" }}>
                     {analytics.avgActualR !== null ? `${analytics.avgActualR}R` : "N/A"}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.2, fontSize: "0.68rem" }}>
                     Risk-Adjusted Return
                   </Typography>
                 </Card>
@@ -736,14 +741,14 @@ export default function TradingJournalView({
 
               {/* Card 6: Maximum Drawdown */}
               <Grid size={{ xs: 12, sm: 6, md: 2 }}>
-                <Card sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase" }}>
+                <Card sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 700, textTransform: "uppercase", fontSize: "0.68rem" }}>
                     Max Drawdown
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: analytics.maxDrawdown > 0 ? "#EF4444" : "#10B981" }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.3, fontSize: "1.1rem", color: analytics.maxDrawdown > 0 ? "#EF4444" : "#10B981" }}>
                     {analytics.maxDrawdownPercent}%
                   </Typography>
-                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", mt: 0.2, fontSize: "0.68rem" }}>
                     -${analytics.maxDrawdown} from Peak
                   </Typography>
                 </Card>
@@ -751,59 +756,60 @@ export default function TradingJournalView({
             </Grid>
 
             {/* Closed-Trade Equity Curve & Breakdown */}
-            <Grid container spacing={2.5}>
+            <Grid container spacing={1.2}>
               {/* Equity Growth Progress */}
               <Grid size={{ xs: 12, md: 8 }}>
-                <Card sx={{ p: 2.5, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Card sx={{ p: 1.5, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0" }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                     <Box>
-                      <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.88rem" }}>
                         Closed-Trade Equity Curve
                       </Typography>
-                      <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B" }}>
-                        Chronological progression: Initial Capital (${analytics.startingBalance}) + Cumulative Realized P&L
+                      <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: "0.7rem" }}>
+                        Initial Capital (${analytics.startingBalance}) + Cumulative Realized P&L
                       </Typography>
                     </Box>
                     <Chip
-                      icon={<TimelineIcon sx={{ fontSize: 16 }} />}
+                      icon={<TimelineIcon sx={{ fontSize: 14 }} />}
                       label={`Ending Balance: $${analytics.endingBalance.toLocaleString()}`}
                       size="small"
-                      sx={{ fontWeight: 700, bgcolor: "rgba(37, 99, 235, 0.15)", color: "#3B82F6" }}
+                      sx={{ fontWeight: 700, bgcolor: "rgba(37, 99, 235, 0.15)", color: "#3B82F6", height: 22, fontSize: "0.72rem" }}
                     />
                   </Box>
 
                   {/* Equity Curve Visual Table / Stepper */}
                   <Box sx={{ overflowX: "auto" }}>
-                    <Box sx={{ display: "flex", gap: 1.5, py: 1 }}>
+                    <Box sx={{ display: "flex", gap: 1, py: 0.5 }}>
                       {analytics.equityCurve.map((pt) => (
                         <Box
                           key={pt.index}
                           sx={{
-                            minWidth: 120,
-                            p: 1.5,
-                            borderRadius: "6px",
+                            minWidth: 105,
+                            p: 1,
+                            borderRadius: "5px",
                             bgcolor: isDark ? "#070B16" : "#F8FAFC",
                             border: isDark ? "1px solid rgba(59, 130, 246, 0.12)" : "1px solid #E2E8F0",
                             textAlign: "center",
                           }}
                         >
-                          <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block" }}>
+                          <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8", display: "block", fontSize: "0.68rem" }}>
                             {pt.date}
                           </Typography>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700, my: 0.3 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, my: 0.2, fontSize: "0.75rem" }}>
                             {pt.symbol}
                           </Typography>
                           <Typography
                             variant="caption"
                             sx={{
                               fontWeight: 700,
+                              fontSize: "0.7rem",
                               color: pt.pnl > 0 ? "#10B981" : pt.pnl < 0 ? "#EF4444" : "#94A3B8",
                               display: "block",
                             }}
                           >
                             {pt.pnl > 0 ? `+$${pt.pnl}` : pt.pnl < 0 ? `-$${Math.abs(pt.pnl)}` : "$0.00"}
                           </Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: "#3B82F6", display: "block", mt: 0.5 }}>
+                          <Typography variant="caption" sx={{ fontWeight: 800, color: "#3B82F6", display: "block", mt: 0.3, fontSize: "0.7rem" }}>
                             ${pt.equity.toLocaleString()}
                           </Typography>
                         </Box>
@@ -815,26 +821,26 @@ export default function TradingJournalView({
 
               {/* Strategy & Symbol Breakdown */}
               <Grid size={{ xs: 12, md: 4 }}>
-                <Card sx={{ p: 2.5, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0", height: "100%" }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5 }}>
+                <Card sx={{ p: 1.5, borderRadius: "6px", bgcolor: isDark ? "#0E162B" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0", height: "100%" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, fontSize: "0.88rem" }}>
                     Performance by Strategy
                   </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                     {analytics.byStrategy.map((s, idx) => (
-                      <Box key={idx} sx={{ p: 1.2, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.1)" : "1px solid #E2E8F0" }}>
+                      <Box key={idx} sx={{ p: 0.8, borderRadius: "5px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.1)" : "1px solid #E2E8F0" }}>
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.82rem" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.78rem" }}>
                             {s.strategyName}
                           </Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: s.netPnl >= 0 ? "#10B981" : "#EF4444" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.78rem", color: s.netPnl >= 0 ? "#10B981" : "#EF4444" }}>
                             {s.netPnl >= 0 ? `+$${s.netPnl}` : `-$${Math.abs(s.netPnl)}`}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.5 }}>
-                          <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B" }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.3 }}>
+                          <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: "0.68rem" }}>
                             {s.count} trades (Win Rate: {s.winRate !== null ? `${s.winRate}%` : "N/A"})
                           </Typography>
-                          <Typography variant="caption" sx={{ color: "#3B82F6", fontWeight: 600 }}>
+                          <Typography variant="caption" sx={{ color: "#3B82F6", fontWeight: 600, fontSize: "0.68rem" }}>
                             PF: {s.profitFactor ?? "N/A"}
                           </Typography>
                         </Box>
@@ -853,25 +859,24 @@ export default function TradingJournalView({
         {activeTab === 1 && (
           <Card
             sx={{
-              maxWidth: 1100,
-              mx: "auto",
+              width: "100%",
               borderRadius: "8px",
               bgcolor: isDark ? "#0B1226" : "#FFFFFF",
               border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
               boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
             }}
           >
-            <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+            <CardContent sx={{ p: { xs: 0.8, sm: 1 }, "&:last-child": { pb: 1 } }}>
               {/* Form Title & Top Banner */}
-              <Box sx={{ mb: 3, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
+              <Box sx={{ mb: 0.8, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 0.8 }}>
                 <Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: "-0.01em" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, fontSize: "0.98rem", letterSpacing: "-0.01em" }}>
                       Trade Entry Form
                     </Typography>
                     <Chip
                       label={`Trade #${tradeForm.tradeNum || "1"}`}
-                      sx={{ bgcolor: "#2563EB", color: "#FFF", fontWeight: 800, fontSize: "0.78rem" }}
+                      sx={{ bgcolor: "#2563EB", color: "#FFF", fontWeight: 800, fontSize: "0.68rem", height: 20 }}
                       size="small"
                     />
                     <Chip
@@ -879,7 +884,8 @@ export default function TradingJournalView({
                       size="small"
                       sx={{
                         fontWeight: 800,
-                        fontSize: "0.75rem",
+                        fontSize: "0.68rem",
+                        height: 20,
                         bgcolor:
                           tradeForm.result === "WIN"
                             ? "rgba(16, 185, 129, 0.2)"
@@ -895,21 +901,22 @@ export default function TradingJournalView({
                       }}
                     />
                   </Box>
-                  <Typography variant="body2" sx={{ color: isDark ? "#94A3B8" : "#64748B", mt: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", display: "block", fontSize: "0.7rem", lineHeight: 1.1 }}>
                     Complete 31-field trading journal entry with Indian Rupee (₹) & point auto-calculations.
                   </Typography>
                 </Box>
 
                 {/* Account Selection */}
-                <FormControl size="small" sx={{ minWidth: 240 }} required>
-                  <InputLabel>Trading Account</InputLabel>
+                <FormControl size="small" sx={{ minWidth: 200 }} required>
+                  <InputLabel sx={{ fontSize: "0.76rem" }}>Trading Account</InputLabel>
                   <Select
                     value={tradeForm.accountId}
                     label="Trading Account"
                     onChange={(e) => updateTradeField("accountId", e.target.value)}
+                    sx={{ fontSize: "0.78rem", height: 30 }}
                   >
                     {accounts.map((a) => (
-                      <MenuItem key={a.id} value={a.id}>
+                      <MenuItem key={a.id} value={a.id} sx={{ fontSize: "0.78rem" }}>
                         {a.name} ({a.account_type.toUpperCase()} - {a.currency})
                       </MenuItem>
                     ))}
@@ -918,8 +925,8 @@ export default function TradingJournalView({
               </Box>
 
               {/* Quick Symbol Chips */}
-              <Box sx={{ mb: 3, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? "#94A3B8" : "#64748B", mr: 1 }}>
+              <Box sx={{ mb: 0.8, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? "#94A3B8" : "#64748B", mr: 0.3, fontSize: "0.65rem" }}>
                   QUICK SYMBOLS:
                 </Typography>
                 {["NIFTY", "BANKNIFTY", "FINNIFTY", "CRUDEOIL", "RELIANCE", "TCS", "EURUSD", "BTCUSDT"].map((sym) => (
@@ -930,7 +937,8 @@ export default function TradingJournalView({
                     onClick={() => updateTradeField("symbol", sym)}
                     sx={{
                       cursor: "pointer",
-                      fontSize: "0.72rem",
+                      fontSize: "0.65rem",
+                      height: 20,
                       fontWeight: tradeForm.symbol === sym ? 800 : 500,
                       bgcolor:
                         tradeForm.symbol === sym
@@ -945,661 +953,674 @@ export default function TradingJournalView({
               </Box>
 
               <form onSubmit={handleCreateTrade}>
-                {/* ======================================================== */}
-                {/* SECTION 1: TRADE SETUP & EXECUTION (Fields 1 - 8)         */}
-                {/* ======================================================== */}
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    mb: 3,
-                    borderRadius: "6px",
-                    bgcolor: isDark ? "#070B16" : "#F8FAFC",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#38BDF8", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box component="span" sx={{ bgcolor: "#0284C7", color: "#FFF", px: 0.8, py: 0.1, borderRadius: "4px", fontSize: "0.7rem" }}>
-                      PART 1
-                    </Box>
-                    Trade Setup & Execution (Fields 1 – 8)
-                  </Typography>
-
-                  <Grid container spacing={2}>
-                    {/* 1. Trade # */}
-                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="1. Trade #"
-                        type="number"
-                        value={tradeForm.tradeNum}
-                        onChange={(e) => updateTradeField("tradeNum", e.target.value)}
-                      />
-                    </Grid>
-
-                    {/* 2. Date */}
-                    <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="2. Date"
-                        type="date"
-                        value={tradeForm.tradeDate}
-                        onChange={(e) => updateTradeField("tradeDate", e.target.value)}
-                        slotProps={{ inputLabel: { shrink: true } }}
-                      />
-                    </Grid>
-
-                    {/* 3. Time */}
-                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="3. Time"
-                        type="time"
-                        value={tradeForm.tradeTime}
-                        onChange={(e) => updateTradeField("tradeTime", e.target.value)}
-                        slotProps={{ inputLabel: { shrink: true } }}
-                      />
-                    </Grid>
-
-                    {/* 4. Symbol */}
-                    <Grid size={{ xs: 6, sm: 4, md: 3 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="4. Symbol"
-                        required
-                        value={tradeForm.symbol}
-                        onChange={(e) => updateTradeField("symbol", e.target.value)}
-                      />
-                    </Grid>
-
-                    {/* 5. Market */}
-                    <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>5. Market</InputLabel>
-                        <Select
-                          value={tradeForm.market}
-                          label="5. Market"
-                          onChange={(e) => updateTradeField("market", e.target.value)}
-                        >
-                          <MenuItem value="Indian Indices (NSE)">Indian Indices (NSE)</MenuItem>
-                          <MenuItem value="Indian Equity / F&O">Indian Equity / F&O</MenuItem>
-                          <MenuItem value="Commodities (MCX)">Commodities (MCX)</MenuItem>
-                          <MenuItem value="Forex">Forex</MenuItem>
-                          <MenuItem value="Crypto">Crypto</MenuItem>
-                          <MenuItem value="US Equities">US Equities</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 6. Direction */}
-                    <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>6. Direction</InputLabel>
-                        <Select
-                          value={tradeForm.direction}
-                          label="6. Direction"
-                          onChange={(e) => updateTradeField("direction", e.target.value)}
-                        >
-                          <MenuItem value="BUY" sx={{ color: "#10B981", fontWeight: 700 }}>BUY / LONG (↗)</MenuItem>
-                          <MenuItem value="SELL" sx={{ color: "#EF4444", fontWeight: 700 }}>SELL / SHORT (↘)</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 7. Strategy / Setup */}
-                    <Grid size={{ xs: 12, sm: 4, md: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>7. Strategy / Setup</InputLabel>
-                        <Select
-                          value={tradeForm.strategyId}
-                          label="7. Strategy / Setup"
-                          onChange={(e) => updateTradeField("strategyId", e.target.value)}
-                        >
-                          <MenuItem value="">SMC Order Block / FVG</MenuItem>
-                          <MenuItem value="break-retest">Break & Retest</MenuItem>
-                          <MenuItem value="orb-15m">ORB 15m Breakout</MenuItem>
-                          <MenuItem value="vwap-rejection">VWAP Bounce / Rejection</MenuItem>
-                          <MenuItem value="pullback-ema">Pullback to 20 EMA</MenuItem>
-                          <MenuItem value="liquidity-sweep">Liquidity Sweep & Reversal</MenuItem>
-                          {strategies.map((s) => (
-                            <MenuItem key={s.id} value={s.id}>
-                              {s.name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 8. Session */}
-                    <Grid size={{ xs: 12, sm: 4, md: 5 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>8. Session</InputLabel>
-                        <Select
-                          value={tradeForm.session}
-                          label="8. Session"
-                          onChange={(e) => updateTradeField("session", e.target.value)}
-                        >
-                          <MenuItem value="Morning Opening (9:15-11:00)">Morning Opening (9:15 - 11:00)</MenuItem>
-                          <MenuItem value="Mid-Day Consolidation (11:00-13:30)">Mid-Day Consolidation (11:00 - 13:30)</MenuItem>
-                          <MenuItem value="Afternoon Closing (13:30-15:30)">Afternoon Closing (13:30 - 15:30)</MenuItem>
-                          <MenuItem value="London Open">London Open</MenuItem>
-                          <MenuItem value="New York Open">New York Open</MenuItem>
-                          <MenuItem value="Asian Session">Asian Session</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Paper>
-
-                {/* ======================================================== */}
-                {/* SECTION 2: PRICE LEVELS & SIZING (Fields 9 - 13)          */}
-                {/* ======================================================== */}
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    mb: 3,
-                    borderRadius: "6px",
-                    bgcolor: isDark ? "#070B16" : "#F8FAFC",
-                    border: isDark ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box component="span" sx={{ bgcolor: "#059669", color: "#FFF", px: 0.8, py: 0.1, borderRadius: "4px", fontSize: "0.7rem" }}>
-                      PART 2
-                    </Box>
-                    Price Levels & Position Sizing (Fields 9 – 13)
-                  </Typography>
-
-                  <Grid container spacing={2}>
-                    {/* 9. Entry */}
-                    <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="9. Entry Price"
-                        type="number"
-                        required
-                        value={tradeForm.entryPrice}
-                        onChange={(e) => updateTradeField("entryPrice", e.target.value)}
-                        placeholder="25150"
-                      />
-                    </Grid>
-
-                    {/* 10. SL */}
-                    <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="10. Stop Loss (SL)"
-                        type="number"
-                        value={tradeForm.stopLoss}
-                        onChange={(e) => updateTradeField("stopLoss", e.target.value)}
-                        placeholder="25100"
-                      />
-                    </Grid>
-
-                    {/* 11. TP */}
-                    <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="11. Take Profit (TP)"
-                        type="number"
-                        value={tradeForm.takeProfit}
-                        onChange={(e) => updateTradeField("takeProfit", e.target.value)}
-                        placeholder="25300"
-                      />
-                    </Grid>
-
-                    {/* 12. Exit */}
-                    <Grid size={{ xs: 6, sm: 4, md: 2.4 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="12. Exit Price"
-                        type="number"
-                        value={tradeForm.exitPrice}
-                        onChange={(e) => updateTradeField("exitPrice", e.target.value)}
-                        placeholder="Leave blank if OPEN"
-                        helperText={tradeForm.exitPrice ? "Trade Marked as CLOSED" : "Leave blank if trade is still OPEN"}
-                      />
-                    </Grid>
-
-                    {/* 13. Lots / Quantity */}
-                    <Grid size={{ xs: 12, sm: 4, md: 2.4 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="13. Lots / Quantity"
-                        type="number"
-                        value={tradeForm.volume}
-                        onChange={(e) => updateTradeField("volume", e.target.value)}
-                        placeholder="e.g. 50 (Nifty 1 lot)"
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-
-                {/* ======================================================== */}
-                {/* SECTION 3: RISK & FINANCIAL ENGINE (Fields 14 - 20)      */}
-                {/* ======================================================== */}
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    mb: 3,
-                    borderRadius: "6px",
-                    bgcolor: isDark ? "rgba(245, 158, 11, 0.04)" : "#FFFBEB",
-                    border: isDark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #FDE68A",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#D97706", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box component="span" sx={{ bgcolor: "#D97706", color: "#FFF", px: 0.8, py: 0.1, borderRadius: "4px", fontSize: "0.7rem" }}>
-                      PART 3
-                    </Box>
-                    Risk, Reward & Auto-Calculated Financials (Fields 14 – 20)
-                  </Typography>
-
-                  <Grid container spacing={2}>
-                    {/* 14. Risk ₹ */}
-                    <Grid size={{ xs: 6, sm: 3, md: 2 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="14. Risk ₹"
-                        type="number"
-                        value={tradeForm.plannedRiskAmount}
-                        onChange={(e) => updateTradeField("plannedRiskAmount", e.target.value)}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } }}
-                      />
-                    </Grid>
-
-                    {/* 15. SL Points */}
-                    <Grid size={{ xs: 6, sm: 3, md: 1.6 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="15. SL Points"
-                        value={tradeForm.slPoints}
-                        onChange={(e) => updateTradeField("slPoints", e.target.value)}
-                        helperText="Auto |Entry - SL|"
-                      />
-                    </Grid>
-
-                    {/* 16. TP Points */}
-                    <Grid size={{ xs: 6, sm: 3, md: 1.6 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="16. TP Points"
-                        value={tradeForm.tpPoints}
-                        onChange={(e) => updateTradeField("tpPoints", e.target.value)}
-                        helperText="Auto |TP - Entry|"
-                      />
-                    </Grid>
-
-                    {/* 17. Planned R:R */}
-                    <Grid size={{ xs: 6, sm: 3, md: 1.8 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="17. Planned R:R"
-                        value={tradeForm.plannedRR}
-                        onChange={(e) => updateTradeField("plannedRR", e.target.value)}
-                        helperText="Auto TP / SL"
-                      />
-                    </Grid>
-
-                    {/* 18. P&L ₹ */}
-                    <Grid size={{ xs: 12, sm: 4, md: 2 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="18. P&L ₹"
-                        type="number"
-                        value={tradeForm.netPnl}
-                        onChange={(e) => updateTradeField("netPnl", e.target.value)}
-                        slotProps={{ input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } }}
-                        helperText="Positive win, negative loss"
-                      />
-                    </Grid>
-
-                    {/* 19. Actual R:R */}
-                    <Grid size={{ xs: 6, sm: 4, md: 1.5 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="19. Actual R:R"
-                        value={tradeForm.actualRR}
-                        onChange={(e) => updateTradeField("actualRR", e.target.value)}
-                        helperText="P&L / Risk"
-                      />
-                    </Grid>
-
-                    {/* 20. Result */}
-                    <Grid size={{ xs: 6, sm: 4, md: 1.5 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>20. Result</InputLabel>
-                        <Select
-                          value={tradeForm.result}
-                          label="20. Result"
-                          onChange={(e) => updateTradeField("result", e.target.value)}
-                        >
-                          <MenuItem value="WIN" sx={{ color: "#10B981", fontWeight: 700 }}>WIN</MenuItem>
-                          <MenuItem value="LOSS" sx={{ color: "#EF4444", fontWeight: 700 }}>LOSS</MenuItem>
-                          <MenuItem value="BREAK_EVEN" sx={{ color: "#64748B", fontWeight: 700 }}>BREAK_EVEN</MenuItem>
-                          <MenuItem value="OPEN" sx={{ color: "#F59E0B", fontWeight: 700 }}>OPEN</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Paper>
-
-                {/* ======================================================== */}
-                {/* SECTION 4: PSYCHOLOGY & DISCIPLINE (Fields 21 - 27)      */}
-                {/* ======================================================== */}
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    mb: 3,
-                    borderRadius: "6px",
-                    bgcolor: isDark ? "#070B16" : "#F8FAFC",
-                    border: isDark ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#8B5CF6", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box component="span" sx={{ bgcolor: "#7C3AED", color: "#FFF", px: 0.8, py: 0.1, borderRadius: "4px", fontSize: "0.7rem" }}>
-                      PART 4
-                    </Box>
-                    Trading Psychology & Mindset (Fields 21 – 27)
-                  </Typography>
-
-                  <Grid container spacing={2}>
-                    {/* 21. Emotion Before */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>21. Emotion Before</InputLabel>
-                        <Select
-                          value={tradeForm.emotionBefore}
-                          label="21. Emotion Before"
-                          onChange={(e) => updateTradeField("emotionBefore", e.target.value)}
-                        >
-                          <MenuItem value="Calm & Focused">Calm & Focused</MenuItem>
-                          <MenuItem value="Confident">Confident</MenuItem>
-                          <MenuItem value="Anxious">Anxious</MenuItem>
-                          <MenuItem value="FOMO / Chasing">FOMO / Chasing</MenuItem>
-                          <MenuItem value="Rushed / Impatient">Rushed / Impatient</MenuItem>
-                          <MenuItem value="Hesitant">Hesitant</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 22. Emotion During */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>22. Emotion During</InputLabel>
-                        <Select
-                          value={tradeForm.emotionDuring}
-                          label="22. Emotion During"
-                          onChange={(e) => updateTradeField("emotionDuring", e.target.value)}
-                        >
-                          <MenuItem value="Focused">Focused & In Flow</MenuItem>
-                          <MenuItem value="Relaxed">Relaxed</MenuItem>
-                          <MenuItem value="Impatient">Impatient</MenuItem>
-                          <MenuItem value="Fearful / Nervous">Fearful / Nervous</MenuItem>
-                          <MenuItem value="Greedy">Greedy</MenuItem>
-                          <MenuItem value="Stressed">Stressed</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 23. Emotion After */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>23. Emotion After</InputLabel>
-                        <Select
-                          value={tradeForm.emotionAfter}
-                          label="23. Emotion After"
-                          onChange={(e) => updateTradeField("emotionAfter", e.target.value)}
-                        >
-                          <MenuItem value="Satisfied">Satisfied & Content</MenuItem>
-                          <MenuItem value="Disciplined">Disciplined</MenuItem>
-                          <MenuItem value="Regretful">Regretful</MenuItem>
-                          <MenuItem value="Frustrated">Frustrated</MenuItem>
-                          <MenuItem value="Relieved">Relieved</MenuItem>
-                          <MenuItem value="Euphoric">Euphoric</MenuItem>
-                          <MenuItem value="Revenge-Minded">Revenge-Minded</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 24. Confidence 1-10 */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <Box sx={{ p: 1.5, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            24. Confidence (1–10):
-                          </Typography>
-                          <Chip label={`${tradeForm.confidenceRating}/10`} size="small" sx={{ fontWeight: 800, bgcolor: "#38BDF8", color: "#000", height: 20 }} />
-                        </Box>
-                        <Slider
-                          value={tradeForm.confidenceRating}
-                          min={1}
-                          max={10}
-                          step={1}
-                          marks
-                          valueLabelDisplay="auto"
-                          onChange={(_, val) => updateTradeField("confidenceRating", val as number)}
-                        />
-                      </Box>
-                    </Grid>
-
-                    {/* 25. Discipline 1-10 */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <Box sx={{ p: 1.5, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            25. Discipline (1–10):
-                          </Typography>
-                          <Chip label={`${tradeForm.disciplineRating}/10`} size="small" sx={{ fontWeight: 800, bgcolor: "#10B981", color: "#FFF", height: 20 }} />
-                        </Box>
-                        <Slider
-                          value={tradeForm.disciplineRating}
-                          min={1}
-                          max={10}
-                          step={1}
-                          marks
-                          valueLabelDisplay="auto"
-                          onChange={(_, val) => updateTradeField("disciplineRating", val as number)}
-                        />
-                      </Box>
-                    </Grid>
-
-                    {/* 26. Mistake? */}
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", p: 1.5, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          26. Mistake?
-                        </Typography>
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={tradeForm.mistakeFlag}
-                              onChange={(e) => updateTradeField("mistakeFlag", e.target.checked)}
-                              color="error"
-                            />
-                          }
-                          label={tradeForm.mistakeFlag ? "YES" : "NO"}
-                        />
-                      </Box>
-                    </Grid>
-
-                    {/* 27. Mistake Type */}
-                    <Grid size={{ xs: 12, sm: 8 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>27. Mistake Type</InputLabel>
-                        <Select
-                          value={tradeForm.mistakeType}
-                          label="27. Mistake Type"
-                          disabled={!tradeForm.mistakeFlag}
-                          onChange={(e) => updateTradeField("mistakeType", e.target.value)}
-                        >
-                          <MenuItem value="None / Followed Plan">None / Followed Plan</MenuItem>
-                          <MenuItem value="Early Entry before Trigger">Early Entry before Trigger</MenuItem>
-                          <MenuItem value="Chased Trade / FOMO">Chased Trade / FOMO</MenuItem>
-                          <MenuItem value="Moved / Widened SL">Moved / Widened SL</MenuItem>
-                          <MenuItem value="Overleveraged / Heavy Size">Overleveraged / Heavy Size</MenuItem>
-                          <MenuItem value="Exited Early out of Fear">Exited Early out of Fear</MenuItem>
-                          <MenuItem value="Revenge Trade">Revenge Trade</MenuItem>
-                          <MenuItem value="Traded Outside Rules">Traded Outside Rules</MenuItem>
-                          <MenuItem value="Ignored Market Trend">Ignored Market Trend</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-                  </Grid>
-                </Paper>
-
-                {/* ======================================================== */}
-                {/* SECTION 5: MARKET CONTEXT & NOTES (Fields 28 - 31)       */}
-                {/* ======================================================== */}
-                <Paper
-                  sx={{
-                    p: 2.5,
-                    mb: 3,
-                    borderRadius: "6px",
-                    bgcolor: isDark ? "#070B16" : "#F8FAFC",
-                    border: isDark ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#06B6D4", mb: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                    <Box component="span" sx={{ bgcolor: "#0891B2", color: "#FFF", px: 0.8, py: 0.1, borderRadius: "4px", fontSize: "0.7rem" }}>
-                      PART 5
-                    </Box>
-                    Market Context & Retrospective Journal (Fields 28 – 31)
-                  </Typography>
-
-                  <Grid container spacing={2}>
-                    {/* 28. Market Condition */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>28. Market Condition</InputLabel>
-                        <Select
-                          value={tradeForm.marketCondition}
-                          label="28. Market Condition"
-                          onChange={(e) => updateTradeField("marketCondition", e.target.value)}
-                        >
-                          <MenuItem value="Strong Trending Up ↗">Strong Trending Up ↗</MenuItem>
-                          <MenuItem value="Strong Trending Down ↘">Strong Trending Down ↘</MenuItem>
-                          <MenuItem value="Range-Bound / Choppy ↔">Range-Bound / Choppy ↔</MenuItem>
-                          <MenuItem value="High Volatility / News Event ⚡">High Volatility / News Event ⚡</MenuItem>
-                          <MenuItem value="Low Volume Consolidation 💤">Low Volume Consolidation 💤</MenuItem>
-                        </Select>
-                      </FormControl>
-                    </Grid>
-
-                    {/* 30. Exit Reason */}
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="30. Exit Reason"
-                        value={tradeForm.exitReason}
-                        onChange={(e) => updateTradeField("exitReason", e.target.value)}
-                        placeholder="e.g. Hit Take Profit, Trailing SL, Manual Early Exit"
-                      />
-                    </Grid>
-
-                    {/* 29. Entry Reason */}
-                    <Grid size={{ xs: 12 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        multiline
-                        rows={2}
-                        label="29. Entry Reason"
-                        value={tradeForm.entryReason}
-                        onChange={(e) => updateTradeField("entryReason", e.target.value)}
-                        placeholder="Exact technical rationale: what market structure, candle pattern, or liquidity sweep triggered this trade?"
-                      />
-                    </Grid>
-
-                    {/* 31. Notes */}
-                    <Grid size={{ xs: 12 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        multiline
-                        rows={2}
-                        label="31. Notes / Lessons Learned"
-                        value={tradeForm.notes}
-                        onChange={(e) => updateTradeField("notes", e.target.value)}
-                        placeholder="Key reflections, psychological lessons, and what you would do differently next time..."
-                      />
-                    </Grid>
-                  </Grid>
-                </Paper>
-
-                {/* Form Action Summary & Submit */}
-                <Box
-                  sx={{
-                    p: 2,
-                    borderRadius: "6px",
-                    bgcolor: isDark ? "#0E162B" : "#EFF6FF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #BFDBFE",
-                    display: "flex",
-                    flexDirection: { xs: "column", sm: "row" },
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", sm: "center" },
-                    gap: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                    <Typography variant="body2" sx={{ fontWeight: 800 }}>
-                      Live Preview:
-                    </Typography>
-                    <Chip label={`${tradeForm.symbol} • ${tradeForm.direction}`} size="small" sx={{ fontWeight: 700 }} />
-                    <Chip label={`Risk: ₹${tradeForm.plannedRiskAmount || "0"}`} size="small" sx={{ fontWeight: 700, bgcolor: "rgba(239,68,68,0.15)", color: "#EF4444" }} />
-                    {tradeForm.netPnl !== "" && (
-                      <Chip
-                        label={`P&L: ${Number(tradeForm.netPnl) >= 0 ? "+" : ""}₹${tradeForm.netPnl} (${tradeForm.actualRR})`}
-                        size="small"
-                        sx={{
-                          fontWeight: 800,
-                          bgcolor: Number(tradeForm.netPnl) >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-                          color: Number(tradeForm.netPnl) >= 0 ? "#10B981" : "#EF4444",
-                        }}
-                      />
-                    )}
-                    <Chip label={`Result: ${tradeForm.result}`} size="small" sx={{ fontWeight: 700 }} />
-                  </Box>
-
-                  <Box sx={{ display: "flex", gap: 1.5 }}>
-                    <Button
-                      variant="outlined"
-                      onClick={() => setActiveTab(0)}
-                      sx={{ borderRadius: "6px" }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      variant="contained"
-                      disabled={submittingTrade}
+                <Grid container spacing={0.8}>
+                  {/* ============================================================ */}
+                  {/* LEFT COLUMN: SETUP, PRICING & FINANCIAL ENGINE (PARTS 1, 2, 3) */}
+                  {/* ============================================================ */}
+                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+                    {/* SECTION 1: TRADE SETUP & EXECUTION (Fields 1 - 8) */}
+                    <Paper
                       sx={{
-                        bgcolor: "#10B981",
-                        color: "#FFFFFF",
-                        borderRadius: "6px",
-                        px: 3,
-                        fontWeight: 800,
-                        "&:hover": { bgcolor: "#059669" },
+                        p: 0.8,
+                        borderRadius: "5px",
+                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
                       }}
                     >
-                      {submittingTrade ? "Saving 31 Fields..." : "Submit Trade (31 Fields)"}
-                    </Button>
-                  </Box>
-                </Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#38BDF8", mb: 0.6, display: "flex", alignItems: "center", gap: 0.6, fontSize: "0.75rem" }}>
+                        <Box component="span" sx={{ bgcolor: "#0284C7", color: "#FFF", px: 0.5, py: 0.05, borderRadius: "3px", fontSize: "0.62rem" }}>
+                          PART 1
+                        </Box>
+                        Trade Setup & Execution (Fields 1 – 8)
+                      </Typography>
+
+                      <Grid container spacing={0.8}>
+                        {/* 1. Trade # */}
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="1. Trade #"
+                            type="number"
+                            value={tradeForm.tradeNum}
+                            onChange={(e) => updateTradeField("tradeNum", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* 2. Date */}
+                        <Grid size={{ xs: 6, sm: 5 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="2. Date"
+                            type="date"
+                            value={tradeForm.tradeDate}
+                            onChange={(e) => updateTradeField("tradeDate", e.target.value)}
+                            slotProps={{ inputLabel: { shrink: true } }}
+                          />
+                        </Grid>
+
+                        {/* 3. Time */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="3. Time"
+                            type="time"
+                            value={tradeForm.tradeTime}
+                            onChange={(e) => updateTradeField("tradeTime", e.target.value)}
+                            slotProps={{ inputLabel: { shrink: true } }}
+                          />
+                        </Grid>
+
+                        {/* 4. Symbol */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="4. Symbol"
+                            required
+                            value={tradeForm.symbol}
+                            onChange={(e) => updateTradeField("symbol", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* 5. Market */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>5. Market</InputLabel>
+                            <Select
+                              value={tradeForm.market}
+                              label="5. Market"
+                              onChange={(e) => updateTradeField("market", e.target.value)}
+                            >
+                              <MenuItem value="Indian Indices (NSE)">Indian Indices (NSE)</MenuItem>
+                              <MenuItem value="Indian Equity / F&O">Indian Equity / F&O</MenuItem>
+                              <MenuItem value="Commodities (MCX)">Commodities (MCX)</MenuItem>
+                              <MenuItem value="Forex">Forex</MenuItem>
+                              <MenuItem value="Crypto">Crypto</MenuItem>
+                              <MenuItem value="US Equities">US Equities</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 6. Direction */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>6. Direction</InputLabel>
+                            <Select
+                              value={tradeForm.direction}
+                              label="6. Direction"
+                              onChange={(e) => updateTradeField("direction", e.target.value)}
+                            >
+                              <MenuItem value="BUY" sx={{ color: "#10B981", fontWeight: 700 }}>BUY / LONG (↗)</MenuItem>
+                              <MenuItem value="SELL" sx={{ color: "#EF4444", fontWeight: 700 }}>SELL / SHORT (↘)</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 7. Strategy / Setup */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>7. Strategy / Setup</InputLabel>
+                            <Select
+                              value={tradeForm.strategyId}
+                              label="7. Strategy / Setup"
+                              onChange={(e) => updateTradeField("strategyId", e.target.value)}
+                            >
+                              <MenuItem value="">SMC Order Block / FVG</MenuItem>
+                              <MenuItem value="break-retest">Break & Retest</MenuItem>
+                              <MenuItem value="orb-15m">ORB 15m Breakout</MenuItem>
+                              <MenuItem value="vwap-rejection">VWAP Bounce / Rejection</MenuItem>
+                              <MenuItem value="pullback-ema">Pullback to 20 EMA</MenuItem>
+                              <MenuItem value="liquidity-sweep">Liquidity Sweep & Reversal</MenuItem>
+                              {strategies.map((s) => (
+                                <MenuItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 8. Session */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>8. Session</InputLabel>
+                            <Select
+                              value={tradeForm.session}
+                              label="8. Session"
+                              onChange={(e) => updateTradeField("session", e.target.value)}
+                            >
+                              <MenuItem value="Morning Opening (9:15-11:00)">Morning Opening (9:15 - 11:00)</MenuItem>
+                              <MenuItem value="Mid-Day Consolidation (11:00-13:30)">Mid-Day Consolidation (11:00 - 13:30)</MenuItem>
+                              <MenuItem value="Afternoon Closing (13:30-15:30)">Afternoon Closing (13:30 - 15:30)</MenuItem>
+                              <MenuItem value="London Open">London Open</MenuItem>
+                              <MenuItem value="New York Open">New York Open</MenuItem>
+                              <MenuItem value="Asian Session">Asian Session</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+
+                    {/* ======================================================== */}
+                    {/* SECTION 2: PRICE LEVELS & SIZING (Fields 9 - 13)          */}
+                    {/* ======================================================== */}
+                    <Paper
+                      sx={{
+                        p: 0.8,
+                        borderRadius: "5px",
+                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        border: isDark ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid #E2E8F0",
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981", mb: 0.6, display: "flex", alignItems: "center", gap: 0.6, fontSize: "0.75rem" }}>
+                        <Box component="span" sx={{ bgcolor: "#059669", color: "#FFF", px: 0.5, py: 0.05, borderRadius: "3px", fontSize: "0.62rem" }}>
+                          PART 2
+                        </Box>
+                        Price Levels & Position Sizing (Fields 9 – 13)
+                      </Typography>
+
+                      <Grid container spacing={0.8}>
+                        {/* 9. Entry */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="9. Entry Price"
+                            type="number"
+                            required
+                            value={tradeForm.entryPrice}
+                            onChange={(e) => updateTradeField("entryPrice", e.target.value)}
+                            placeholder="25150"
+                          />
+                        </Grid>
+
+                        {/* 10. SL */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="10. Stop Loss (SL)"
+                            type="number"
+                            value={tradeForm.stopLoss}
+                            onChange={(e) => updateTradeField("stopLoss", e.target.value)}
+                            placeholder="25100"
+                          />
+                        </Grid>
+
+                        {/* 11. TP */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="11. Take Profit (TP)"
+                            type="number"
+                            value={tradeForm.takeProfit}
+                            onChange={(e) => updateTradeField("takeProfit", e.target.value)}
+                            placeholder="25300"
+                          />
+                        </Grid>
+
+                        {/* 12. Exit */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="12. Exit Price"
+                            type="number"
+                            value={tradeForm.exitPrice}
+                            onChange={(e) => updateTradeField("exitPrice", e.target.value)}
+                            placeholder="Blank if OPEN"
+                          />
+                        </Grid>
+
+                        {/* 13. Lots / Quantity */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="13. Lots / Quantity"
+                            type="number"
+                            value={tradeForm.volume}
+                            onChange={(e) => updateTradeField("volume", e.target.value)}
+                            placeholder="e.g. 50"
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+
+                    {/* ======================================================== */}
+                    {/* SECTION 3: RISK & FINANCIAL ENGINE (Fields 14 - 20)      */}
+                    {/* ======================================================== */}
+                    <Paper
+                      sx={{
+                        p: 0.8,
+                        borderRadius: "5px",
+                        bgcolor: isDark ? "rgba(245, 158, 11, 0.04)" : "#FFFBEB",
+                        border: isDark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #FDE68A",
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#D97706", mb: 0.6, display: "flex", alignItems: "center", gap: 0.6, fontSize: "0.75rem" }}>
+                        <Box component="span" sx={{ bgcolor: "#D97706", color: "#FFF", px: 0.5, py: 0.05, borderRadius: "3px", fontSize: "0.62rem" }}>
+                          PART 3
+                        </Box>
+                        Risk, Reward & Auto-Calculated Financials (Fields 14 – 20)
+                      </Typography>
+
+                      <Grid container spacing={0.8}>
+                        {/* 14. Risk ₹ */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="14. Risk ₹"
+                            type="number"
+                            value={tradeForm.plannedRiskAmount}
+                            onChange={(e) => updateTradeField("plannedRiskAmount", e.target.value)}
+                            slotProps={{ input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } }}
+                          />
+                        </Grid>
+
+                        {/* 15. SL Points */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="15. SL Points"
+                            value={tradeForm.slPoints}
+                            onChange={(e) => updateTradeField("slPoints", e.target.value)}
+                            placeholder="Auto |Entry - SL|"
+                          />
+                        </Grid>
+
+                        {/* 16. TP Points */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="16. TP Points"
+                            value={tradeForm.tpPoints}
+                            onChange={(e) => updateTradeField("tpPoints", e.target.value)}
+                            placeholder="Auto |TP - Entry|"
+                          />
+                        </Grid>
+
+                        {/* 17. Planned R:R */}
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="17. Planned R:R"
+                            value={tradeForm.plannedRR}
+                            onChange={(e) => updateTradeField("plannedRR", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* 18. P&L ₹ */}
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="18. P&L ₹"
+                            type="number"
+                            value={tradeForm.netPnl}
+                            onChange={(e) => updateTradeField("netPnl", e.target.value)}
+                            slotProps={{ input: { startAdornment: <InputAdornment position="start">₹</InputAdornment> } }}
+                          />
+                        </Grid>
+
+                        {/* 19. Actual R:R */}
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="19. Actual R:R"
+                            value={tradeForm.actualRR}
+                            onChange={(e) => updateTradeField("actualRR", e.target.value)}
+                          />
+                        </Grid>
+
+                        {/* 20. Result */}
+                        <Grid size={{ xs: 6, sm: 3 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>20. Result</InputLabel>
+                            <Select
+                              value={tradeForm.result}
+                              label="20. Result"
+                              onChange={(e) => updateTradeField("result", e.target.value)}
+                            >
+                              <MenuItem value="WIN" sx={{ color: "#10B981", fontWeight: 700 }}>WIN</MenuItem>
+                              <MenuItem value="LOSS" sx={{ color: "#EF4444", fontWeight: 700 }}>LOSS</MenuItem>
+                              <MenuItem value="BREAK_EVEN" sx={{ color: "#64748B", fontWeight: 700 }}>BREAK_EVEN</MenuItem>
+                              <MenuItem value="OPEN" sx={{ color: "#F59E0B", fontWeight: 700 }}>OPEN</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* ============================================================ */}
+                  {/* RIGHT COLUMN: PSYCHOLOGY & MARKET CONTEXT (PARTS 4, 5)        */}
+                  {/* ============================================================ */}
+                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 0.8 }}>
+                    {/* SECTION 4: PSYCHOLOGY & DISCIPLINE (Fields 21 - 27) */}
+                    <Paper
+                      sx={{
+                        p: 0.8,
+                        borderRadius: "5px",
+                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        border: isDark ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid #E2E8F0",
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#8B5CF6", mb: 0.6, display: "flex", alignItems: "center", gap: 0.6, fontSize: "0.75rem" }}>
+                        <Box component="span" sx={{ bgcolor: "#7C3AED", color: "#FFF", px: 0.5, py: 0.05, borderRadius: "3px", fontSize: "0.62rem" }}>
+                          PART 4
+                        </Box>
+                        Trading Psychology & Mindset (Fields 21 – 27)
+                      </Typography>
+
+                      <Grid container spacing={0.8}>
+                        {/* 21. Emotion Before */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>21. Emotion Before</InputLabel>
+                            <Select
+                              value={tradeForm.emotionBefore}
+                              label="21. Emotion Before"
+                              onChange={(e) => updateTradeField("emotionBefore", e.target.value)}
+                            >
+                              <MenuItem value="Calm & Focused">Calm & Focused</MenuItem>
+                              <MenuItem value="Confident">Confident</MenuItem>
+                              <MenuItem value="Anxious">Anxious</MenuItem>
+                              <MenuItem value="FOMO / Chasing">FOMO / Chasing</MenuItem>
+                              <MenuItem value="Rushed / Impatient">Rushed / Impatient</MenuItem>
+                              <MenuItem value="Hesitant">Hesitant</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 22. Emotion During */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>22. Emotion During</InputLabel>
+                            <Select
+                              value={tradeForm.emotionDuring}
+                              label="22. Emotion During"
+                              onChange={(e) => updateTradeField("emotionDuring", e.target.value)}
+                            >
+                              <MenuItem value="Focused">Focused & In Flow</MenuItem>
+                              <MenuItem value="Relaxed">Relaxed</MenuItem>
+                              <MenuItem value="Impatient">Impatient</MenuItem>
+                              <MenuItem value="Fearful / Nervous">Fearful / Nervous</MenuItem>
+                              <MenuItem value="Greedy">Greedy</MenuItem>
+                              <MenuItem value="Stressed">Stressed</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 23. Emotion After */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>23. Emotion After</InputLabel>
+                            <Select
+                              value={tradeForm.emotionAfter}
+                              label="23. Emotion After"
+                              onChange={(e) => updateTradeField("emotionAfter", e.target.value)}
+                            >
+                              <MenuItem value="Satisfied">Satisfied & Content</MenuItem>
+                              <MenuItem value="Disciplined">Disciplined</MenuItem>
+                              <MenuItem value="Regretful">Regretful</MenuItem>
+                              <MenuItem value="Frustrated">Frustrated</MenuItem>
+                              <MenuItem value="Relieved">Relieved</MenuItem>
+                              <MenuItem value="Euphoric">Euphoric</MenuItem>
+                              <MenuItem value="Revenge-Minded">Revenge-Minded</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 24. Confidence 1-10 */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Box sx={{ p: 0.6, py: 0.3, borderRadius: "5px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.1 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.72rem" }}>
+                                24. Confidence (1–10):
+                              </Typography>
+                              <Chip label={`${tradeForm.confidenceRating}/10`} size="small" sx={{ fontWeight: 800, bgcolor: "#38BDF8", color: "#000", height: 16, fontSize: "0.62rem" }} />
+                            </Box>
+                            <Slider
+                              size="small"
+                              value={tradeForm.confidenceRating}
+                              min={1}
+                              max={10}
+                              step={1}
+                              marks
+                              valueLabelDisplay="auto"
+                              onChange={(_, val) => updateTradeField("confidenceRating", val as number)}
+                              sx={{ py: 0.5 }}
+                            />
+                          </Box>
+                        </Grid>
+
+                        {/* 25. Discipline 1-10 */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <Box sx={{ p: 0.6, py: 0.3, borderRadius: "5px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
+                            <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.1 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.72rem" }}>
+                                25. Discipline (1–10):
+                              </Typography>
+                              <Chip label={`${tradeForm.disciplineRating}/10`} size="small" sx={{ fontWeight: 800, bgcolor: "#10B981", color: "#FFF", height: 16, fontSize: "0.62rem" }} />
+                            </Box>
+                            <Slider
+                              size="small"
+                              value={tradeForm.disciplineRating}
+                              min={1}
+                              max={10}
+                              step={1}
+                              marks
+                              valueLabelDisplay="auto"
+                              onChange={(_, val) => updateTradeField("disciplineRating", val as number)}
+                              sx={{ py: 0.5 }}
+                            />
+                          </Box>
+                        </Grid>
+
+                        {/* 26. Mistake? */}
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", p: 0.6, py: 0.3, borderRadius: "5px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.72rem" }}>
+                              26. Mistake?
+                            </Typography>
+                            <FormControlLabel
+                              sx={{ mr: 0 }}
+                              control={
+                                <Switch
+                                  size="small"
+                                  checked={tradeForm.mistakeFlag}
+                                  onChange={(e) => updateTradeField("mistakeFlag", e.target.checked)}
+                                  color="error"
+                                />
+                              }
+                              label={<Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.68rem" }}>{tradeForm.mistakeFlag ? "YES" : "NO"}</Typography>}
+                            />
+                          </Box>
+                        </Grid>
+
+                        {/* 27. Mistake Type */}
+                        <Grid size={{ xs: 12, sm: 8 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>27. Mistake Type</InputLabel>
+                            <Select
+                              value={tradeForm.mistakeType}
+                              label="27. Mistake Type"
+                              disabled={!tradeForm.mistakeFlag}
+                              onChange={(e) => updateTradeField("mistakeType", e.target.value)}
+                            >
+                              <MenuItem value="None / Followed Plan">None / Followed Plan</MenuItem>
+                              <MenuItem value="Early Entry before Trigger">Early Entry before Trigger</MenuItem>
+                              <MenuItem value="Chased Trade / FOMO">Chased Trade / FOMO</MenuItem>
+                              <MenuItem value="Moved / Widened SL">Moved / Widened SL</MenuItem>
+                              <MenuItem value="Overleveraged / Heavy Size">Overleveraged / Heavy Size</MenuItem>
+                              <MenuItem value="Exited Early out of Fear">Exited Early out of Fear</MenuItem>
+                              <MenuItem value="Revenge Trade">Revenge Trade</MenuItem>
+                              <MenuItem value="Traded Outside Rules">Traded Outside Rules</MenuItem>
+                              <MenuItem value="Ignored Market Trend">Ignored Market Trend</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+
+                    {/* SECTION 5: MARKET CONTEXT & NOTES (Fields 28 - 31) */}
+                    <Paper
+                      sx={{
+                        p: 0.8,
+                        borderRadius: "5px",
+                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        border: isDark ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid #E2E8F0",
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#06B6D4", mb: 0.6, display: "flex", alignItems: "center", gap: 0.6, fontSize: "0.75rem" }}>
+                        <Box component="span" sx={{ bgcolor: "#0891B2", color: "#FFF", px: 0.5, py: 0.05, borderRadius: "3px", fontSize: "0.62rem" }}>
+                          PART 5
+                        </Box>
+                        Market Context & Retrospective Journal (Fields 28 – 31)
+                      </Typography>
+
+                      <Grid container spacing={0.8}>
+                        {/* 28. Market Condition */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>28. Market Condition</InputLabel>
+                            <Select
+                              value={tradeForm.marketCondition}
+                              label="28. Market Condition"
+                              onChange={(e) => updateTradeField("marketCondition", e.target.value)}
+                            >
+                              <MenuItem value="Strong Trending Up ↗">Strong Trending Up ↗</MenuItem>
+                              <MenuItem value="Strong Trending Down ↘">Strong Trending Down ↘</MenuItem>
+                              <MenuItem value="Range-Bound / Choppy ↔">Range-Bound / Choppy ↔</MenuItem>
+                              <MenuItem value="High Volatility / News Event ⚡">High Volatility / News Event ⚡</MenuItem>
+                              <MenuItem value="Low Volume Consolidation 💤">Low Volume Consolidation 💤</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {/* 30. Exit Reason */}
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            label="30. Exit Reason"
+                            value={tradeForm.exitReason}
+                            onChange={(e) => updateTradeField("exitReason", e.target.value)}
+                            placeholder="Hit TP, Trailing SL, Manual Early Exit"
+                          />
+                        </Grid>
+
+                        {/* 29. Entry Reason */}
+                        <Grid size={{ xs: 12 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            multiline
+                            rows={1.8}
+                            label="29. Entry Reason"
+                            value={tradeForm.entryReason}
+                            onChange={(e) => updateTradeField("entryReason", e.target.value)}
+                            placeholder="Market structure, candle pattern, or liquidity sweep trigger"
+                          />
+                        </Grid>
+
+                        {/* 31. Notes */}
+                        <Grid size={{ xs: 12 }}>
+                          <TextField
+                            fullWidth
+                            size="small"
+                            multiline
+                            rows={1.8}
+                            label="31. Notes / Lessons Learned"
+                            value={tradeForm.notes}
+                            onChange={(e) => updateTradeField("notes", e.target.value)}
+                            placeholder="Key reflections, psychology lessons, adjustments..."
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+
+                  {/* ============================================================ */}
+                  {/* FULL-WIDTH BOTTOM ACTION SUMMARY & SUBMIT BAR                */}
+                  {/* ============================================================ */}
+                  <Grid size={{ xs: 12 }}>
+                    <Box
+                      sx={{
+                        p: 0.8,
+                        borderRadius: "5px",
+                        bgcolor: isDark ? "#0E162B" : "#EFF6FF",
+                        border: isDark ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #BFDBFE",
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        justifyContent: "space-between",
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        gap: 0.8,
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.78rem" }}>
+                          Live Preview:
+                        </Typography>
+                        <Chip label={`${tradeForm.symbol} • ${tradeForm.direction}`} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.68rem" }} />
+                        <Chip label={`Risk: ₹${tradeForm.plannedRiskAmount || "0"}`} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.68rem", bgcolor: "rgba(239,68,68,0.15)", color: "#EF4444" }} />
+                        {tradeForm.netPnl !== "" && (
+                          <Chip
+                            label={`P&L: ${Number(tradeForm.netPnl) >= 0 ? "+" : ""}₹${tradeForm.netPnl} (${tradeForm.actualRR})`}
+                            size="small"
+                            sx={{
+                              fontWeight: 800,
+                              height: 20,
+                              fontSize: "0.68rem",
+                              bgcolor: Number(tradeForm.netPnl) >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+                              color: Number(tradeForm.netPnl) >= 0 ? "#10B981" : "#EF4444",
+                            }}
+                          />
+                        )}
+                        <Chip label={`Result: ${tradeForm.result}`} size="small" sx={{ fontWeight: 700, height: 20, fontSize: "0.68rem" }} />
+                      </Box>
+
+                      <Box sx={{ display: "flex", gap: 0.8 }}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => setActiveTab(0)}
+                          sx={{ borderRadius: "5px", height: 28, fontSize: "0.75rem", px: 1.5 }}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="submit"
+                          size="small"
+                          variant="contained"
+                          disabled={submittingTrade}
+                          sx={{
+                            bgcolor: "#10B981",
+                            color: "#FFFFFF",
+                            borderRadius: "5px",
+                            px: 2,
+                            height: 28,
+                            fontSize: "0.75rem",
+                            fontWeight: 800,
+                            "&:hover": { bgcolor: "#059669" },
+                          }}
+                        >
+                          {submittingTrade ? "Saving..." : "Submit Trade (31 Fields)"}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Grid>
+                </Grid>
               </form>
             </CardContent>
           </Card>
@@ -2135,7 +2156,7 @@ export default function TradingJournalView({
             </Grid>
           </Box>
         )}
-      </Container>
+      </Box>
 
       {/* ============================================================== */}
       {/* TRADE DETAIL MODAL (PSYCHOLOGY & JOURNAL NOTES)                */}
