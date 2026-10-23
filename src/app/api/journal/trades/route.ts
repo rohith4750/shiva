@@ -1,8 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import tradePool from "@/lib/tradeDb";
 import { randomUUID } from "crypto";
+import { requireUserId } from "@/lib/server/auth";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
     const body = await request.json();
     const {
@@ -55,10 +60,19 @@ export async function POST(request: Request) {
     }
 
     const tradeId = `trd-${randomUUID().slice(0, 8)}`;
-    const userId = "usr-001"; // Current authorized user
 
-    // Handle Custom Strategy creation/lookup if selected "Other"
-    let finalStrategyId = strategyId && strategyId !== "other" ? strategyId : null;
+    // The account must belong to the signed-in user
+    const ownedAccount = await tradePool.query(`SELECT 1 FROM trading_accounts WHERE id = $1 AND user_id = $2`, [accountId, userId]);
+    if (ownedAccount.rowCount === 0) {
+      return NextResponse.json({ success: false, error: "Trading account not found" }, { status: 404 });
+    }
+
+    // Only keep a strategy id that belongs to this user; "other" creates one below
+    let finalStrategyId: string | null = null;
+    if (strategyId && strategyId !== "other") {
+      const ownedStrategy = await tradePool.query(`SELECT id FROM strategies WHERE id = $1 AND user_id = $2`, [strategyId, userId]);
+      finalStrategyId = ownedStrategy.rows[0]?.id ?? null;
+    }
     if (body.customStrategy && body.customStrategy.trim()) {
       const stratName = body.customStrategy.trim();
       const existing = await tradePool.query(
@@ -173,10 +187,10 @@ export async function POST(request: Request) {
         finalNetPnl,
         notes || null,
         market || null,
-        session || "Morning Opening (9:15-11:00)",
+        session || null,
         computedSLPoints,
         computedTPPoints,
-        marketCondition || "Trending",
+        marketCondition || null,
         computedResult,
       ]
     );
@@ -198,11 +212,11 @@ export async function POST(request: Request) {
         tradeId,
         entryReason || null,
         exitReason || null,
-        emotionBefore || "Calm",
+        emotionBefore || null,
         emotionDuring || null,
-        emotionAfter || "Satisfied",
-        confidenceRating ? Math.min(5, Math.max(1, Number(confidenceRating))) : 5,
-        disciplineRating ? Math.min(5, Math.max(1, Number(disciplineRating))) : 5,
+        emotionAfter || null,
+        confidenceRating ? Math.min(5, Math.max(1, Number(confidenceRating))) : null,
+        disciplineRating ? Math.min(5, Math.max(1, Number(disciplineRating))) : null,
         ruleAdherence !== undefined ? Boolean(ruleAdherence) : true,
         mistakeFlag !== undefined ? Boolean(mistakeFlag) : false,
         finalMistakeType,
@@ -215,8 +229,8 @@ export async function POST(request: Request) {
     // Update account balance if closed trade has netPnl
     if (tradeStatus === "CLOSED" && finalNetPnl !== null) {
       await tradePool.query(
-        `UPDATE trading_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2`,
-        [finalNetPnl, accountId]
+        `UPDATE trading_accounts SET current_balance = current_balance + $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+        [finalNetPnl, accountId, userId]
       );
     }
 

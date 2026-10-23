@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import tradePool from "@/lib/tradeDb";
 import { randomUUID } from "crypto";
+import { requireUserId } from "@/lib/server/auth";
 
-export async function GET() {
+const ACCOUNT_TYPES = ["live", "funded", "backtest"];
+const normalizeType = (t: unknown) => (ACCOUNT_TYPES.includes(String(t).toLowerCase()) ? String(t).toLowerCase() : "live");
+
+export async function GET(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
     const result = await tradePool.query(`
       SELECT 
@@ -13,9 +21,10 @@ export async function GET() {
         COALESCE(SUM(CASE WHEN t.status = 'CLOSED' THEN t.net_pnl ELSE 0 END), 0)::float as total_pnl
       FROM trading_accounts a
       LEFT JOIN trades t ON a.id = t.account_id
+      WHERE a.user_id = $1
       GROUP BY a.id
       ORDER BY a.created_at ASC
-    `);
+    `, [userId]);
 
     return NextResponse.json({
       success: true,
@@ -31,11 +40,15 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
     const body = await request.json();
     const {
       name,
-      accountType = "demo",
+      accountType = "live",
       currency = "USD",
       startingBalance = 10000,
       description = "",
@@ -49,7 +62,6 @@ export async function POST(request: NextRequest) {
     }
 
     const id = `acc-${randomUUID().slice(0, 8)}`;
-    const userId = "usr-001";
     const balance = parseFloat(startingBalance) || 10000;
 
     const insertResult = await tradePool.query(
@@ -63,7 +75,7 @@ export async function POST(request: NextRequest) {
         id,
         userId,
         name.trim(),
-        String(accountType).toLowerCase() === "live" ? "live" : "demo",
+        normalizeType(accountType),
         currency.toUpperCase(),
         balance,
         balance,
@@ -86,6 +98,10 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
     const body = await request.json();
     const {
@@ -123,17 +139,18 @@ export async function PUT(request: NextRequest) {
         current_balance = COALESCE($5, current_balance),
         description = $6,
         updated_at = NOW()
-      WHERE id = $7
+      WHERE id = $7 AND user_id = $8
       RETURNING id, name, account_type, currency, starting_balance::float, current_balance::float, description
       `,
       [
         name.trim(),
-        String(accountType).toLowerCase() === "live" ? "live" : "demo",
+        normalizeType(accountType),
         currency ? currency.toUpperCase() : "USD",
         parseFloat(startingBalance) || 10000,
         currentBalance !== undefined && currentBalance !== null ? parseFloat(currentBalance) : null,
         description ? description.trim() : null,
         id,
+        userId,
       ]
     );
 
@@ -159,6 +176,10 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
@@ -171,7 +192,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check count of remaining accounts; prevent deleting the last account if desired, or allow with prompt
-    const countCheck = await tradePool.query("SELECT COUNT(*) FROM trading_accounts");
+    const countCheck = await tradePool.query("SELECT COUNT(*) FROM trading_accounts WHERE user_id = $1", [userId]);
     if (parseInt(countCheck.rows[0].count) <= 1) {
       return NextResponse.json(
         { success: false, error: "Cannot delete the only remaining account. Please create another account first." },
@@ -180,8 +201,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     const deleteResult = await tradePool.query(
-      `DELETE FROM trading_accounts WHERE id = $1 RETURNING id`,
-      [id]
+      `DELETE FROM trading_accounts WHERE id = $1 AND user_id = $2 RETURNING id`,
+      [id, userId]
     );
 
     if (deleteResult.rowCount === 0) {

@@ -921,7 +921,7 @@ export default function Home() {
                     {
                       label: "Forgot Password?",
                       icon: <LockResetIcon fontSize="small" />,
-                      onClick: () => setAuthMode("forgot"),
+                      onClick: () => showToast("Forgot your password? Ask an administrator to reset it from the Users page.", "info"),
                     }
                   ]}
                 />

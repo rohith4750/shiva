@@ -1,41 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import tradePool from "@/lib/tradeDb";
+import { requireUserId } from "@/lib/server/auth";
 
-// Ensure pre_market_routines table exists
-async function ensureRoutineTable() {
-  await tradePool.query(`
-    CREATE TABLE IF NOT EXISTS pre_market_routines (
-      id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
-      user_id VARCHAR(36) NOT NULL,
-      account_id VARCHAR(36),
-      routine_date DATE NOT NULL,
-      economic_calendar_reviewed BOOLEAN DEFAULT FALSE,
-      economic_calendar_notes TEXT,
-      trade_plan_reviewed BOOLEAN DEFAULT FALSE,
-      daily_bias VARCHAR(50),
-      max_daily_loss NUMERIC(15,2),
-      trade_plan_notes TEXT,
-      charts_analyzed BOOLEAN DEFAULT FALSE,
-      watchlist TEXT,
-      chart_notes TEXT,
-      meditation_completed BOOLEAN DEFAULT FALSE,
-      meditation_minutes INTEGER DEFAULT 10,
-      mindset_rating INTEGER DEFAULT 5,
-      is_completed BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      CONSTRAINT uq_routine_user_date UNIQUE (user_id, routine_date)
-    );
-  `);
-}
+// pre_market_routines is created by scripts/migrate_trading_schema.js
 
 export async function GET(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
-    await ensureRoutineTable();
 
     const searchParams = request.nextUrl.searchParams;
     const dateParam = searchParams.get("date") || new Date().toISOString().slice(0, 10);
-    const userId = "usr-001";
 
     // 1. Fetch routine for the requested date
     const routineRes = await tradePool.query(
@@ -91,11 +68,13 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
-    await ensureRoutineTable();
 
     const body = await request.json();
-    const userId = "usr-001";
     const routineDate = body.routineDate || new Date().toISOString().slice(0, 10);
     const accountId = body.accountId || null;
 

@@ -1,59 +1,10 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { email, newpassword, confirmPassword } = body;
-
-    if (!email || !newpassword) {
-      return NextResponse.json(
-        { success: false, error: "Email and new password are required" },
-        { status: 400 }
-      );
-    }
-
-    if (confirmPassword && newpassword !== confirmPassword) {
-      return NextResponse.json(
-        { success: false, error: "Passwords do not match" },
-        { status: 400 }
-      );
-    }
-
-    const cleanEmail = email.trim().toLowerCase();
-    const user = await prisma.users.findUnique({
-      where: { email: cleanEmail },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    const hashedPassword = await bcrypt.hash(newpassword, 10);
-
-    const updatedUser = await prisma.users.update({
-      where: { email: cleanEmail },
-      data: {
-        password_hash: hashedPassword,
-        newpassword: newpassword,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Password has been successfully updated in App database!",
-      userId: updatedUser.id,
-      email: updatedUser.email,
-    });
-  } catch (error: unknown) {
-    console.error("POST /api/auth/reset-password error:", error);
-    return NextResponse.json(
-      { success: false, error: "Error resetting password" },
-      { status: 500 }
-    );
-  }
+// Self-service password reset is disabled until it can verify identity (e.g. an emailed one-time code).
+// Administrators reset passwords from the Users page (PUT /api/users/[id], requires users.edit).
+export async function POST() {
+  return NextResponse.json(
+    { success: false, error: "Password reset is handled by an administrator. Please contact your admin." },
+    { status: 403 }
+  );
 }

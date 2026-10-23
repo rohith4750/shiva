@@ -45,18 +45,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify password via bcrypt hash or stored credential
-    let isMatch = false;
-    if (user.password_hash) {
-      isMatch = await bcrypt.compare(password, user.password_hash).catch(() => false);
-    }
-    if (!isMatch && user.newpassword) {
-      isMatch =
-        user.newpassword === password ||
-        (await bcrypt.compare(password, user.newpassword).catch(() => false));
-    }
-    if (!isMatch && user.password_hash === password) {
+    // Verify against the bcrypt hash. Accounts still holding a legacy plain-text credential are
+    // accepted once, then re-hashed and the plain-text copy is cleared.
+    let isMatch = user.password_hash
+      ? await bcrypt.compare(password, user.password_hash).catch(() => false)
+      : false;
+    if (!isMatch && (user.newpassword === password || user.password_hash === password)) {
       isMatch = true;
+      await prisma.users.update({
+        where: { id: user.id },
+        data: { password_hash: await bcrypt.hash(password, 10), newpassword: null },
+      });
+    } else if (isMatch && user.newpassword) {
+      await prisma.users.update({ where: { id: user.id }, data: { newpassword: null } });
     }
 
     if (!isMatch) {

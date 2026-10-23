@@ -1,11 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireSession } from "@/lib/server/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requireSession(request);
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
-    const { userId, email, currentPassword, newpassword, confirmPassword } = body;
+    const { currentPassword, newpassword, confirmPassword } = body;
+
+    if (!currentPassword) {
+      return NextResponse.json(
+        { success: false, error: "Current password is required" },
+        { status: 400 }
+      );
+    }
 
     if (!newpassword) {
       return NextResponse.json(
@@ -21,12 +32,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Find by userId (string) or email
-    const user = userId
-      ? await prisma.users.findUnique({ where: { id: String(userId) } })
-      : email
-      ? await prisma.users.findUnique({ where: { email: email.trim().toLowerCase() } })
-      : null;
+    // Always the signed-in user's own account
+    const user = await prisma.users.findUnique({ where: { id: auth.session.userId } });
 
     if (!user) {
       return NextResponse.json(
@@ -35,25 +42,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verify current password if provided
-    if (currentPassword) {
-      let isMatch = false;
-      if (user.password_hash) {
-        isMatch = await bcrypt.compare(currentPassword, user.password_hash).catch(() => false);
-      }
-      if (!isMatch && user.newpassword) {
-        isMatch = user.newpassword === currentPassword;
-      }
-      if (!isMatch && user.password_hash === currentPassword) {
-        isMatch = true;
-      }
-
-      if (!isMatch) {
-        return NextResponse.json(
-          { success: false, error: "Current password is incorrect" },
-          { status: 401 }
-        );
-      }
+    const isMatch = user.password_hash
+      ? await bcrypt.compare(currentPassword, user.password_hash).catch(() => false)
+      : false;
+    if (!isMatch) {
+      return NextResponse.json(
+        { success: false, error: "Current password is incorrect" },
+        { status: 401 }
+      );
     }
 
     const hashedPassword = await bcrypt.hash(newpassword, 10);
@@ -62,7 +58,7 @@ export async function POST(request: Request) {
       where: { id: user.id },
       data: {
         password_hash: hashedPassword,
-        newpassword: newpassword,
+        newpassword: null,
       },
     });
 

@@ -229,7 +229,7 @@ CREATE TABLE public.trading_accounts (
     id character varying(36) DEFAULT (gen_random_uuid())::text NOT NULL,
     user_id character varying(36) NOT NULL,
     name character varying(100) NOT NULL,
-    account_type character varying(30) DEFAULT 'demo'::character varying NOT NULL,
+    account_type character varying(30) DEFAULT 'live'::character varying NOT NULL,
     currency character varying(10) DEFAULT 'USD'::character varying NOT NULL,
     starting_balance numeric(18,4) DEFAULT 10000.0000 NOT NULL,
     current_balance numeric(18,4) DEFAULT 10000.0000 NOT NULL,
@@ -238,7 +238,7 @@ CREATE TABLE public.trading_accounts (
     archived_at timestamp(6) with time zone,
     created_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     updated_at timestamp(6) with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT trading_accounts_account_type_check CHECK (((account_type)::text = ANY ((ARRAY['demo'::character varying, 'live'::character varying, 'backtest'::character varying, 'funded'::character varying])::text[])))
+    CONSTRAINT trading_accounts_account_type_check CHECK (((account_type)::text = ANY ((ARRAY['live'::character varying, 'backtest'::character varying, 'funded'::character varying])::text[])))
 );
 
 

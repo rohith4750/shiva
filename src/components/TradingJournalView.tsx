@@ -94,6 +94,62 @@ export const EXIT_EMOTIONS = [
   "Proud",
 ] as const;
 
+// A fresh trade entry: selects get neutral defaults, every price and result field starts empty
+const EMPTY_TRADE_FORM = {
+  tradeDate: "",
+  tradeTime: "",
+  exitTime: "",
+  symbol: "XAUUSD",
+  direction: "BUY",
+  strategyId: "",
+  customStrategy: "",
+  session: "Morning Opening (9:15-11:00)",
+  entryPrice: "",
+  stopLoss: "",
+  takeProfit: "",
+  exitPrice: "",
+  volume: "1",
+  plannedRiskAmount: "",
+  slPoints: "",
+  tpPoints: "",
+  plannedRR: "",
+  netPnl: "",
+  actualRR: "-",
+  result: "OPEN",
+  emotionBefore: "Calm",
+  emotionAfter: "Satisfied",
+  confidenceRating: 3,
+  disciplineRating: 3,
+  mistakeFlag: false,
+  mistakeType: "None / Followed Plan",
+  customMistake: "",
+  marketCondition: "Strong Trending Up ↗",
+  entryReason: "",
+  exitReason: "",
+  notes: "",
+  accountId: "",
+  status: "OPEN",
+};
+
+const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", INR: "₹", EUR: "€", GBP: "£" };
+export const currencySymbol = (code?: string | null) => (code ? CURRENCY_SYMBOLS[code.toUpperCase()] ?? `${code.toUpperCase()} ` : "$");
+
+// Market is derived from the symbol so every saved trade carries it
+const MARKET_BY_SYMBOL: Record<string, string> = {
+  XAUUSD: "Metals",
+  XAGUSD: "Metals",
+  EURUSD: "Forex",
+  GBPUSD: "Forex",
+  USDJPY: "Forex",
+  USDINR: "Forex",
+  BTCUSD: "Crypto",
+  ETHUSD: "Crypto",
+  NIFTY: "Indian Indices (NSE)",
+  BANKNIFTY: "Indian Indices (NSE)",
+  NASDAQ: "US Indices",
+  "S&P500": "US Indices",
+};
+
 const RATING_OPTIONS = [
   { value: 1, label: "Very low" },
   { value: 2, label: "Low" },
@@ -161,6 +217,10 @@ export default function TradingJournalView({
       const url = `/api/journal/overview?accountId=${selectedAccountId}`;
       const res = await fetch(url);
       const data = await res.json();
+      if (res.status === 401) {
+        showToast("Your session has expired. Please sign in again.", "error");
+        return;
+      }
       if (data.success) {
         setAccounts(data.accounts || []);
         setStrategies(data.strategies || []);
@@ -206,7 +266,7 @@ export default function TradingJournalView({
   const [editingAccount, setEditingAccount] = useState<any | null>(null);
   const [accountForm, setAccountForm] = useState({
     name: "",
-    accountType: "demo",
+    accountType: "live",
     currency: "USD",
     startingBalance: "10000",
     description: "",
@@ -219,7 +279,7 @@ export default function TradingJournalView({
     setEditingAccount(null);
     setAccountForm({
       name: "",
-      accountType: "demo",
+      accountType: "live",
       currency: "USD",
       startingBalance: "10000",
       description: "",
@@ -231,7 +291,7 @@ export default function TradingJournalView({
     setEditingAccount(acc);
     setAccountForm({
       name: acc.name,
-      accountType: acc.account_type || "demo",
+      accountType: acc.account_type || "live",
       currency: acc.currency || "USD",
       startingBalance: String(acc.starting_balance || 10000),
       description: acc.description || "",
@@ -322,73 +382,11 @@ export default function TradingJournalView({
   };
 
   // --- TRADE ENTRY FORM STATE ---
-  const [tradeForm, setTradeForm] = useState({
-    // 2. Date
-    tradeDate: "",
-    // 3. Time
-    tradeTime: "09:25",
-    // 4. Symbol
-    symbol: "XAUUSD",
-    // 6. Direction (BUY or SELL only)
-    direction: "BUY",
-    // 7. Strategy/Setup
-    strategyId: "",
-    customStrategy: "",
-    // 8. Session
-    session: "Morning Opening (9:15-11:00)",
-    // 9. Entry Price
-    entryPrice: "2350.50",
-    // 10. SL Price
-    stopLoss: "2340.00",
-    // 11. TP Price
-    takeProfit: "2375.00",
-    // 12. Exit Price
-    exitPrice: "2370.00",
-    // 13. Lots / Quantity
-    volume: "1",
-    // 14. Risk
-    plannedRiskAmount: "1050",
-    // 15. SL Points
-    slPoints: "10.50",
-    // 16. TP Points
-    tpPoints: "24.50",
-    // 17. Planned R:R
-    plannedRR: "1 : 2.33",
-    // 18. P&L
-    netPnl: "1950",
-    // 19. Actual R:R
-    actualRR: "+1.86R",
-    // 20. Result
-    result: "WIN",
-    // 21. Emotion Before (Entry Emotion)
-    emotionBefore: "Calm",
-    // 23. Emotion After (Exit Emotion)
-    emotionAfter: "Satisfied",
-    // 24. Confidence (1–5)
-    confidenceRating: 5,
-    // 25. Discipline (1–5)
-    disciplineRating: 5,
-    // 26. Mistake?
-    mistakeFlag: false,
-    // 27. Mistake Type
-    mistakeType: "None / Followed Plan",
-    customMistake: "",
-    // 28. Market Condition
-    marketCondition: "Strong Trending Up ↗",
-    // 29. Entry Reason
-    entryReason: "Liquidity sweep at support with order flow confirmation.",
-    // 30. Exit Reason
-    exitReason: "Hit Take Profit Target",
-    // 31. Notes
-    notes: "Clean trade execution following rules without hesitation.",
+  const [tradeForm, setTradeForm] = useState(EMPTY_TRADE_FORM);
 
-    accountId: "",
-    status: "CLOSED",
-  });
-
-  const currencyOfAccount = (accountId: string) => (accounts.find((a) => a.id === accountId)?.currency === "INR" ? "₹" : "$");
+  const currencyOfAccount = (accountId: string) => currencySymbol(accounts.find((a) => a.id === accountId)?.currency);
   const formCurrencySymbol = currencyOfAccount(tradeForm.accountId);
-  const ACCOUNT_TYPE_COLOR: Record<string, string> = { live: tk.pos, funded: tk.indigo, backtest: tk.accent, demo: tk.neutral };
+  const ACCOUNT_TYPE_COLOR: Record<string, string> = { live: tk.pos, funded: tk.indigo, backtest: tk.accent };
 
   // Auto-Calculation helper for single form
   const updateTradeField = (field: string, val: any) => {
@@ -490,6 +488,13 @@ export default function TradingJournalView({
     setSubmittingTrade(true);
     try {
       const openedAtDateTime = `${tradeForm.tradeDate}T${tradeForm.tradeTime || "09:15"}:00`;
+      // Exit time is on the trade date; an exit earlier than the entry rolls to the next day
+      let closedAtDateTime: string | null = null;
+      if (tradeForm.exitPrice) {
+        const closeDate = new Date(`${tradeForm.tradeDate}T${tradeForm.exitTime || tradeForm.tradeTime || "09:15"}:00`);
+        if (closeDate < new Date(openedAtDateTime)) closeDate.setDate(closeDate.getDate() + 1);
+        closedAtDateTime = closeDate.toISOString();
+      }
       const payload = {
         accountId: tradeForm.accountId,
         strategyId: tradeForm.strategyId === "other" ? null : (tradeForm.strategyId || null),
@@ -497,8 +502,9 @@ export default function TradingJournalView({
         symbol: tradeForm.symbol.toUpperCase().trim(),
         direction: tradeForm.direction,
         status: tradeForm.exitPrice ? "CLOSED" : "OPEN",
-        openedAt: openedAtDateTime,
-        closedAt: tradeForm.exitPrice ? openedAtDateTime : null,
+        openedAt: new Date(openedAtDateTime).toISOString(),
+        closedAt: closedAtDateTime,
+        market: MARKET_BY_SYMBOL[tradeForm.symbol] ?? null,
         entryPrice: Number(tradeForm.entryPrice),
         exitPrice: tradeForm.exitPrice ? Number(tradeForm.exitPrice) : null,
         stopLoss: tradeForm.stopLoss ? Number(tradeForm.stopLoss) : null,
@@ -541,6 +547,12 @@ export default function TradingJournalView({
       const data = await res.json();
       if (res.ok && data.success) {
         showToast(data.tradeNum ? `Trade #${data.tradeNum} recorded successfully!` : "Trade recorded successfully!", "success");
+        setTradeForm((prev) => ({
+          ...EMPTY_TRADE_FORM,
+          accountId: prev.accountId,
+          tradeDate: new Date().toISOString().slice(0, 10),
+          tradeTime: new Date().toTimeString().slice(0, 5),
+        }));
         fetchJournalData();
         setActiveTab(2); // Jump to Trade History
       } else {
@@ -634,9 +646,13 @@ export default function TradingJournalView({
   };
 
   // --- OVERVIEW ANALYTICS COMPUTATION ---
-  const activeAccount = accounts.find((a) => a.id === selectedAccountId) || accounts[0];
-  const activeCurrencySymbol = activeAccount?.currency === "INR" ? "₹" : "$";
-  const activeStartingBalance = activeAccount ? Number(activeAccount.starting_balance) : 10000;
+  const activeAccount = selectedAccountId === "all" ? null : accounts.find((a) => a.id === selectedAccountId) ?? null;
+  const scopeAccounts = activeAccount ? [activeAccount] : accounts;
+  const scopeCurrencies = Array.from(new Set(scopeAccounts.map((a) => String(a.currency || "USD").toUpperCase())));
+  const mixedCurrencies = scopeCurrencies.length > 1;
+  // Mixed currencies can't share one symbol, so amounts are shown unlabelled and flagged in the dashboard
+  const activeCurrencySymbol = mixedCurrencies ? "" : currencySymbol(scopeCurrencies[0]);
+  const activeStartingBalance = scopeAccounts.reduce((sum, a) => sum + (Number(a.starting_balance) || 0), 0);
 
   // Trades for the selected account only (Analytics tab applies its own period filter)
   const accountTrades = useMemo(
@@ -901,6 +917,12 @@ export default function TradingJournalView({
       >
         {loading && <LinearProgress sx={{ mb: 1, borderRadius: 1 }} />}
 
+        {mixedCurrencies && [0, 3, 4].includes(activeTab) && (
+          <Alert severity="info" sx={{ mb: 1.5, py: 0.2, fontSize: "0.76rem", alignItems: "center" }}>
+            All Accounts mixes {scopeCurrencies.join(" and ")} accounts, so totals add amounts in different currencies. Pick a single account for exact figures.
+          </Alert>
+        )}
+
         {/* ============================================================ */}
         {/* TAB 0: OVERVIEW (DASHBOARD)                                  */}
         {/* ============================================================ */}
@@ -1137,7 +1159,19 @@ export default function TradingJournalView({
                     <TextField fullWidth size="small" label="Date" type="date" value={tradeForm.tradeDate} onChange={(e) => updateTradeField("tradeDate", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
                   </Grid>
                   <Grid size={FIELD}>
-                    <TextField fullWidth size="small" label="Time" type="time" value={tradeForm.tradeTime} onChange={(e) => updateTradeField("tradeTime", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                    <TextField fullWidth size="small" label="Entry Time" type="time" value={tradeForm.tradeTime} onChange={(e) => updateTradeField("tradeTime", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Exit Time"
+                      type="time"
+                      value={tradeForm.exitTime}
+                      onChange={(e) => updateTradeField("exitTime", e.target.value)}
+                      disabled={!tradeForm.exitPrice}
+                      slotProps={{ inputLabel: { shrink: true } }}
+                    />
                   </Grid>
                   <Grid size={FIELD}>
                     <FormControl fullWidth size="small" required>
@@ -1170,19 +1204,14 @@ export default function TradingJournalView({
                     <FormControl fullWidth size="small">
                       <InputLabel>Strategy / Setup</InputLabel>
                       <Select value={tradeForm.strategyId} label="Strategy / Setup" onChange={(e) => updateTradeField("strategyId", e.target.value)}>
-                        <MenuItem value="">SMC Order Block / FVG</MenuItem>
-                        <MenuItem value="break-retest">Break & Retest</MenuItem>
-                        <MenuItem value="orb-15m">ORB 15m Breakout</MenuItem>
-                        <MenuItem value="vwap-rejection">VWAP Bounce / Rejection</MenuItem>
-                        <MenuItem value="pullback-ema">Pullback to 20 EMA</MenuItem>
-                        <MenuItem value="liquidity-sweep">Liquidity Sweep & Reversal</MenuItem>
+                        <MenuItem value="" sx={{ color: "text.secondary" }}>No strategy</MenuItem>
                         {strategies.map((s) => (
                           <MenuItem key={s.id} value={s.id}>
                             {s.name}
                           </MenuItem>
                         ))}
                         <MenuItem value="other" sx={{ fontWeight: 600, color: "#38BDF8" }}>
-                          + Other (Enter Details Manually)
+                          + New strategy (type a name)
                         </MenuItem>
                       </Select>
                     </FormControl>
@@ -1200,7 +1229,7 @@ export default function TradingJournalView({
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid size={FIELD_MID}>
+                  <Grid size={FIELD}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Market Condition</InputLabel>
                       <Select value={tradeForm.marketCondition} label="Market Condition" onChange={(e) => updateTradeField("marketCondition", e.target.value)}>
@@ -1212,7 +1241,7 @@ export default function TradingJournalView({
                       </Select>
                     </FormControl>
                   </Grid>
-                  <Grid size={FIELD_MID}>
+                  <Grid size={FIELD}>
                     <TextField fullWidth size="small" label="Exit Reason" value={tradeForm.exitReason} onChange={(e) => updateTradeField("exitReason", e.target.value)} placeholder="Hit TP, Trailing SL, Manual Exit" />
                   </Grid>
                   {tradeForm.strategyId === "other" && (
@@ -1683,6 +1712,11 @@ export default function TradingJournalView({
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
             <Card sx={{ p: 2, borderRadius: "8px", bgcolor: isDark ? "#0A1124" : "#FFFFFF", border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0" }}>
 
+              {reviews.length === 0 && (
+                <Typography sx={{ fontSize: "0.82rem", color: "text.secondary", textAlign: "center", py: 4 }}>
+                  No daily reviews yet. Reviews you record will appear here.
+                </Typography>
+              )}
               <Grid container spacing={2}>
                 {reviews.map((r) => (
                   <Grid key={r.id} size={{ xs: 12, md: 6 }}>
@@ -1691,7 +1725,7 @@ export default function TradingJournalView({
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#38BDF8" }}>
                           Review Date: {new Date(r.review_date).toLocaleDateString()}
                         </Typography>
-                        <Rating value={r.daily_rating || 4} readOnly size="small" />
+                        {r.daily_rating ? <Rating value={r.daily_rating} readOnly size="small" /> : <Typography variant="caption" sx={{ color: "text.secondary" }}>Not rated</Typography>}
                       </Box>
 
                       <Box sx={{ mb: 1.5 }}>
@@ -1699,7 +1733,7 @@ export default function TradingJournalView({
                           WHAT WENT WELL:
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
-                          {r.what_went_well || "Executed plan without hesitation."}
+                          {r.what_went_well || "—"}
                         </Typography>
                       </Box>
 
@@ -1708,7 +1742,7 @@ export default function TradingJournalView({
                           WHAT WENT WRONG / MISTAKES:
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
-                          {r.what_went_wrong || "None identified."}
+                          {r.what_went_wrong || "—"}
                         </Typography>
                       </Box>
 
@@ -1717,7 +1751,7 @@ export default function TradingJournalView({
                           LESSONS & NEXT SESSION PLAN:
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
-                          {r.next_session_plan || "Focus on A+ setups only."}
+                          {r.next_session_plan || r.lessons || "—"}
                         </Typography>
                       </Box>
                     </Paper>
@@ -1739,7 +1773,7 @@ export default function TradingJournalView({
               const current = acc.current_balance != null ? Number(acc.current_balance) : starting;
               const netProfit = current - starting;
               const growthPct = starting > 0 ? (netProfit / starting) * 100 : 0;
-              const cur = acc.currency === "INR" ? "₹" : "$";
+              const cur = currencySymbol(acc.currency);
               const money = (v: number) => `${cur}${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
               const typeColor = ACCOUNT_TYPE_COLOR[acc.account_type?.toLowerCase()] ?? tk.warn;
               const growthColor = signColor(tk, netProfit);
@@ -1891,7 +1925,7 @@ export default function TradingJournalView({
                   <AddIcon sx={{ fontSize: 20 }} />
                 </Box>
                 <Typography sx={{ fontSize: "0.8rem", fontWeight: 600 }}>Add trading account</Typography>
-                <Typography sx={{ fontSize: "0.68rem", color: tk.textMuted }}>Live, demo, funded or backtest</Typography>
+                <Typography sx={{ fontSize: "0.68rem", color: tk.textMuted }}>Live, funded or backtest</Typography>
               </Box>
             </Grid>
           </Grid>
@@ -1942,8 +1976,9 @@ export default function TradingJournalView({
                     label="Account Type"
                     onChange={(e) => setAccountForm((prev) => ({ ...prev, accountType: e.target.value }))}
                   >
-                    <MenuItem value="demo">Demo</MenuItem>
                     <MenuItem value="live">Live</MenuItem>
+                    <MenuItem value="funded">Funded / Prop</MenuItem>
+                    <MenuItem value="backtest">Backtest</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -2107,7 +2142,7 @@ export default function TradingJournalView({
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>1. Trade #:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>#{selectedTrade.trade_num || "1"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.trade_num ? `#${selectedTrade.trade_num}` : "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>2. Date:</Typography>
@@ -2129,11 +2164,11 @@ export default function TradingJournalView({
                   </Grid>
                   <Grid size={{ xs: 6, sm: 4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>6. Strategy / Setup:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.strategy_name || "SMC Order Block"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.strategy_name || "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>7. Session:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.session || "Morning Opening"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.session || "—"}</Typography>
                   </Grid>
                 </Grid>
               </Box>
@@ -2164,7 +2199,7 @@ export default function TradingJournalView({
                   </Grid>
                   <Grid size={{ xs: 6, sm: 2.4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Lots / Quantity:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.volume ?? "1"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.volume ?? "—"}</Typography>
                   </Grid>
                 </Grid>
               </Box>
@@ -2179,7 +2214,7 @@ export default function TradingJournalView({
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 6, sm: 1.7 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Risk Amount:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#EF4444" }}>${selectedTrade.planned_risk_amount ?? "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#EF4444" }}>{selectedTrade.planned_risk_amount != null ? `${currencyOfAccount(selectedTrade.account_id)}${selectedTrade.planned_risk_amount}` : "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.7 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>SL Points:</Typography>
@@ -2196,7 +2231,9 @@ export default function TradingJournalView({
                   <Grid size={{ xs: 6, sm: 2 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Realized P&L:</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: (selectedTrade.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444" }}>
-                      {(selectedTrade.net_pnl || 0) >= 0 ? `+$${selectedTrade.net_pnl}` : `-$${Math.abs(selectedTrade.net_pnl || 0)}`}
+                      {selectedTrade.net_pnl == null
+                        ? "—"
+                        : `${selectedTrade.net_pnl >= 0 ? "+" : "−"}${currencyOfAccount(selectedTrade.account_id)}${Math.abs(selectedTrade.net_pnl)}`}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.6 }}>
@@ -2206,7 +2243,7 @@ export default function TradingJournalView({
                   <Grid size={{ xs: 6, sm: 1.6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Result:</Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: (selectedTrade.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444" }}>
-                      {selectedTrade.result || ((selectedTrade.net_pnl || 0) > 0 ? "WIN" : "LOSS")}
+                      {selectedTrade.result || (selectedTrade.net_pnl == null ? "OPEN" : selectedTrade.net_pnl > 0 ? "WIN" : selectedTrade.net_pnl < 0 ? "LOSS" : "BREAK_EVEN")}
                     </Typography>
                   </Grid>
                 </Grid>
@@ -2222,19 +2259,19 @@ export default function TradingJournalView({
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Entry Emotion:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.emotion_before || "Calm"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.emotion_before || "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Exit Emotion:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.emotion_after || "Satisfied"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.emotion_after || "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.5 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Confidence (1-5):</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#38BDF8" }}>{selectedTrade.confidence_rating || 5}/5</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#38BDF8" }}>{selectedTrade.confidence_rating ? `${selectedTrade.confidence_rating}/5` : "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.5 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Discipline (1-5):</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#10B981" }}>{selectedTrade.discipline_rating || 5}/5</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#10B981" }}>{selectedTrade.discipline_rating ? `${selectedTrade.discipline_rating}/5` : "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Mistake Flag:</Typography>
@@ -2261,22 +2298,22 @@ export default function TradingJournalView({
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Market Condition:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.market_condition || "Strong Trending Up"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.market_condition || "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Exit Reason:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.exit_reason || "Hit Take Profit Target"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.exit_reason || "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Entry Reason:</Typography>
                     <Typography variant="body2" sx={{ fontStyle: "italic", bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC", p: 1, borderRadius: "4px" }}>
-                      {selectedTrade.entry_reason || "Order block reaction with high volume expansion."}
+                      {selectedTrade.entry_reason || "—"}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 12 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Notes / Lessons Learned:</Typography>
                     <Typography variant="body2" sx={{ bgcolor: isDark ? "rgba(255,255,255,0.03)" : "#F8FAFC", p: 1, borderRadius: "4px" }}>
-                      {selectedTrade.notes || selectedTrade.lessons_learned || "Followed trading rules strictly without hesitation."}
+                      {selectedTrade.notes || selectedTrade.lessons_learned || "—"}
                     </Typography>
                   </Grid>
                 </Grid>

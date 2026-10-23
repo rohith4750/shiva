@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requirePermission } from "@/lib/server/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
@@ -6,7 +7,10 @@ import { DEFAULT_USER_PASSWORD } from "@/lib/brand";
 
 const db = prisma as any;
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "users.view");
+  if (auth.response) return auth.response;
+
   try {
     const dbUsers = await db.users.findMany({
       orderBy: { created_at: "desc" },
@@ -43,7 +47,6 @@ export async function GET() {
         department: u.department,
         is_active: u.is_active,
         created_at: u.created_at,
-        newpassword: u.newpassword,
       };
     });
 
@@ -57,10 +60,13 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "users.create");
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
-    const { name, email, password, role, newpassword, department } = body;
+    const { name, email, password, role, department } = body;
 
     if (!name || !email) {
       return NextResponse.json(
@@ -108,7 +114,6 @@ export async function POST(request: Request) {
         last_name,
         email: cleanEmail,
         password_hash: hashedPassword,
-        newpassword: newpassword || rawPassword,
         role: foundRole?.name || targetRoleName,
         role_id: foundRole?.id || null,
         department: department || "Operations",

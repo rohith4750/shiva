@@ -1,35 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import tradePool from "@/lib/tradeDb";
-import { calculateTradingAnalytics, TradeRecord } from "@/lib/tradingAnalytics";
+import { TradeRecord } from "@/lib/tradingAnalytics";
+import { requireUserId } from "@/lib/server/auth";
 
 export async function GET(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
   try {
     const accountId = request.nextUrl.searchParams.get("accountId") || undefined;
 
     // 1. Fetch Trading Accounts
-    const accResult = await tradePool.query(`
+    const accResult = await tradePool.query(
+      `
       SELECT id, name, account_type, currency, starting_balance::float, current_balance::float, description, is_archived
       FROM trading_accounts
+      WHERE user_id = $1
       ORDER BY created_at ASC
-    `);
+    `,
+      [userId]
+    );
 
     // 2. Fetch Strategies
-    const stratResult = await tradePool.query(`
+    const stratResult = await tradePool.query(
+      `
       SELECT id, name, description, color, is_active
       FROM strategies
+      WHERE user_id = $1
       ORDER BY name ASC
-    `);
+    `,
+      [userId]
+    );
 
     // 3. Fetch Tags
-    const tagResult = await tradePool.query(`
+    const tagResult = await tradePool.query(
+      `
       SELECT id, name, color
       FROM tags
+      WHERE user_id = $1
       ORDER BY name ASC
-    `);
+    `,
+      [userId]
+    );
 
     // 4. Fetch Trades with joined Strategy, Journal, and Tags
     let tradeQuery = `
-      SELECT 
+      SELECT
         t.id, t.user_id, t.account_id, t.strategy_id, s.name as strategy_name,
         t.trade_num, t.market, t.session, t.symbol, t.direction, t.status, t.opened_at, t.closed_at,
         t.entry_price::float, t.exit_price::float, t.stop_loss::float, t.take_profit::float,
@@ -44,11 +61,12 @@ export async function GET(request: NextRequest) {
       FROM trades t
       LEFT JOIN strategies s ON t.strategy_id = s.id
       LEFT JOIN trade_journals j ON t.id = j.trade_id
+      WHERE t.user_id = $1
     `;
 
-    const queryParams: any[] = [];
+    const queryParams: string[] = [userId];
     if (accountId && accountId !== "all") {
-      tradeQuery += ` WHERE t.account_id = $1 `;
+      tradeQuery += ` AND t.account_id = $2 `;
       queryParams.push(accountId);
     }
     tradeQuery += ` ORDER BY t.opened_at DESC `;
@@ -57,16 +75,15 @@ export async function GET(request: NextRequest) {
     const trades: TradeRecord[] = tradesResult.rows;
 
     // 5. Fetch Daily Reviews
-    const reviewResult = await tradePool.query(`
+    const reviewResult = await tradePool.query(
+      `
       SELECT id, account_id, review_date, what_went_well, what_went_wrong, lessons, next_session_plan, market_condition, daily_rating
       FROM daily_reviews
+      WHERE user_id = $1
       ORDER BY review_date DESC
-    `);
-
-    // 6. Calculate Section 7 Mathematical Analytics
-    const activeAccount = accResult.rows.find((a: any) => a.id === accountId) || accResult.rows[0];
-    const startingBalance = activeAccount ? Number(activeAccount.starting_balance) : 10000;
-    const analytics = calculateTradingAnalytics(trades, startingBalance);
+    `,
+      [userId]
+    );
 
     return NextResponse.json({
       success: true,
@@ -75,7 +92,6 @@ export async function GET(request: NextRequest) {
       tags: tagResult.rows,
       trades,
       reviews: reviewResult.rows,
-      analytics,
     });
   } catch (error: any) {
     console.error("GET /api/journal/overview error:", error);

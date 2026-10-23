@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requirePermission } from "@/lib/server/auth";
 import prisma from "@/lib/prisma";
 
 function formatModule(module?: string | null, name?: string): string {
@@ -58,7 +59,10 @@ function formatAction(action?: string | null, name?: string): string {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "permissions.read");
+  if (auth.response) return auth.response;
+
   try {
     const permissions = await prisma.permissions.findMany({
       orderBy: [{ id: "asc" }],
@@ -95,7 +99,10 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "permissions.write");
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     let { name, module: moduleName, action, description } = body;

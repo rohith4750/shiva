@@ -1,17 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requirePermission, requireSession, hasPermission } from "@/lib/server/auth";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 const db = prisma as any;
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireSession(request);
+  if (auth.response) return auth.response;
+
   try {
     const { id } = await params;
     if (!id) {
       return NextResponse.json({ success: false, error: "Invalid user ID" }, { status: 400 });
+    }
+    // Anyone may read their own profile; reading others needs users.view
+    if (id !== auth.session.userId && !hasPermission(auth.session, "users.view")) {
+      return NextResponse.json({ success: false, error: "You don't have permission to do this." }, { status: 403 });
     }
 
     const user = await db.users.findUnique({
@@ -59,9 +67,12 @@ export async function GET(
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requireSession(request);
+  if (auth.response) return auth.response;
+
   try {
     const { id } = await params;
     if (!id) {
@@ -70,6 +81,14 @@ export async function PUT(
 
     const body = await request.json();
     const { name, email, password, newpassword, role, department, is_active } = body;
+
+    // Editing someone else, or changing role / active status / password, needs users.edit;
+    // users can still update their own name, email and department.
+    const isSelf = id === auth.session.userId;
+    const privileged = role !== undefined || is_active !== undefined || Boolean(password) || Boolean(newpassword);
+    if ((!isSelf || privileged) && !hasPermission(auth.session, "users.edit")) {
+      return NextResponse.json({ success: false, error: "You don't have permission to do this." }, { status: 403 });
+    }
 
     const dataToUpdate: Record<string, unknown> = {};
 
@@ -96,12 +115,11 @@ export async function PUT(
       }
     }
 
-    if (password !== undefined && password !== "") {
-      dataToUpdate.password_hash = await bcrypt.hash(String(password), 10);
-      dataToUpdate.newpassword = newpassword || password;
-    } else if (newpassword !== undefined && newpassword !== "") {
-      dataToUpdate.password_hash = await bcrypt.hash(String(newpassword), 10);
-      dataToUpdate.newpassword = newpassword;
+    // Only the bcrypt hash is stored; the legacy plain-text column is cleared on every password change
+    const nextPassword = password || newpassword;
+    if (nextPassword) {
+      dataToUpdate.password_hash = await bcrypt.hash(String(nextPassword), 10);
+      dataToUpdate.newpassword = null;
     }
 
     if (department !== undefined) dataToUpdate.department = department;
@@ -136,13 +154,19 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const auth = await requirePermission(request, "users.delete");
+  if (auth.response) return auth.response;
+
   try {
     const { id } = await params;
     if (!id) {
       return NextResponse.json({ success: false, error: "Invalid user ID" }, { status: 400 });
+    }
+    if (id === auth.session.userId) {
+      return NextResponse.json({ success: false, error: "You can't delete your own account." }, { status: 400 });
     }
 
     await db.users.delete({

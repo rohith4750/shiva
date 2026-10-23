@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requirePermission } from "@/lib/server/auth";
 import prisma from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const auth = await requirePermission(request, "roles.view");
+  if (auth.response) return auth.response;
+
   try {
     const roles = await prisma.roles.findMany({
       orderBy: { id: "asc" },
@@ -39,7 +43,10 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  const auth = await requirePermission(request, "roles.create");
+  if (auth.response) return auth.response;
+
   try {
     const body = await request.json();
     const { name, description, permissionIds } = body;

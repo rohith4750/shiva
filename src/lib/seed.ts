@@ -19,7 +19,6 @@ export async function ensureSeedUsers() {
         last_name: "Telidevara",
         email: "rohithtelidevara@gmail.com",
         password_hash: hash,
-        newpassword: "Rohith@143",
         role: "SUPER_ADMIN",
         role_id: superAdminRole?.id || null,
         department: "Executive",
