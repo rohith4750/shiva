@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo } from "react";
 import { createTheme, ThemeProvider, CssBaseline } from "@mui/material";
 import { STORAGE_PREFIX } from "@/lib/brand";
 
@@ -17,26 +17,15 @@ export const ColorModeContext = createContext<ColorModeContextType>({
 export const useColorMode = () => useContext(ColorModeContext);
 
 export default function ThemeRegistry({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<"light" | "dark">("dark");
+  // The terminal ships dark-only; the light branches below are kept for the context API
+  const mode = "dark" as "light" | "dark";
 
   useEffect(() => {
-    const saved = localStorage.getItem(`${STORAGE_PREFIX}_theme_mode`) as "light" | "dark" | null;
-    if (saved === "light" || saved === "dark") {
-      setMode(saved);
-      document.documentElement.setAttribute("data-theme", saved);
-    } else {
-      document.documentElement.setAttribute("data-theme", "dark");
-    }
+    localStorage.removeItem(`${STORAGE_PREFIX}_theme_mode`);
+    document.documentElement.setAttribute("data-theme", "dark");
   }, []);
 
-  const toggleColorMode = () => {
-    setMode((prev) => {
-      const nextMode = prev === "dark" ? "light" : "dark";
-      localStorage.setItem(`${STORAGE_PREFIX}_theme_mode`, nextMode);
-      document.documentElement.setAttribute("data-theme", nextMode);
-      return nextMode;
-    });
-  };
+  const toggleColorMode = () => {};
 
   const theme = useMemo(() => {
     const isDark = mode === "dark";

@@ -27,7 +27,6 @@ export async function POST(request: Request) {
       fees,
       notes,
       // 31-Field Specifics
-      tradeNum,
       market,
       session,
       slPoints,
@@ -85,12 +84,6 @@ export async function POST(request: Request) {
       ? body.customMistake.trim()
       : (mistakes || null);
 
-    // Sequence Trade Number if not provided
-    let finalTradeNum = tradeNum ? Number(tradeNum) : null;
-    if (!finalTradeNum) {
-      const maxRes = await tradePool.query(`SELECT COALESCE(MAX(trade_num), 0) + 1 as next_num FROM trades`);
-      finalTradeNum = maxRes.rows[0]?.next_num || 1;
-    }
 
     // Auto-calculate Points if not directly provided
     const numEntry = Number(entryPrice);
@@ -132,22 +125,23 @@ export async function POST(request: Request) {
     const finalNetPnl = tradeStatus === "CLOSED" && netPnl !== undefined && netPnl !== null ? Number(netPnl) : null;
     const finalGrossPnl = tradeStatus === "CLOSED" ? (grossPnl !== undefined && grossPnl !== null ? Number(grossPnl) : finalNetPnl) : null;
 
-    // Insert trade
-    await tradePool.query(
+    // Insert trade (trade_num is assigned per account by the trades_assign_trade_num trigger)
+    const inserted = await tradePool.query(
       `
       INSERT INTO trades (
         id, user_id, account_id, strategy_id, symbol, direction, status,
         opened_at, closed_at, entry_price, exit_price, stop_loss, take_profit,
         volume, planned_risk_amount, planned_reward_amount, planned_rr_ratio, actual_r,
         gross_pnl, commission, swap, fees, net_pnl, notes,
-        trade_num, market, session, sl_points, tp_points, market_condition, result
+        market, session, sl_points, tp_points, market_condition, result
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7,
         $8, $9, $10, $11, $12, $13,
         $14, $15, $16, $17, $18,
         $19, $20, $21, $22, $23, $24,
-        $25, $26, $27, $28, $29, $30, $31
+        $25, $26, $27, $28, $29, $30
       )
+      RETURNING trade_num
     `,
       [
         tradeId,
@@ -178,7 +172,6 @@ export async function POST(request: Request) {
         fees ? Number(fees) : 0,
         finalNetPnl,
         notes || null,
-        finalTradeNum,
         market || null,
         session || "Morning Opening (9:15-11:00)",
         computedSLPoints,
@@ -231,6 +224,7 @@ export async function POST(request: Request) {
       success: true,
       message: "Trade recorded successfully!",
       tradeId,
+      tradeNum: inserted.rows[0]?.trade_num ?? null,
     });
   } catch (error: any) {
     console.error("POST /api/journal/trades error:", error);

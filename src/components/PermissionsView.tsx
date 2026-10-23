@@ -616,22 +616,22 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
             <Table stickyHeader size="small" className="app-table">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 65 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 75 }}>
                     ID
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 170 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 180 }}>
                     MODULE
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 130 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 140 }}>
                     ACTION
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 180 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 190 }}>
                     PERMISSION KEY
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5 }}>
                     DESCRIPTION
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 190 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 200 }}>
                     ASSIGNED TO ROLES
                   </TableCell>
                 </TableRow>
@@ -650,7 +650,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredPermissions.map((p) => {
+                  filteredPermissions.map((p, idx) => {
                     const modStyle = getModuleStyle(p.module);
                     const actStyle = getActionStyle(p.action);
 
@@ -658,24 +658,25 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                       <TableRow
                         key={p.id}
                         sx={{
-                          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.02)" },
-                          borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                          bgcolor: idx % 2 === 0 ? "transparent" : (isDark ? "rgba(255, 255, 255, 0.015)" : "#F8FAFC"),
+                          "&:hover": { backgroundColor: isDark ? "rgba(56, 189, 248, 0.1)" : "#F1F5F9" },
+                          borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.12)" : "1px solid #E2E8F0",
                         }}
                       >
                         <TableCell
-                          sx={{ color: "#64748B", fontSize: "0.78rem", fontWeight: 600, py: 1 }}
+                          sx={{ color: "#64748B", fontSize: "0.82rem", fontWeight: 600, py: 1.5 }}
                         >
                           #{p.id}
                         </TableCell>
 
                         {/* MODULE Column */}
-                        <TableCell sx={{ py: 1 }}>
+                        <TableCell sx={{ py: 1.5 }}>
                           <Chip
                             icon={modStyle.icon}
                             label={p.module}
                             size="small"
                             sx={{
-                              height: 22,
+                              height: 24,
                               fontSize: "0.72rem",
                               fontWeight: 600,
                               backgroundColor: modStyle.bg,
@@ -688,13 +689,13 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         </TableCell>
 
                         {/* ACTION Column */}
-                        <TableCell sx={{ py: 1 }}>
+                        <TableCell sx={{ py: 1.5 }}>
                           <Chip
                             icon={actStyle.icon}
                             label={p.action.toUpperCase()}
                             size="small"
                             sx={{
-                              height: 22,
+                              height: 24,
                               fontSize: "0.7rem",
                               fontWeight: 600,
                               letterSpacing: "0.02em",
@@ -708,17 +709,17 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         </TableCell>
 
                         {/* PERMISSION KEY Column */}
-                        <TableCell sx={{ py: 1 }}>
+                        <TableCell sx={{ py: 1.5 }}>
                           <Typography
                             component="span"
                             sx={{
                               fontFamily: "monospace",
-                              fontSize: "0.76rem",
+                              fontSize: "0.78rem",
                               fontWeight: 600,
                               color: isDark ? "#22D3EE" : "#0369A1",
                               backgroundColor: isDark ? "rgba(6, 182, 212, 0.1)" : "#E0F2FE",
-                              px: 0.9,
-                              py: 0.3,
+                              px: 1,
+                              py: 0.4,
                               borderRadius: "4px",
                               border: `1px solid ${isDark ? "rgba(6, 182, 212, 0.25)" : "#BAE6FD"}`,
                               display: "inline-block",
@@ -729,12 +730,12 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         </TableCell>
 
                         {/* DESCRIPTION Column */}
-                        <TableCell sx={{ color: "text.secondary", fontSize: "0.78rem", py: 1 }}>
+                        <TableCell sx={{ color: "text.secondary", fontSize: "0.84rem", py: 1.5 }}>
                           {p.description || "—"}
                         </TableCell>
 
                         {/* INHERITED BY ROLES Column */}
-                        <TableCell sx={{ py: 1 }}>
+                        <TableCell sx={{ py: 1.5 }}>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                             {!p.roles || p.roles.length === 0 ? (
                               <Typography

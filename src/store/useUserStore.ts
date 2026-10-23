@@ -7,9 +7,9 @@ export type SortOrder = "asc" | "desc";
 export type ModalType = "add" | "edit" | "delete" | "details" | null;
 
 export const ROW_HEIGHTS: Record<RowDensity, number> = {
-  compact: 46,
-  standard: 62,
-  spacious: 78,
+  compact: 54,
+  standard: 70,
+  spacious: 86,
 };
 
 interface UserState {
@@ -72,7 +72,7 @@ export const useUserStore = create<UserState>((set) => ({
   selectedUserIds: [],
   
   viewMode: "virtualized",
-  rowDensity: "compact",
+  rowDensity: "standard",
   virtualOverscan: 10,
   mockDataCount: 0,
   

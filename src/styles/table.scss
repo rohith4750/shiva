@@ -9,21 +9,21 @@
 
 :root {
   --table-bg: var(--bg-surface-card);
-  --table-header-bg: var(--bg-surface-header);
-  --table-header-text: var(--text-secondary);
-  --table-header-border: var(--border-color);
+  --table-header-bg: #0B152B;
+  --table-header-text: #94A3B8;
+  --table-header-border: rgba(56, 189, 248, 0.28);
   
-  --table-row-border: var(--border-subtle);
-  --table-row-hover-bg: var(--bg-surface-hover);
+  --table-row-border: rgba(255, 255, 255, 0.08);
+  --table-row-hover-bg: rgba(56, 189, 248, 0.08);
   --table-row-text: var(--text-primary);
   
   --table-card-bg: var(--bg-surface);
-  --table-card-border: var(--border-color);
-  --table-card-header-bg: var(--bg-surface-elevated);
-  --table-card-header-border: var(--border-color);
+  --table-card-border: rgba(56, 189, 248, 0.25);
+  --table-card-header-bg: #0D1933;
+  --table-card-header-border: rgba(56, 189, 248, 0.25);
   
-  --table-footer-bg: var(--bg-surface-elevated);
-  --table-footer-border: var(--border-color);
+  --table-footer-bg: #0B152B;
+  --table-footer-border: rgba(56, 189, 248, 0.25);
   --table-footer-text: var(--text-secondary);
   --table-strong-text: var(--text-primary);
 }
@@ -31,23 +31,23 @@
 [data-theme="light"],
 .light-mode {
   --table-bg: #FFFFFF;
-  --table-header-bg: #EFF6FF;
-  --table-header-text: #0F172A; /* Deep Navy: crisp dark text in light mode */
-  --table-header-border: #E2E8F0;
+  --table-header-bg: #F8FAFC;
+  --table-header-text: #334155; /* Crisp dark text in light mode */
+  --table-header-border: #CBD5E1; /* Crisp defined header border */
   
-  --table-row-border: #E2E8F0;
+  --table-row-border: #E2E8F0;    /* Clear defined row divider line */
   --table-row-hover-bg: #F1F5F9;
-  --table-row-text: #0F172A;    /* Dark font in light mode */
+  --table-row-text: #0F172A;      /* Dark font in light mode */
   
   --table-card-bg: #FFFFFF;
-  --table-card-border: #E2E8F0;
+  --table-card-border: #CBD5E1;   /* Crisp outer card outline */
   --table-card-header-bg: #F8FAFC;
-  --table-card-header-border: #E2E8F0;
+  --table-card-header-border: #CBD5E1;
   
   --table-footer-bg: #F8FAFC;
-  --table-footer-border: #E2E8F0;
+  --table-footer-border: #CBD5E1;
   --table-footer-text: #475569;
-  --table-strong-text: #0F172A; /* Dark font in light mode */
+  --table-strong-text: #0F172A;
 }
 
 /* ==========================================================================
@@ -57,7 +57,8 @@
   width: 100%;
   background-color: var(--table-card-bg);
   border: 1px solid var(--table-card-border);
-  border-radius: var(--border-radius);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.03);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -139,11 +140,11 @@
     z-index: 10;
     background-color: var(--table-header-bg) !important;
     color: var(--table-header-text) !important;
-    font-size: 0.75rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--table-header-border);
+    letter-spacing: 0.05em;
+    padding: 14px 20px;
+    border-bottom: 2px solid var(--table-header-border);
     white-space: nowrap;
   }
 
@@ -158,8 +159,8 @@
 
     td,
     .MuiTableCell-root {
-      padding: 9px 14px;
-      font-size: 0.8rem;
+      padding: 16px 20px;
+      font-size: 0.85rem;
       border-bottom: 1px solid var(--table-row-border);
       color: var(--table-row-text);
       vertical-align: middle;

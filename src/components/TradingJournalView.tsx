@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -28,10 +28,7 @@ import {
   LinearProgress,
   Snackbar,
   Alert,
-  FormControlLabel,
   Rating,
-  Switch,
-  Slider,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -50,12 +47,15 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  Visibility as ViewIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "@/components/ThemeRegistry";
 import { TradeRecord } from "@/lib/tradingAnalytics";
 import AdvancedTradingDashboard from "./AdvancedTradingDashboard";
 import WaveAnalyticsView from "./WaveAnalyticsView";
 import AnalyticsView from "./AnalyticsView";
+import { MONO, makeTokens, signColor, cardSx } from "./TradingInsightsPanel";
+import TradingCalendarView from "./TradingCalendarView";
 
 export const TRADING_SYMBOLS = [
   "XAUUSD",
@@ -94,6 +94,25 @@ export const EXIT_EMOTIONS = [
   "Proud",
 ] as const;
 
+const RATING_OPTIONS = [
+  { value: 1, label: "Very low" },
+  { value: 2, label: "Low" },
+  { value: 3, label: "Average" },
+  { value: 4, label: "High" },
+  { value: 5, label: "Very high" },
+];
+
+// Trade-entry grid column spans: on lg, FIELD = 6 per row, FIELD_MID = 4, FIELD_WIDE = 3
+const FIELD = { xs: 6, sm: 4, md: 3, lg: 2 };
+const FIELD_MID = { xs: 12, sm: 6, lg: 3 };
+const FIELD_WIDE = { xs: 12, sm: 8, md: 6, lg: 4 };
+
+// Auto-calculated inputs stay editable but read as derived values
+const autoFieldSx = {
+  "& .MuiOutlinedInput-root": { bgcolor: "rgba(56, 189, 248, 0.05)" },
+  "& .MuiInputBase-input": { color: "#7DD3FC", fontFamily: "var(--font-mono)" },
+};
+
 interface TradingJournalViewProps {
   initialTab?: number;
   onBackToHome?: () => void;
@@ -105,6 +124,7 @@ export default function TradingJournalView({
 }: TradingJournalViewProps) {
   const { mode } = useColorMode();
   const isDark = mode === "dark";
+  const tk = useMemo(() => makeTokens(isDark), [isDark]);
 
   // Navigation State: 0 = Overview, 1 = Add Trade, 2 = History, 3 = Calendar, 4 = Analytics, 5 = Journal, 6 = Accounts
   const [activeTab, setActiveTab] = useState<number>(initialTab);
@@ -165,9 +185,8 @@ export default function TradingJournalView({
       ...prev,
       tradeDate: prev.tradeDate || today,
       tradeTime: prev.tradeTime || nowTime,
-      tradeNum: prev.tradeNum || String(trades.length + 1),
     }));
-  }, [fetchJournalData, trades.length]);
+  }, [fetchJournalData]);
 
   // --- OVERVIEW TIMEFRAME FILTERS ---
   const [overviewPeriod, setOverviewPeriod] = useState<"all" | "day" | "week" | "month" | "year" | "custom">("all");
@@ -304,8 +323,6 @@ export default function TradingJournalView({
 
   // --- TRADE ENTRY FORM STATE ---
   const [tradeForm, setTradeForm] = useState({
-    // 1. Trade #
-    tradeNum: "6",
     // 2. Date
     tradeDate: "",
     // 3. Time
@@ -368,6 +385,10 @@ export default function TradingJournalView({
     accountId: "",
     status: "CLOSED",
   });
+
+  const currencyOfAccount = (accountId: string) => (accounts.find((a) => a.id === accountId)?.currency === "INR" ? "₹" : "$");
+  const formCurrencySymbol = currencyOfAccount(tradeForm.accountId);
+  const ACCOUNT_TYPE_COLOR: Record<string, string> = { live: tk.pos, funded: tk.indigo, backtest: tk.accent, demo: tk.neutral };
 
   // Auto-Calculation helper for single form
   const updateTradeField = (field: string, val: any) => {
@@ -444,9 +465,9 @@ export default function TradingJournalView({
         next.status = "OPEN";
       }
 
-      // Mistake Sync
-      if (field === "mistakeFlag") {
-        next.mistakeType = val ? "Early Entry before Trigger" : "None / Followed Plan";
+      // Mistake Sync: any type other than "None" marks the trade as a mistake
+      if (field === "mistakeType") {
+        next.mistakeFlag = val !== "None / Followed Plan";
       }
 
       return next;
@@ -492,7 +513,6 @@ export default function TradingJournalView({
         swap: 0,
         fees: 0,
         notes: tradeForm.notes,
-        tradeNum: tradeForm.tradeNum ? Number(tradeForm.tradeNum) : null,
         session: tradeForm.session,
         slPoints: tradeForm.slPoints ? Number(tradeForm.slPoints) : null,
         tpPoints: tradeForm.tpPoints ? Number(tradeForm.tpPoints) : null,
@@ -520,7 +540,7 @@ export default function TradingJournalView({
 
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast("Trade recorded in PostgreSQL successfully!", "success");
+        showToast(data.tradeNum ? `Trade #${data.tradeNum} recorded successfully!` : "Trade recorded successfully!", "success");
         fetchJournalData();
         setActiveTab(2); // Jump to Trade History
       } else {
@@ -668,6 +688,24 @@ export default function TradingJournalView({
     return list;
   }, [trades, selectedAccountId, overviewPeriod, overviewDay, overviewStartDate, overviewEndDate]);
 
+  // Size the view to the visible outlet so the top menu stays fixed and only tab content scrolls
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const outlet = document.getElementById("app-main-outlet");
+    const el = rootRef.current;
+    if (!outlet || !el) return;
+    const bottomPadding = parseFloat(getComputedStyle(el.closest(".app-content-container") ?? outlet).paddingBottom) || 0;
+    const measure = () => {
+      const top = el.getBoundingClientRect().top - outlet.getBoundingClientRect().top + outlet.scrollTop;
+      setViewportHeight(Math.max(360, Math.floor(outlet.clientHeight - top - bottomPadding)));
+    };
+    // ResizeObserver fires once on observe, which also covers the initial measurement
+    const ro = new ResizeObserver(measure);
+    ro.observe(outlet);
+    return () => ro.disconnect();
+  }, []);
+
   // Single source of truth for every journal tab: nav label, icon and page header
   const journalTabs: {
     label: string;
@@ -686,17 +724,20 @@ export default function TradingJournalView({
 
   return (
     <Box
+      ref={rootRef}
       sx={{
-        minHeight: "100%",
+        height: viewportHeight ?? "auto",
+        display: "flex",
+        flexDirection: "column",
         bgcolor: "transparent",
         color: isDark ? "#F8FAFC" : "#0F172A",
-        pb: 2,
       }}
     >
       {/* ============================================================== */}
       {/* NAVIGATION COMMAND BAR (TABS + ACCOUNT CONTROLS) & PAGE HEADER */}
       {/* ============================================================== */}
-      <Box sx={{ px: { xs: 0.8, sm: 1.2, md: 1.5 }, pt: 1, display: "flex", flexDirection: "column", gap: 1.4 }}>
+      {/* Fixed top menu: sits outside the scroll area so only the tab content below it scrolls */}
+      <Box sx={{ flexShrink: 0, px: { xs: 0.8, sm: 1.2, md: 1.5 }, pt: 1, display: "flex", flexDirection: "column", gap: 1.4 }}>
         <Box
           sx={{
             display: "flex",
@@ -711,19 +752,18 @@ export default function TradingJournalView({
             value={activeTab}
             onChange={(_, val) => setActiveTab(val)}
             variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
+            scrollButtons={false}
             sx={{
               flex: 1,
               minWidth: 0,
               minHeight: 44,
-              "& .MuiTabs-flexContainer": { gap: 0.5 },
-              "& .MuiTabs-scrollButtons.Mui-disabled": { opacity: 0.3 },
+              "& .MuiTabs-flexContainer": { gap: 0.2 },
               "& .MuiTab-root": {
                 minHeight: 44,
+                minWidth: 0,
                 py: 0,
-                px: 1.4,
-                fontSize: "0.82rem",
+                px: { xs: 1, xl: 1.3 },
+                fontSize: "0.8rem",
                 fontWeight: 500,
                 textTransform: "none",
                 color: isDark ? "#94A3B8" : "#64748B",
@@ -777,7 +817,7 @@ export default function TradingJournalView({
 
           {/* Account selector + refresh */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, pr: 0.4 }}>
-            <FormControl size="small" sx={{ minWidth: 170 }}>
+            <FormControl size="small" sx={{ minWidth: 170, maxWidth: 230 }}>
               <Select
                 value={selectedAccountId}
                 onChange={(e) => setSelectedAccountId(e.target.value)}
@@ -789,7 +829,7 @@ export default function TradingJournalView({
                   height: 34,
                   borderRadius: "9px",
                   bgcolor: isDark ? "rgba(5, 9, 18, 0.6)" : "#F8FAFC",
-                  "& .MuiSelect-select": { py: 0.4, pl: 0, pr: 3 },
+                  "& .MuiSelect-select": { py: 0.4, pl: 0, pr: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
                 }}
               >
                 <MenuItem value="all" sx={{ fontSize: "0.78rem" }}>All Accounts ({accounts.length})</MenuItem>
@@ -841,7 +881,24 @@ export default function TradingJournalView({
       {/* ============================================================== */}
       {/* MAIN VIEW CONTAINER (100% FULL-WIDTH COMPACT VIEWPORT)         */}
       {/* ============================================================== */}
-      <Box key={`tab-${activeTab}`} sx={{ width: "100%", mt: 1, px: { xs: 0.8, sm: 1.2, md: 1.5 }, pb: 1.5, animation: "view-enter 0.35s ease-out both" }}>
+      <Box
+        key={`tab-${activeTab}`}
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: viewportHeight ? "auto" : "visible",
+          overflowX: "hidden",
+          width: "100%",
+          mt: 1,
+          px: { xs: 0.8, sm: 1.2, md: 1.5 },
+          pb: 1.5,
+          animation: "view-enter 0.35s ease-out both",
+          scrollbarWidth: "thin",
+          scrollbarColor: "var(--scrollbar-thumb) var(--scrollbar-track)",
+          "&::-webkit-scrollbar": { width: "var(--scrollbar-width)" },
+          "&::-webkit-scrollbar-thumb": { backgroundColor: "var(--scrollbar-thumb)", borderRadius: "var(--border-radius)" },
+        }}
+      >
         {loading && <LinearProgress sx={{ mb: 1, borderRadius: 1 }} />}
 
         {/* ============================================================ */}
@@ -1061,698 +1118,331 @@ export default function TradingJournalView({
                 },
               }}
             >
-              {/* Form Title & Clean Header */}
-              <Box sx={{ mb: 1.2, pb: 1, borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 1.5 }}>
-                <Typography variant="caption" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: isDark ? "#94A3B8" : "#64748B" }}>
-                  New trade entry
-                </Typography>
-
-                {/* Account Selection */}
-                <FormControl size="small" sx={{ minWidth: 220 }} required>
-                  <InputLabel sx={{ fontSize: "0.74rem" }}>Trading Account</InputLabel>
-                  <Select
-                    value={tradeForm.accountId}
-                    label="Trading Account"
-                    onChange={(e) => updateTradeField("accountId", e.target.value)}
-                    sx={{ fontSize: "0.76rem", height: 32 }}
-                  >
-                    {accounts.map((a) => (
-                      <MenuItem key={a.id} value={a.id} sx={{ fontSize: "0.75rem" }}>
-                        {a.name} ({a.account_type.toUpperCase()} - {a.currency})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-
               <form onSubmit={handleCreateTrade}>
-                <Grid container spacing={1.5}>
-                  {/* ============================================================ */}
-                  {/* LEFT COLUMN: SETUP, PRICING & FINANCIAL ENGINE (PARTS 1, 2, 3) */}
-                  {/* ============================================================ */}
-                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    {/* SECTION 1: TRADE SETUP & EXECUTION */}
-                    <Paper
-                      sx={{
-                        p: 1.2,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "#050912" : "#F8FAFC",
-                        border: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #E2E8F0",
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#38BDF8", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
-                        <Box component="span" sx={{ bgcolor: "#0284C7", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
-                          PART 1
-                        </Box>
-                        Trade Setup & Execution
-                      </Typography>
-
-                      <Grid container spacing={1.2}>
-                        {/* 1. Trade # */}
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="1. Trade #"
-                            type="number"
-                            value={tradeForm.tradeNum}
-                            onChange={(e) => updateTradeField("tradeNum", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* 2. Date */}
-                        <Grid size={{ xs: 6, sm: 5 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="2. Date"
-                            type="date"
-                            value={tradeForm.tradeDate}
-                            onChange={(e) => updateTradeField("tradeDate", e.target.value)}
-                            slotProps={{ inputLabel: { shrink: true } }}
-                          />
-                        </Grid>
-
-                        {/* 3. Time */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="3. Time"
-                            type="time"
-                            value={tradeForm.tradeTime}
-                            onChange={(e) => updateTradeField("tradeTime", e.target.value)}
-                            slotProps={{ inputLabel: { shrink: true } }}
-                          />
-                        </Grid>
-
-                        {/* 4. Symbol (Dropdown with 12 preset values) */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small" required>
-                            <InputLabel>4. Symbol</InputLabel>
-                            <Select
-                              value={tradeForm.symbol}
-                              label="4. Symbol"
-                              onChange={(e) => updateTradeField("symbol", e.target.value)}
-                            >
-                              {TRADING_SYMBOLS.map((sym) => (
-                                <MenuItem key={sym} value={sym} sx={{ fontWeight: 600, fontSize: "0.75rem" }}>
-                                  {sym}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        {/* 5. Direction (ONLY BUY and SELL) */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>5. Direction</InputLabel>
-                            <Select
-                              value={tradeForm.direction}
-                              label="5. Direction"
-                              onChange={(e) => updateTradeField("direction", e.target.value)}
-                            >
-                              <MenuItem value="BUY" sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.75rem" }}>BUY</MenuItem>
-                              <MenuItem value="SELL" sx={{ color: "#EF4444", fontWeight: 600, fontSize: "0.75rem" }}>SELL</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        {/* 6. Strategy / Setup (with Other manual text input option) */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>6. Strategy / Setup</InputLabel>
-                            <Select
-                              value={tradeForm.strategyId}
-                              label="6. Strategy / Setup"
-                              onChange={(e) => updateTradeField("strategyId", e.target.value)}
-                            >
-                              <MenuItem value="">SMC Order Block / FVG</MenuItem>
-                              <MenuItem value="break-retest">Break & Retest</MenuItem>
-                              <MenuItem value="orb-15m">ORB 15m Breakout</MenuItem>
-                              <MenuItem value="vwap-rejection">VWAP Bounce / Rejection</MenuItem>
-                              <MenuItem value="pullback-ema">Pullback to 20 EMA</MenuItem>
-                              <MenuItem value="liquidity-sweep">Liquidity Sweep & Reversal</MenuItem>
-                              {strategies.map((s) => (
-                                <MenuItem key={s.id} value={s.id}>
-                                  {s.name}
-                                </MenuItem>
-                              ))}
-                              <MenuItem value="other" sx={{ fontWeight: 600, color: "#38BDF8" }}>
-                                + Other (Enter Details Manually)
-                              </MenuItem>
-                            </Select>
-                          </FormControl>
-                          {tradeForm.strategyId === "other" && (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              label="Custom Strategy Details"
-                              placeholder="Describe your strategy manually..."
-                              value={tradeForm.customStrategy}
-                              onChange={(e) => updateTradeField("customStrategy", e.target.value)}
-                              required
-                              sx={{ mt: 1 }}
-                            />
-                          )}
-                        </Grid>
-
-                        {/* 7. Session */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>7. Session</InputLabel>
-                            <Select
-                              value={tradeForm.session}
-                              label="7. Session"
-                              onChange={(e) => updateTradeField("session", e.target.value)}
-                            >
-                              <MenuItem value="Morning Opening (9:15-11:00)">Morning Opening (9:15 - 11:00)</MenuItem>
-                              <MenuItem value="Mid-Day Consolidation (11:00-13:30)">Mid-Day Consolidation (11:00 - 13:30)</MenuItem>
-                              <MenuItem value="Afternoon Closing (13:30-15:30)">Afternoon Closing (13:30 - 15:30)</MenuItem>
-                              <MenuItem value="London Open">London Open</MenuItem>
-                              <MenuItem value="New York Open">New York Open</MenuItem>
-                              <MenuItem value="Asian Session">Asian Session</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                      </Grid>
-                    </Paper>
-
-                    {/* ======================================================== */}
-                    {/* SECTION 2: PRICE LEVELS & SIZING          */}
-                    {/* ======================================================== */}
-                    <Paper
-                      sx={{
-                        p: 1.2,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "#050912" : "#F8FAFC",
-                        border: isDark ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid #E2E8F0",
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#10B981", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
-                        <Box component="span" sx={{ bgcolor: "#059669", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
-                          PART 2
-                        </Box>
-                        Price Levels & Position Sizing
-                      </Typography>
-
-                      <Grid container spacing={1.2}>
-                        {/* 9. Entry */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="9. Entry Price"
-                            type="number"
-                            required
-                            value={tradeForm.entryPrice}
-                            onChange={(e) => updateTradeField("entryPrice", e.target.value)}
-                            placeholder="25150"
-                          />
-                        </Grid>
-
-                        {/* 10. SL */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="10. Stop Loss (SL)"
-                            type="number"
-                            value={tradeForm.stopLoss}
-                            onChange={(e) => updateTradeField("stopLoss", e.target.value)}
-                            placeholder="25100"
-                          />
-                        </Grid>
-
-                        {/* 11. TP */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="11. Take Profit (TP)"
-                            type="number"
-                            value={tradeForm.takeProfit}
-                            onChange={(e) => updateTradeField("takeProfit", e.target.value)}
-                            placeholder="25300"
-                          />
-                        </Grid>
-
-                        {/* 12. Exit */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="12. Exit Price"
-                            type="number"
-                            value={tradeForm.exitPrice}
-                            onChange={(e) => updateTradeField("exitPrice", e.target.value)}
-                            placeholder="Blank if OPEN"
-                          />
-                        </Grid>
-
-                        {/* 13. Lots / Quantity */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="13. Lots / Quantity"
-                            type="number"
-                            value={tradeForm.volume}
-                            onChange={(e) => updateTradeField("volume", e.target.value)}
-                            placeholder="e.g. 50"
-                          />
-                        </Grid>
-                      </Grid>
-                    </Paper>
-
-                    {/* ======================================================== */}
-                    {/* SECTION 3: RISK & FINANCIAL ENGINE      */}
-                    {/* ======================================================== */}
-                    <Paper
-                      sx={{
-                        p: 1.2,
-                        flex: 1,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "rgba(245, 158, 11, 0.04)" : "#FFFBEB",
-                        border: isDark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #FDE68A",
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#D97706", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
-                        <Box component="span" sx={{ bgcolor: "#D97706", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
-                          PART 3
-                        </Box>
-                        Risk, Reward & Auto-Calculated Financials
-                      </Typography>
-
-                      <Grid container spacing={1.2}>
-                        {/* 14. Risk */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label={`14. Planned Risk (${activeCurrencySymbol})`}
-                            type="number"
-                            value={tradeForm.plannedRiskAmount}
-                            onChange={(e) => updateTradeField("plannedRiskAmount", e.target.value)}
-                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>{activeCurrencySymbol}</span></InputAdornment> } }}
-                          />
-                        </Grid>
-
-                        {/* 15. SL Points */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="15. SL Points (Auto)"
-                            value={tradeForm.slPoints}
-                            onChange={(e) => updateTradeField("slPoints", e.target.value)}
-                            placeholder="Auto |Entry - SL|"
-                          />
-                        </Grid>
-
-                        {/* 16. TP Points */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="16. TP Points (Auto)"
-                            value={tradeForm.tpPoints}
-                            onChange={(e) => updateTradeField("tpPoints", e.target.value)}
-                            placeholder="Auto |TP - Entry|"
-                          />
-                        </Grid>
-
-                        {/* 17. Planned R:R */}
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="17. Planned R:R (Auto)"
-                            value={tradeForm.plannedRR}
-                            onChange={(e) => updateTradeField("plannedRR", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* 18. P&L */}
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label={`18. Net P&L (${activeCurrencySymbol})`}
-                            type="number"
-                            value={tradeForm.netPnl}
-                            onChange={(e) => updateTradeField("netPnl", e.target.value)}
-                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>{activeCurrencySymbol}</span></InputAdornment> } }}
-                          />
-                        </Grid>
-
-                        {/* 19. Actual R:R */}
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="19. Actual R:R (Auto)"
-                            value={tradeForm.actualRR}
-                            onChange={(e) => updateTradeField("actualRR", e.target.value)}
-                          />
-                        </Grid>
-
-                        {/* 20. Result */}
-                        <Grid size={{ xs: 6, sm: 3 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>20. Result</InputLabel>
-                            <Select
-                              value={tradeForm.result}
-                              label="20. Result"
-                              onChange={(e) => updateTradeField("result", e.target.value)}
-                            >
-                              <MenuItem value="WIN" sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.75rem" }}>WIN</MenuItem>
-                              <MenuItem value="LOSS" sx={{ color: "#EF4444", fontWeight: 600, fontSize: "0.75rem" }}>LOSS</MenuItem>
-                              <MenuItem value="BREAK_EVEN" sx={{ color: "#64748B", fontWeight: 600, fontSize: "0.75rem" }}>BREAK_EVEN</MenuItem>
-                              <MenuItem value="OPEN" sx={{ color: "#F59E0B", fontWeight: 600, fontSize: "0.75rem" }}>OPEN</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </Grid>
-                      </Grid>
-                    </Paper>
+                {/* Single dense grid; on lg each row fills 12 cols: setup, context, prices, financials, mindset, journal */}
+                <Grid container spacing={1.2}>
+                  <Grid size={FIELD_WIDE}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Trading Account</InputLabel>
+                      <Select value={tradeForm.accountId} label="Trading Account" onChange={(e) => updateTradeField("accountId", e.target.value)}>
+                        {accounts.map((a) => (
+                          <MenuItem key={a.id} value={a.id}>
+                            {a.name} ({a.account_type.toUpperCase()} - {a.currency})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Date" type="date" value={tradeForm.tradeDate} onChange={(e) => updateTradeField("tradeDate", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Time" type="time" value={tradeForm.tradeTime} onChange={(e) => updateTradeField("tradeTime", e.target.value)} slotProps={{ inputLabel: { shrink: true } }} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <FormControl fullWidth size="small" required>
+                      <InputLabel>Symbol</InputLabel>
+                      <Select value={tradeForm.symbol} label="Symbol" onChange={(e) => updateTradeField("symbol", e.target.value)}>
+                        {TRADING_SYMBOLS.map((sym) => (
+                          <MenuItem key={sym} value={sym} sx={{ fontWeight: 600 }}>
+                            {sym}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Direction</InputLabel>
+                      <Select
+                        value={tradeForm.direction}
+                        label="Direction"
+                        onChange={(e) => updateTradeField("direction", e.target.value)}
+                        sx={{ color: tradeForm.direction === "BUY" ? "#10B981" : "#EF4444", fontWeight: 600 }}
+                      >
+                        <MenuItem value="BUY" sx={{ color: "#10B981", fontWeight: 600 }}>BUY</MenuItem>
+                        <MenuItem value="SELL" sx={{ color: "#EF4444", fontWeight: 600 }}>SELL</MenuItem>
+                      </Select>
+                    </FormControl>
                   </Grid>
 
-                  {/* ============================================================ */}
-                  {/* RIGHT COLUMN: PSYCHOLOGY & MARKET CONTEXT (PARTS 4, 5)        */}
-                  {/* ============================================================ */}
-                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                    {/* SECTION 4: PSYCHOLOGY & DISCIPLINE */}
-                    <Paper
-                      sx={{
-                        p: 1.2,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "#050912" : "#F8FAFC",
-                        border: isDark ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid #E2E8F0",
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#8B5CF6", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
-                        <Box component="span" sx={{ bgcolor: "#7C3AED", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
-                          PART 4
-                        </Box>
-                        Trading Psychology & Mindset
-                      </Typography>
+                  <Grid size={FIELD_MID}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Strategy / Setup</InputLabel>
+                      <Select value={tradeForm.strategyId} label="Strategy / Setup" onChange={(e) => updateTradeField("strategyId", e.target.value)}>
+                        <MenuItem value="">SMC Order Block / FVG</MenuItem>
+                        <MenuItem value="break-retest">Break & Retest</MenuItem>
+                        <MenuItem value="orb-15m">ORB 15m Breakout</MenuItem>
+                        <MenuItem value="vwap-rejection">VWAP Bounce / Rejection</MenuItem>
+                        <MenuItem value="pullback-ema">Pullback to 20 EMA</MenuItem>
+                        <MenuItem value="liquidity-sweep">Liquidity Sweep & Reversal</MenuItem>
+                        {strategies.map((s) => (
+                          <MenuItem key={s.id} value={s.id}>
+                            {s.name}
+                          </MenuItem>
+                        ))}
+                        <MenuItem value="other" sx={{ fontWeight: 600, color: "#38BDF8" }}>
+                          + Other (Enter Details Manually)
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={FIELD_MID}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Session</InputLabel>
+                      <Select value={tradeForm.session} label="Session" onChange={(e) => updateTradeField("session", e.target.value)}>
+                        <MenuItem value="Morning Opening (9:15-11:00)">Morning Opening (9:15 - 11:00)</MenuItem>
+                        <MenuItem value="Mid-Day Consolidation (11:00-13:30)">Mid-Day Consolidation (11:00 - 13:30)</MenuItem>
+                        <MenuItem value="Afternoon Closing (13:30-15:30)">Afternoon Closing (13:30 - 15:30)</MenuItem>
+                        <MenuItem value="London Open">London Open</MenuItem>
+                        <MenuItem value="New York Open">New York Open</MenuItem>
+                        <MenuItem value="Asian Session">Asian Session</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={FIELD_MID}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Market Condition</InputLabel>
+                      <Select value={tradeForm.marketCondition} label="Market Condition" onChange={(e) => updateTradeField("marketCondition", e.target.value)}>
+                        <MenuItem value="Strong Trending Up ↗">Strong Trending Up ↗</MenuItem>
+                        <MenuItem value="Strong Trending Down ↘">Strong Trending Down ↘</MenuItem>
+                        <MenuItem value="Range-Bound / Choppy ↔">Range-Bound / Choppy ↔</MenuItem>
+                        <MenuItem value="High Volatility / News Event ⚡">High Volatility / News Event ⚡</MenuItem>
+                        <MenuItem value="Low Volume Consolidation 💤">Low Volume Consolidation 💤</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={FIELD_MID}>
+                    <TextField fullWidth size="small" label="Exit Reason" value={tradeForm.exitReason} onChange={(e) => updateTradeField("exitReason", e.target.value)} placeholder="Hit TP, Trailing SL, Manual Exit" />
+                  </Grid>
+                  {tradeForm.strategyId === "other" && (
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Custom Strategy Details"
+                        placeholder="Describe your strategy manually..."
+                        value={tradeForm.customStrategy}
+                        onChange={(e) => updateTradeField("customStrategy", e.target.value)}
+                        required
+                      />
+                    </Grid>
+                  )}
 
-                      <Grid container spacing={1.2}>
-                        {/* 21. Entry Emotion */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>21. Entry Emotion</InputLabel>
-                            <Select
-                              value={tradeForm.emotionBefore}
-                              label="21. Entry Emotion"
-                              onChange={(e) => updateTradeField("emotionBefore", e.target.value)}
-                            >
-                              {ENTRY_EMOTIONS.map((emo) => (
-                                <MenuItem key={emo} value={emo} sx={{ fontSize: "0.75rem" }}>
-                                  {emo}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        {/* 22. Exit Emotion */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>22. Exit Emotion</InputLabel>
-                            <Select
-                              value={tradeForm.emotionAfter}
-                              label="22. Exit Emotion"
-                              onChange={(e) => updateTradeField("emotionAfter", e.target.value)}
-                            >
-                              {EXIT_EMOTIONS.map((emo) => (
-                                <MenuItem key={emo} value={emo} sx={{ fontSize: "0.75rem" }}>
-                                  {emo}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        {/* 23. Confidence (1–5) */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <Box sx={{ p: 1, py: 0.6, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.3 }}>
-                              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.70rem" }}>
-                                23. Confidence (1–5):
-                              </Typography>
-                              <Chip label={`${tradeForm.confidenceRating}/5`} size="small" sx={{ fontWeight: 600, bgcolor: "#38BDF8", color: "#000", height: 16, fontSize: "0.62rem" }} />
-                            </Box>
-                            <Slider
-                              size="small"
-                              value={tradeForm.confidenceRating}
-                              min={1}
-                              max={5}
-                              step={1}
-                              marks
-                              valueLabelDisplay="auto"
-                              onChange={(_, val) => updateTradeField("confidenceRating", val as number)}
-                              sx={{ py: 0.3 }}
-                            />
-                          </Box>
-                        </Grid>
-
-                        {/* 24. Discipline (1–5) */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <Box sx={{ p: 1, py: 0.6, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.3 }}>
-                              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.70rem" }}>
-                                24. Discipline (1–5):
-                              </Typography>
-                              <Chip label={`${tradeForm.disciplineRating}/5`} size="small" sx={{ fontWeight: 600, bgcolor: "#10B981", color: "#FFF", height: 16, fontSize: "0.62rem" }} />
-                            </Box>
-                            <Slider
-                              size="small"
-                              value={tradeForm.disciplineRating}
-                              min={1}
-                              max={5}
-                              step={1}
-                              marks
-                              valueLabelDisplay="auto"
-                              onChange={(_, val) => updateTradeField("disciplineRating", val as number)}
-                              sx={{ py: 0.3 }}
-                            />
-                          </Box>
-                        </Grid>
-
-                        {/* 25. Mistake? */}
-                        <Grid size={{ xs: 12, sm: 4 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", p: 1, py: 0.5, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                            <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.70rem" }}>
-                              25. Mistake?
-                            </Typography>
-                            <FormControlLabel
-                              sx={{ mr: 0 }}
-                              control={
-                                <Switch
-                                  size="small"
-                                  checked={tradeForm.mistakeFlag}
-                                  onChange={(e) => updateTradeField("mistakeFlag", e.target.checked)}
-                                  color="error"
-                                />
-                              }
-                              label={<Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.68rem" }}>{tradeForm.mistakeFlag ? "YES" : "NO"}</Typography>}
-                            />
-                          </Box>
-                        </Grid>
-
-                        {/* 26. Mistake Type (with Other manual text input option) */}
-                        <Grid size={{ xs: 12, sm: 8 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>26. Mistake Type</InputLabel>
-                            <Select
-                              value={tradeForm.mistakeType}
-                              label="26. Mistake Type"
-                              disabled={!tradeForm.mistakeFlag}
-                              onChange={(e) => updateTradeField("mistakeType", e.target.value)}
-                            >
-                              <MenuItem value="None / Followed Plan">None / Followed Plan</MenuItem>
-                              <MenuItem value="Early Entry before Trigger">Early Entry before Trigger</MenuItem>
-                              <MenuItem value="Chased Trade / FOMO">Chased Trade / FOMO</MenuItem>
-                              <MenuItem value="Moved / Widened SL">Moved / Widened SL</MenuItem>
-                              <MenuItem value="Overleveraged / Heavy Size">Overleveraged / Heavy Size</MenuItem>
-                              <MenuItem value="Exited Early out of Fear">Exited Early out of Fear</MenuItem>
-                              <MenuItem value="Revenge Trade">Revenge Trade</MenuItem>
-                              <MenuItem value="Traded Outside Rules">Traded Outside Rules</MenuItem>
-                              <MenuItem value="Ignored Market Trend">Ignored Market Trend</MenuItem>
-                              <MenuItem value="Other" sx={{ fontWeight: 600, color: "#EF4444" }}>
-                                Other (Enter Details Manually)
-                              </MenuItem>
-                            </Select>
-                          </FormControl>
-                          {tradeForm.mistakeFlag && tradeForm.mistakeType === "Other" && (
-                            <TextField
-                              fullWidth
-                              size="small"
-                              label="Describe Mistake Details"
-                              placeholder="Enter details of what went wrong..."
-                              value={tradeForm.customMistake}
-                              onChange={(e) => updateTradeField("customMistake", e.target.value)}
-                              required
-                              sx={{ mt: 1 }}
-                            />
-                          )}
-                        </Grid>
-                      </Grid>
-                    </Paper>
-
-                    {/* SECTION 5: MARKET CONTEXT & NOTES */}
-                    <Paper
-                      sx={{
-                        p: 1.2,
-                        flex: 1,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "#050912" : "#F8FAFC",
-                        border: isDark ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid #E2E8F0",
-                      }}
-                    >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#22D3EE", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
-                        <Box component="span" sx={{ bgcolor: "#0891B2", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
-                          PART 5
-                        </Box>
-                        Market Context & Retrospective Journal
-                      </Typography>
-
-                      <Grid container spacing={1.2}>
-                        {/* 28. Market Condition */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <FormControl fullWidth size="small">
-                            <InputLabel>28. Market Condition</InputLabel>
-                            <Select
-                              value={tradeForm.marketCondition}
-                              label="28. Market Condition"
-                              onChange={(e) => updateTradeField("marketCondition", e.target.value)}
-                            >
-                              <MenuItem value="Strong Trending Up ↗">Strong Trending Up ↗</MenuItem>
-                              <MenuItem value="Strong Trending Down ↘">Strong Trending Down ↘</MenuItem>
-                              <MenuItem value="Range-Bound / Choppy ↔">Range-Bound / Choppy ↔</MenuItem>
-                              <MenuItem value="High Volatility / News Event ⚡">High Volatility / News Event ⚡</MenuItem>
-                              <MenuItem value="Low Volume Consolidation 💤">Low Volume Consolidation 💤</MenuItem>
-                            </Select>
-                          </FormControl>
-                        </Grid>
-
-                        {/* 30. Exit Reason */}
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="30. Exit Reason"
-                            value={tradeForm.exitReason}
-                            onChange={(e) => updateTradeField("exitReason", e.target.value)}
-                            placeholder="Hit TP, Trailing SL, Manual Early Exit"
-                          />
-                        </Grid>
-
-                        {/* 29. Entry Reason */}
-                        <Grid size={{ xs: 12 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            multiline
-                            rows={2}
-                            label="29. Entry Reason"
-                            value={tradeForm.entryReason}
-                            onChange={(e) => updateTradeField("entryReason", e.target.value)}
-                            placeholder="Market structure, candle pattern, or liquidity sweep trigger"
-                          />
-                        </Grid>
-
-                        {/* 31. Notes */}
-                        <Grid size={{ xs: 12 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            multiline
-                            rows={2}
-                            label="31. Notes / Lessons Learned"
-                            value={tradeForm.notes}
-                            onChange={(e) => updateTradeField("notes", e.target.value)}
-                            placeholder="Key reflections, psychology lessons, adjustments..."
-                          />
-                        </Grid>
-                      </Grid>
-                    </Paper>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Entry Price" type="number" required value={tradeForm.entryPrice} onChange={(e) => updateTradeField("entryPrice", e.target.value)} placeholder="25150" />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Stop Loss" type="number" value={tradeForm.stopLoss} onChange={(e) => updateTradeField("stopLoss", e.target.value)} placeholder="25100" />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Take Profit" type="number" value={tradeForm.takeProfit} onChange={(e) => updateTradeField("takeProfit", e.target.value)} placeholder="25300" />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Exit Price" type="number" value={tradeForm.exitPrice} onChange={(e) => updateTradeField("exitPrice", e.target.value)} placeholder="Blank if open" />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Lots / Qty" type="number" value={tradeForm.volume} onChange={(e) => updateTradeField("volume", e.target.value)} placeholder="e.g. 50" />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Planned Risk"
+                      type="number"
+                      value={tradeForm.plannedRiskAmount}
+                      onChange={(e) => updateTradeField("plannedRiskAmount", e.target.value)}
+                      slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>{formCurrencySymbol}</span></InputAdornment> } }}
+                    />
                   </Grid>
 
-                  {/* ============================================================ */}
-                  {/* FULL-WIDTH BOTTOM ACTION SUMMARY & SUBMIT BAR                */}
-                  {/* ============================================================ */}
-                  <Grid size={{ xs: 12 }}>
-                    <Box
-                      sx={{
-                        p: 1.4,
-                        mt: 0.5,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "#0A1124" : "#F0F9FF",
-                        border: isDark ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid #BAE6FD",
-                        display: "flex",
-                        flexDirection: { xs: "column", sm: "row" },
-                        justifyContent: "space-between",
-                        alignItems: { xs: "flex-start", sm: "center" },
-                        gap: 1.2,
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.75rem" }}>
-                          Live Preview:
-                        </Typography>
-                        <Chip label={`${tradeForm.symbol} • ${tradeForm.direction}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem" }} />
-                        <Chip label={`Risk: ₹${tradeForm.plannedRiskAmount || "0"}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem", bgcolor: "rgba(239,68,68,0.15)", color: "#EF4444" }} />
-                        {tradeForm.netPnl !== "" && (
-                          <Chip
-                            label={`P&L: ${Number(tradeForm.netPnl) >= 0 ? "+" : ""}₹${tradeForm.netPnl} (${tradeForm.actualRR})`}
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              height: 22,
-                              fontSize: "0.68rem",
-                              bgcolor: Number(tradeForm.netPnl) >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
-                              color: Number(tradeForm.netPnl) >= 0 ? "#10B981" : "#EF4444",
-                            }}
-                          />
-                        )}
-                        <Chip label={`Result: ${tradeForm.result}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem" }} />
-                      </Box>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="SL Points (Auto)" value={tradeForm.slPoints} onChange={(e) => updateTradeField("slPoints", e.target.value)} placeholder="|Entry − SL|" sx={autoFieldSx} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="TP Points (Auto)" value={tradeForm.tpPoints} onChange={(e) => updateTradeField("tpPoints", e.target.value)} placeholder="|TP − Entry|" sx={autoFieldSx} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Planned R:R (Auto)" value={tradeForm.plannedRR} onChange={(e) => updateTradeField("plannedRR", e.target.value)} sx={autoFieldSx} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      label="Net P&L"
+                      type="number"
+                      value={tradeForm.netPnl}
+                      onChange={(e) => updateTradeField("netPnl", e.target.value)}
+                      slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>{formCurrencySymbol}</span></InputAdornment> } }}
+                      sx={{ "& .MuiInputBase-input": { fontWeight: 600, color: tradeForm.netPnl === "" ? undefined : Number(tradeForm.netPnl) >= 0 ? "#10B981" : "#EF4444" } }}
+                    />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <TextField fullWidth size="small" label="Actual R (Auto)" value={tradeForm.actualRR} onChange={(e) => updateTradeField("actualRR", e.target.value)} sx={autoFieldSx} />
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Result</InputLabel>
+                      <Select value={tradeForm.result} label="Result" onChange={(e) => updateTradeField("result", e.target.value)}>
+                        <MenuItem value="WIN" sx={{ color: "#10B981", fontWeight: 600 }}>WIN</MenuItem>
+                        <MenuItem value="LOSS" sx={{ color: "#EF4444", fontWeight: 600 }}>LOSS</MenuItem>
+                        <MenuItem value="BREAK_EVEN" sx={{ color: "#64748B", fontWeight: 600 }}>BREAK_EVEN</MenuItem>
+                        <MenuItem value="OPEN" sx={{ color: "#F59E0B", fontWeight: 600 }}>OPEN</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
 
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => setActiveTab(0)}
-                          sx={{ borderRadius: "6px", height: 32, fontSize: "0.74rem", px: 1.8, textTransform: "none", fontWeight: 600 }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="submit"
-                          size="small"
-                          variant="contained"
-                          disabled={submittingTrade}
-                          sx={{
-                            bgcolor: "#10B981",
-                            color: "#FFFFFF",
-                            borderRadius: "6px",
-                            px: 2.2,
-                            height: 32,
-                            fontSize: "0.74rem",
-                            fontWeight: 600,
-                            textTransform: "none",
-                            "&:hover": { bgcolor: "#059669" },
-                          }}
-                        >
-                          {submittingTrade ? "Saving..." : "Submit Trade (31 Fields)"}
-                        </Button>
-                      </Box>
-                    </Box>
+                  <Grid size={FIELD}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Entry Emotion</InputLabel>
+                      <Select value={tradeForm.emotionBefore} label="Entry Emotion" onChange={(e) => updateTradeField("emotionBefore", e.target.value)}>
+                        {ENTRY_EMOTIONS.map((emo) => (
+                          <MenuItem key={emo} value={emo}>
+                            {emo}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={FIELD}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Exit Emotion</InputLabel>
+                      <Select value={tradeForm.emotionAfter} label="Exit Emotion" onChange={(e) => updateTradeField("emotionAfter", e.target.value)}>
+                        {EXIT_EMOTIONS.map((emo) => (
+                          <MenuItem key={emo} value={emo}>
+                            {emo}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  {(
+                    [
+                      { field: "confidenceRating", label: "Confidence" },
+                      { field: "disciplineRating", label: "Discipline" },
+                    ] as const
+                  ).map((r) => (
+                    <Grid key={r.field} size={FIELD}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>{r.label} (1–5)</InputLabel>
+                        <Select value={tradeForm[r.field]} label={`${r.label} (1–5)`} onChange={(e) => updateTradeField(r.field, Number(e.target.value))}>
+                          {RATING_OPTIONS.map((o) => (
+                            <MenuItem key={o.value} value={o.value}>
+                              {o.value} · {o.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  ))}
+                  <Grid size={FIELD_WIDE}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Mistake</InputLabel>
+                      <Select
+                        value={tradeForm.mistakeType}
+                        label="Mistake"
+                        onChange={(e) => updateTradeField("mistakeType", e.target.value)}
+                        sx={{ color: tradeForm.mistakeFlag ? "#F87171" : undefined }}
+                      >
+                        <MenuItem value="None / Followed Plan">None / Followed Plan</MenuItem>
+                        <MenuItem value="Early Entry before Trigger">Early Entry before Trigger</MenuItem>
+                        <MenuItem value="Chased Trade / FOMO">Chased Trade / FOMO</MenuItem>
+                        <MenuItem value="Moved / Widened SL">Moved / Widened SL</MenuItem>
+                        <MenuItem value="Overleveraged / Heavy Size">Overleveraged / Heavy Size</MenuItem>
+                        <MenuItem value="Exited Early out of Fear">Exited Early out of Fear</MenuItem>
+                        <MenuItem value="Revenge Trade">Revenge Trade</MenuItem>
+                        <MenuItem value="Traded Outside Rules">Traded Outside Rules</MenuItem>
+                        <MenuItem value="Ignored Market Trend">Ignored Market Trend</MenuItem>
+                        <MenuItem value="Other" sx={{ fontWeight: 600, color: "#EF4444" }}>
+                          Other (Enter Details Manually)
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  {tradeForm.mistakeType === "Other" && (
+                    <Grid size={{ xs: 12 }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Describe Mistake Details"
+                        placeholder="Enter details of what went wrong..."
+                        value={tradeForm.customMistake}
+                        onChange={(e) => updateTradeField("customMistake", e.target.value)}
+                        required
+                      />
+                    </Grid>
+                  )}
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField fullWidth size="small" multiline rows={2} label="Entry Reason" value={tradeForm.entryReason} onChange={(e) => updateTradeField("entryReason", e.target.value)} placeholder="Market structure, candle pattern, or liquidity sweep trigger" />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField fullWidth size="small" multiline rows={2} label="Notes / Lessons Learned" value={tradeForm.notes} onChange={(e) => updateTradeField("notes", e.target.value)} placeholder="Key reflections, psychology lessons, adjustments..." />
                   </Grid>
                 </Grid>
+
+                {/* Summary + actions */}
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    pt: 1.2,
+                    borderTop: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0",
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "space-between",
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    gap: 1.2,
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
+                    <Chip label={`${tradeForm.symbol} • ${tradeForm.direction}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem" }} />
+                    <Chip label={`Risk: ${formCurrencySymbol}${tradeForm.plannedRiskAmount || "0"}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem", bgcolor: "rgba(239,68,68,0.15)", color: "#EF4444" }} />
+                    {tradeForm.netPnl !== "" && (
+                      <Chip
+                        label={`P&L: ${Number(tradeForm.netPnl) >= 0 ? "+" : ""}${formCurrencySymbol}${tradeForm.netPnl} (${tradeForm.actualRR})`}
+                        size="small"
+                        sx={{
+                          fontWeight: 600,
+                          height: 22,
+                          fontSize: "0.68rem",
+                          bgcolor: Number(tradeForm.netPnl) >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+                          color: Number(tradeForm.netPnl) >= 0 ? "#10B981" : "#EF4444",
+                        }}
+                      />
+                    )}
+                    <Chip label={`Result: ${tradeForm.result}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem" }} />
+                  </Box>
+
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setActiveTab(0)}
+                      sx={{ borderRadius: "6px", height: 32, fontSize: "0.74rem", px: 1.8, textTransform: "none", fontWeight: 600 }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="small"
+                      variant="contained"
+                      disabled={submittingTrade}
+                      sx={{
+                        bgcolor: "#10B981",
+                        color: "#FFFFFF",
+                        borderRadius: "6px",
+                        px: 2.2,
+                        height: 32,
+                        fontSize: "0.74rem",
+                        fontWeight: 600,
+                        textTransform: "none",
+                        "&:hover": { bgcolor: "#059669" },
+                      }}
+                    >
+                      {submittingTrade ? "Saving..." : "Submit Trade"}
+                    </Button>
+                  </Box>
+                </Box>
               </form>
             </CardContent>
           </Card>
@@ -1762,343 +1452,216 @@ export default function TradingJournalView({
         {/* TAB 2: TRADE HISTORY                                         */}
         {/* ============================================================ */}
         {activeTab === 2 && (
-          <Card
-            sx={{
-              borderRadius: "8px",
-              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
-              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
-            }}
-          >
-            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
-              {/* Filter Controls & Search */}
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2 }}>
-                <TextField
+          <Paper elevation={0} sx={{ ...cardSx(tk), height: "100%", minHeight: 420, p: 1.4, gap: 1.2 }}>
+            {/* Filter Controls & Search */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+              <TextField
+                size="small"
+                placeholder="Filter by symbol, notes, strategy..."
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ fontSize: 17, color: tk.accent }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{ minWidth: 260, "& .MuiInputBase-root": { height: 32, fontSize: "0.78rem" } }}
+              />
+
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center", "& .MuiInputBase-root": { height: 32, fontSize: "0.78rem" } }}>
+                <FormControl size="small" sx={{ minWidth: 130 }}>
+                  <InputLabel>Status</InputLabel>
+                  <Select value={historyStatus} label="Status" onChange={(e) => setHistoryStatus(e.target.value)}>
+                    <MenuItem value="ALL">All Statuses</MenuItem>
+                    <MenuItem value="CLOSED">Closed</MenuItem>
+                    <MenuItem value="OPEN">Open</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <FormControl size="small" sx={{ minWidth: 130 }}>
+                  <InputLabel>Direction</InputLabel>
+                  <Select value={historyDirection} label="Direction" onChange={(e) => setHistoryDirection(e.target.value)}>
+                    <MenuItem value="ALL">All Directions</MenuItem>
+                    <MenuItem value="BUY">Buy / Long</MenuItem>
+                    <MenuItem value="SELL">Sell / Short</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Button
+                  variant="outlined"
                   size="small"
-                  placeholder="Filter by symbol, notes, strategy..."
-                  value={historySearch}
-                  onChange={(e) => setHistorySearch(e.target.value)}
-                  slotProps={{
-                    input: {
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ fontSize: 18, color: "#38BDF8" }} />
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                  sx={{ minWidth: 260 }}
-                />
-
-                <Box sx={{ display: "flex", gap: 1 }}>
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={historyStatus}
-                      label="Status"
-                      onChange={(e) => setHistoryStatus(e.target.value)}
-                    >
-                      <MenuItem value="ALL">All Statuses</MenuItem>
-                      <MenuItem value="CLOSED">CLOSED</MenuItem>
-                      <MenuItem value="OPEN">OPEN</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <FormControl size="small" sx={{ minWidth: 120 }}>
-                    <InputLabel>Direction</InputLabel>
-                    <Select
-                      value={historyDirection}
-                      label="Direction"
-                      onChange={(e) => setHistoryDirection(e.target.value)}
-                    >
-                      <MenuItem value="ALL">All Directions</MenuItem>
-                      <MenuItem value="BUY">BUY / LONG</MenuItem>
-                      <MenuItem value="SELL">SELL / SHORT</MenuItem>
-                    </Select>
-                  </FormControl>
-
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<ExportIcon />}
-                    onClick={handleExportCSV}
-                    sx={{ borderRadius: "6px", fontSize: "0.8rem" }}
-                  >
-                    Export CSV
-                  </Button>
-                </Box>
-              </Box>
-
-              {/* Table */}
-              <Paper elevation={0} sx={{ overflowX: "auto", border: isDark ? "1px solid rgba(56, 189, 248, 0.15)" : "1px solid #E2E8F0", borderRadius: "6px" }}>
-                <Box
-                  component="table"
-                  sx={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                    textAlign: "left",
-                    fontSize: "0.82rem",
-                    "& th": {
-                      py: 1.2,
-                      px: 1.5,
-                      bgcolor: isDark ? "#0A1124" : "#F1F5F9",
-                      color: isDark ? "#94A3B8" : "#475569",
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.05em",
-                      fontSize: "0.72rem",
-                      borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #E2E8F0",
-                    },
-                    "& td": {
-                      py: 1.2,
-                      px: 1.5,
-                      borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.08)" : "1px solid #F1F5F9",
-                    },
-                    "& tr:hover": {
-                      bgcolor: isDark ? "rgba(56, 189, 248, 0.06)" : "rgba(2, 132, 199, 0.04)",
-                    },
-                  }}
+                  startIcon={<ExportIcon />}
+                  onClick={handleExportCSV}
+                  sx={{ borderRadius: "6px", fontSize: "0.76rem", height: 32, textTransform: "none", fontWeight: 600 }}
                 >
-                  <thead>
+                  Export CSV
+                </Button>
+              </Box>
+            </Box>
+
+            {/* Table: scrolls inside its own viewport with a pinned header */}
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 240,
+                overflow: "auto",
+                border: `1px solid ${tk.border}`,
+                borderRadius: "6px",
+              }}
+            >
+              <Box
+                component="table"
+                sx={{
+                  width: "100%",
+                  borderCollapse: "separate",
+                  borderSpacing: 0,
+                  textAlign: "left",
+                  fontSize: "0.76rem",
+                  "& th": {
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 2,
+                    py: 0.8,
+                    px: 1,
+                    bgcolor: tk.isDark ? "#0E1A33" : "#F1F5F9",
+                    color: tk.textSec,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    fontSize: "0.64rem",
+                    whiteSpace: "nowrap",
+                    borderBottom: `1px solid ${tk.borderHover}`,
+                  },
+                  "& td": {
+                    py: 0.55,
+                    px: 1,
+                    color: tk.text,
+                    whiteSpace: "nowrap",
+                    borderBottom: `1px solid ${tk.grid}`,
+                  },
+                  "& .num": { textAlign: "right", fontFamily: MONO, fontVariantNumeric: "tabular-nums" },
+                  "& .muted": { color: tk.textMuted },
+                  "& tbody tr": { cursor: "pointer", transition: "background-color 0.12s ease" },
+                  "& tbody tr:hover": { bgcolor: tk.hoverTint },
+                  "& .pill": { display: "inline-block", px: 0.7, py: 0.1, borderRadius: "4px", fontSize: "0.64rem", fontWeight: 700, letterSpacing: "0.02em" },
+                }}
+              >
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date & Time</th>
+                    <th>Symbol</th>
+                    <th>Market</th>
+                    <th>Side</th>
+                    <th className="num">Entry</th>
+                    <th className="num">Exit</th>
+                    <th className="num">Lots</th>
+                    <th className="num">SL / TP pts</th>
+                    <th className="num">Risk</th>
+                    <th className="num">P&L</th>
+                    <th className="num">R</th>
+                    <th>Result</th>
+                    <th>Mistake</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTrades.length === 0 ? (
                     <tr>
-                      <th>#</th>
-                      <th>Date & Time</th>
-                      <th>Symbol</th>
-                      <th>Market</th>
-                      <th>Direction</th>
-                      <th>Entry</th>
-                      <th>Exit</th>
-                      <th>Lots</th>
-                      <th>SL/TP Pts</th>
-                      <th>Risk ₹</th>
-                      <th>P&L ₹</th>
-                      <th>Actual R</th>
-                      <th>Result</th>
-                      <th>Mistake?</th>
-                      <th>Actions</th>
+                      <td colSpan={15} style={{ textAlign: "center", padding: "32px", cursor: "default" }}>
+                        <Typography variant="body2" sx={{ color: tk.textMuted }}>
+                          No trades matching current filters
+                        </Typography>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {filteredTrades.length === 0 ? (
-                      <tr>
-                        <td colSpan={15} style={{ textAlign: "center", padding: "32px" }}>
-                          <Typography variant="body2" sx={{ color: isDark ? "#64748B" : "#94A3B8" }}>
-                            No trades matching current filters
-                          </Typography>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredTrades.map((t) => (
-                        <tr key={t.id}>
+                  ) : (
+                    filteredTrades.map((t) => {
+                      const cur = currencyOfAccount(t.account_id);
+                      const isBuy = ["BUY", "LONG"].includes(t.direction);
+                      const closed = t.status === "CLOSED" && t.net_pnl !== null && t.net_pnl !== undefined;
+                      const result = t.result || (closed ? (t.net_pnl! > 0 ? "WIN" : t.net_pnl! < 0 ? "LOSS" : "BE") : "OPEN");
+                      const resultColor = result === "WIN" ? tk.pos : result === "LOSS" ? tk.neg : result === "OPEN" ? tk.warn : tk.neutral;
+                      const opened = new Date(t.opened_at);
+                      const slPts = t.sl_points ?? (t.stop_loss ? Math.abs(t.entry_price - t.stop_loss).toFixed(1) : "–");
+                      const tpPts = t.tp_points ?? (t.take_profit ? Math.abs(t.take_profit - t.entry_price).toFixed(1) : "–");
+                      return (
+                        <tr key={t.id} onClick={() => setSelectedTrade(t)}>
+                          <td className="muted" style={{ fontFamily: MONO }}>#{t.trade_num || t.id.slice(-3)}</td>
                           <td>
-                            <Chip
-                              label={`#${t.trade_num || t.id.slice(-3)}`}
-                              size="small"
-                              sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600, bgcolor: "rgba(56, 189, 248, 0.15)", color: "#38BDF8" }}
-                            />
+                            {opened.toLocaleDateString([], { day: "2-digit", month: "short", year: "2-digit" })}
+                            <Box component="span" className="muted" sx={{ ml: 0.7, fontFamily: MONO }}>
+                              {opened.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+                            </Box>
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{t.symbol}</td>
+                          <td className="muted">{t.market || "—"}</td>
+                          <td>
+                            <Box component="span" className="pill" sx={{ color: isBuy ? tk.pos : tk.neg, bgcolor: isBuy ? "rgba(16,185,129,0.14)" : "rgba(239,68,68,0.14)" }}>
+                              {isBuy ? "BUY" : "SELL"}
+                            </Box>
+                          </td>
+                          <td className="num">{t.entry_price}</td>
+                          <td className="num">{t.exit_price ?? "–"}</td>
+                          <td className="num">{t.volume ?? 1}</td>
+                          <td className="num">
+                            <Box component="span" sx={{ color: tk.neg }}>{slPts}</Box>
+                            <Box component="span" className="muted"> / </Box>
+                            <Box component="span" sx={{ color: tk.pos }}>{tpPts}</Box>
+                          </td>
+                          <td className="num">{t.planned_risk_amount != null ? `${cur}${Number(t.planned_risk_amount).toLocaleString()}` : "–"}</td>
+                          <td className="num" style={{ fontWeight: 600, color: closed ? signColor(tk, Number(t.net_pnl)) : tk.textMuted }}>
+                            {closed ? `${Number(t.net_pnl) >= 0 ? "+" : "−"}${cur}${Math.abs(Number(t.net_pnl)).toLocaleString()}` : "–"}
+                          </td>
+                          <td className="num" style={{ color: t.actual_r != null ? signColor(tk, Number(t.actual_r)) : tk.textMuted }}>
+                            {t.actual_r != null ? `${Number(t.actual_r) > 0 ? "+" : ""}${t.actual_r}R` : "–"}
                           </td>
                           <td>
-                            <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.78rem" }}>
-                              {new Date(t.opened_at).toLocaleDateString()}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: "0.68rem" }}>
-                              {new Date(t.opened_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                            </Typography>
+                            <Box component="span" className="pill" sx={{ color: resultColor, border: `1px solid ${resultColor}` }}>
+                              {result === "BREAK_EVEN" ? "BE" : result}
+                            </Box>
                           </td>
                           <td>
-                            <strong>{t.symbol}</strong>
-                          </td>
-                          <td>
-                            <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B" }}>
-                              {t.market || "Indices"}
-                            </Typography>
-                          </td>
-                          <td>
-                            <Chip
-                              label={t.direction}
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: "0.68rem",
-                                fontWeight: 600,
-                                bgcolor: t.direction === "BUY" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                                color: t.direction === "BUY" ? "#34D399" : "#F87171",
-                              }}
-                            />
-                          </td>
-                          <td>{t.entry_price}</td>
-                          <td>{t.exit_price ?? "-"}</td>
-                          <td>{t.volume ?? "1"}</td>
-                          <td>
-                            <Typography variant="caption" sx={{ display: "block", color: "#F59E0B" }}>
-                              SL: {t.sl_points ?? (t.stop_loss ? Math.abs(t.entry_price - t.stop_loss).toFixed(1) : "-")}
-                            </Typography>
-                            <Typography variant="caption" sx={{ display: "block", color: "#10B981" }}>
-                              TP: {t.tp_points ?? (t.take_profit ? Math.abs(t.take_profit - t.entry_price).toFixed(1) : "-")}
-                            </Typography>
-                          </td>
-                          <td>₹{t.planned_risk_amount ?? "-"}</td>
-                          <td>
-                            {t.status === "CLOSED" && t.net_pnl !== null && t.net_pnl !== undefined ? (
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  fontWeight: 600,
-                                  color: t.net_pnl >= 0 ? "#10B981" : "#EF4444",
-                                }}
-                              >
-                                {t.net_pnl >= 0 ? `+₹${t.net_pnl}` : `-₹${Math.abs(t.net_pnl)}`}
-                              </Typography>
+                            {t.mistake_flag ? (
+                              <Box component="span" className="pill" sx={{ color: tk.neg, bgcolor: "rgba(239,68,68,0.14)" }}>YES</Box>
                             ) : (
-                              <Chip label="OPEN" size="small" sx={{ height: 18, fontSize: "0.65rem", bgcolor: "rgba(245, 158, 11, 0.15)", color: "#FBBF24" }} />
+                              <Box component="span" className="muted">No</Box>
                             )}
                           </td>
-                          <td>
-                            {t.actual_r !== null ? (
-                              <Typography variant="body2" sx={{ fontWeight: 600, color: "#8B5CF6" }}>
-                                {t.actual_r}R
-                              </Typography>
-                            ) : (
-                              "-"
-                            )}
-                          </td>
-                          <td>
-                            <Chip
-                              label={t.result || (t.net_pnl !== null && t.net_pnl !== undefined ? (t.net_pnl > 0 ? "WIN" : t.net_pnl < 0 ? "LOSS" : "BE") : "OPEN")}
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: "0.68rem",
-                                fontWeight: 600,
-                                bgcolor:
-                                  t.result === "WIN" || (t.net_pnl && t.net_pnl > 0)
-                                    ? "rgba(16, 185, 129, 0.15)"
-                                    : t.result === "LOSS" || (t.net_pnl && t.net_pnl < 0)
-                                    ? "rgba(239, 68, 68, 0.15)"
-                                    : "rgba(245, 158, 11, 0.15)",
-                                color:
-                                  t.result === "WIN" || (t.net_pnl && t.net_pnl > 0)
-                                    ? "#10B981"
-                                    : t.result === "LOSS" || (t.net_pnl && t.net_pnl < 0)
-                                    ? "#EF4444"
-                                    : "#F59E0B",
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <Chip
-                              label={t.mistake_flag ? "YES" : "NO"}
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: "0.68rem",
-                                fontWeight: 600,
-                                bgcolor: t.mistake_flag ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)",
-                                color: t.mistake_flag ? "#EF4444" : "#10B981",
-                              }}
-                            />
-                          </td>
-                          <td>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => setSelectedTrade(t)}
-                              sx={{ fontSize: "0.72rem", textTransform: "none", py: 0.3, px: 1, borderRadius: "4px" }}
-                            >
-                              31 Fields
-                            </Button>
+                          <td style={{ textAlign: "right" }}>
+                            <Tooltip title="View all fields" arrow>
+                              <IconButton size="small" sx={{ p: 0.3, color: tk.accent }}>
+                                <ViewIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </Box>
-              </Paper>
-            </CardContent>
-          </Card>
+                      );
+                    })
+                  )}
+                </tbody>
+              </Box>
+            </Box>
+
+            <Typography sx={{ fontSize: "0.68rem", color: tk.textMuted }}>
+              Showing {filteredTrades.length} of {trades.length} trade{trades.length === 1 ? "" : "s"} · click a row for full details
+            </Typography>
+          </Paper>
         )}
 
         {/* ============================================================ */}
         {/* TAB 3: TRADING CALENDAR                                      */}
         {/* ============================================================ */}
         {activeTab === 3 && (
-          <Card
-            sx={{
-              borderRadius: "8px",
-              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
-              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
-              p: 2,
-            }}
-          >
-
-            <Grid container spacing={1.5}>
-              {["Mon", "Tue", "Wed", "Thu", "Fri"].map((day) => (
-                <Grid key={day} size={{ xs: 2.4 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 600, textAlign: "center", display: "block", color: isDark ? "#94A3B8" : "#64748B" }}>
-                    {day}
-                  </Typography>
-                </Grid>
-              ))}
-
-              {/* Sample Month Grid Day Cards */}
-              {[
-                { date: "Oct 05", pnl: 0, count: 0 },
-                { date: "Oct 06", pnl: 980, count: 1, win: true },
-                { date: "Oct 07", pnl: -357.5, count: 1, win: false },
-                { date: "Oct 08", pnl: 907.5, count: 1, win: true },
-                { date: "Oct 09", pnl: -8, count: 1, win: false },
-              ].map((dayItem, i) => (
-                <Grid key={i} size={{ xs: 2.4 }}>
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 2,
-                      minHeight: 100,
-                      borderRadius: "6px",
-                      bgcolor:
-                        dayItem.count === 0
-                          ? isDark ? "#050912" : "#F8FAFC"
-                          : dayItem.pnl > 0
-                          ? isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5"
-                          : isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
-                      border:
-                        dayItem.count === 0
-                          ? isDark ? "1px solid rgba(56, 189, 248, 0.1)" : "1px solid #E2E8F0"
-                          : dayItem.pnl > 0
-                          ? "1px solid rgba(16, 185, 129, 0.3)"
-                          : "1px solid rgba(239, 68, 68, 0.3)",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ fontWeight: 600, color: isDark ? "#94A3B8" : "#64748B" }}>
-                      {dayItem.date}
-                    </Typography>
-                    {dayItem.count > 0 ? (
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontWeight: 600,
-                            color: dayItem.pnl > 0 ? "#10B981" : "#EF4444",
-                          }}
-                        >
-                          {dayItem.pnl > 0 ? `+$${dayItem.pnl}` : `-$${Math.abs(dayItem.pnl)}`}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B" }}>
-                          {dayItem.count} trade{dayItem.count > 1 ? "s" : ""}
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <Typography variant="caption" sx={{ color: isDark ? "#475569" : "#CBD5E1" }}>
-                        No trades
-                      </Typography>
-                    )}
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          </Card>
+          <TradingCalendarView
+            trades={accountTrades}
+            currencySymbol={activeCurrencySymbol}
+            isDark={isDark}
+            onSelectTrade={(trade) => setSelectedTrade(trade)}
+          />
         )}
 
         {/* ============================================================ */}
@@ -2169,165 +1732,169 @@ export default function TradingJournalView({
         {/* TAB 6: ACCOUNTS MANAGEMENT (COMPLETE CRUD)                  */}
         {/* ============================================================ */}
         {activeTab === 6 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Accounts Grid */}
-            <Grid container spacing={2}>
-              {accounts.map((acc) => {
-                const isActive = selectedAccountId === acc.id;
-                const starting = Number(acc.starting_balance) || 10000;
-                const current = Number(acc.current_balance) || starting;
-                const netProfit = current - starting;
-                const currSymbol = acc.currency === "INR" ? "₹" : "$";
+          <Grid container spacing={1.5}>
+            {accounts.map((acc) => {
+              const isActive = selectedAccountId === acc.id;
+              const starting = Number(acc.starting_balance) || 0;
+              const current = acc.current_balance != null ? Number(acc.current_balance) : starting;
+              const netProfit = current - starting;
+              const growthPct = starting > 0 ? (netProfit / starting) * 100 : 0;
+              const cur = acc.currency === "INR" ? "₹" : "$";
+              const money = (v: number) => `${cur}${Math.abs(v).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+              const typeColor = ACCOUNT_TYPE_COLOR[acc.account_type?.toLowerCase()] ?? tk.warn;
+              const growthColor = signColor(tk, netProfit);
 
-                return (
-                  <Grid key={acc.id} size={{ xs: 12, md: 6, lg: 4 }}>
-                    <Card
-                      sx={{
-                        p: 2,
-                        borderRadius: "8px",
-                        bgcolor: isDark ? "#0A1124" : "#FFFFFF",
-                        border: isActive
-                          ? "2px solid #0284C7"
-                          : isDark
-                          ? "1px solid rgba(56, 189, 248, 0.2)"
-                          : "1px solid #E2E8F0",
-                        position: "relative",
-                      }}
-                    >
-                      {/* Top Badges */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                          <Chip
-                            label={acc.account_type.toUpperCase()}
-                            size="small"
-                            sx={{
-                              fontWeight: 600,
-                              fontSize: "0.65rem",
-                              height: 20,
-                              bgcolor:
-                                acc.account_type === "live"
-                                  ? "rgba(16, 185, 129, 0.2)"
-                                  : "rgba(56, 189, 248, 0.2)",
-                              color:
-                                acc.account_type === "live"
-                                  ? "#10B981"
-                                  : "#38BDF8",
-                            }}
-                          />
-                          <Chip
-                            label={acc.currency}
-                            size="small"
-                            sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }}
-                          />
+              return (
+                <Grid key={acc.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      ...cardSx(tk),
+                      p: 0,
+                      overflow: "hidden",
+                      borderColor: isActive ? tk.accent : tk.border,
+                      boxShadow: isActive ? `0 0 0 1px ${tk.accent}, 0 8px 24px rgba(2, 132, 199, 0.15)` : "none",
+                      transition: "border-color 0.15s ease, transform 0.15s ease",
+                      "&:hover": { borderColor: isActive ? tk.accent : tk.borderHover, transform: "translateY(-1px)" },
+                    }}
+                  >
+                    {/* Type accent strip */}
+                    <Box sx={{ height: 3, bgcolor: typeColor, opacity: 0.9 }} />
+
+                    <Box sx={{ p: 1.6, display: "flex", flexDirection: "column", gap: 1.2, flex: 1 }}>
+                      {/* Header */}
+                      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, mb: 0.6 }}>
+                            <Box
+                              component="span"
+                              sx={{ px: 0.7, py: 0.1, borderRadius: "4px", fontSize: "0.6rem", fontWeight: 700, letterSpacing: "0.06em", color: typeColor, border: `1px solid ${typeColor}` }}
+                            >
+                              {acc.account_type.toUpperCase()}
+                            </Box>
+                            <Box component="span" sx={{ px: 0.7, py: 0.1, borderRadius: "4px", fontSize: "0.6rem", fontWeight: 700, color: tk.textSec, bgcolor: tk.tint, border: `1px solid ${tk.border}` }}>
+                              {acc.currency}
+                            </Box>
+                          </Box>
+                          <Typography noWrap sx={{ fontWeight: 600, fontSize: "0.95rem", color: tk.text }}>
+                            {acc.name}
+                          </Typography>
+                          <Typography noWrap sx={{ fontSize: "0.7rem", color: tk.textMuted, mt: 0.2 }}>
+                            {acc.description || "No description"}
+                          </Typography>
                         </Box>
-
                         {isActive && (
-                          <Chip
-                            label="ACTIVE"
-                            size="small"
-                            sx={{
-                              bgcolor: "#0284C7",
-                              color: "#FFF",
-                              fontWeight: 600,
-                              fontSize: "0.62rem",
-                              height: 18,
-                            }}
-                          />
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 0.8, py: 0.25, borderRadius: "999px", bgcolor: "rgba(56, 189, 248, 0.12)", color: tk.accent, fontSize: "0.62rem", fontWeight: 700, flexShrink: 0 }}>
+                            <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: tk.accent, animation: "brand-pulse 2.4s ease-in-out infinite" }} />
+                            ACTIVE
+                          </Box>
                         )}
                       </Box>
 
-                      {/* Account Name & Description */}
-                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.05rem", mt: 0.5 }}>
-                        {acc.name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block", minHeight: 32, fontSize: "0.72rem" }}>
-                        {acc.description || "Portfolio account tracked in PostgreSQL database."}
-                      </Typography>
-
-                      <Divider sx={{ my: 1.2 }} />
-
-                      {/* Balances */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.6 }}>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>Starting Capital:</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {currSymbol}{starting.toLocaleString()}
+                      {/* Equity hero */}
+                      <Box>
+                        <Typography sx={{ fontSize: "0.62rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: tk.textMuted }}>
+                          Current equity
                         </Typography>
-                      </Box>
-
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.6 }}>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>Current Equity:</Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: current >= starting ? "#10B981" : "#EF4444",
-                          }}
-                        >
-                          {currSymbol}{current.toLocaleString()}
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ color: "text.secondary" }}>Realized Growth:</Typography>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            fontWeight: 600,
-                            color: netProfit >= 0 ? "#10B981" : "#EF4444",
-                          }}
-                        >
-                          {netProfit >= 0 ? `+${currSymbol}${netProfit.toLocaleString()}` : `-${currSymbol}${Math.abs(netProfit).toLocaleString()}`} ({starting > 0 ? ((netProfit / starting) * 100).toFixed(2) : "0.00"}%)
-                        </Typography>
-                      </Box>
-
-                      {/* Actions */}
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 1, borderTop: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #F1F5F9" }}>
-                        <Button
-                          size="small"
-                          variant={isActive ? "outlined" : "contained"}
-                          onClick={() => setSelectedAccountId(acc.id)}
-                          disabled={isActive}
-                          sx={{
-                            fontSize: "0.72rem",
-                            height: 26,
-                            textTransform: "none",
-                            fontWeight: 600,
-                          }}
-                        >
-                          {isActive ? "Active Account" : "Set as Active"}
-                        </Button>
-
-                        <Box sx={{ display: "flex", gap: 0.5 }}>
-                          <Tooltip title="Edit Account Details">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenEditAccount(acc)}
-                              sx={{ border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #E2E8F0" }}
-                            >
-                              <EditIcon sx={{ fontSize: 15, color: "#38BDF8" }} />
-                            </IconButton>
-                          </Tooltip>
-
-                          <Tooltip title="Delete Account">
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setAccountToDelete(acc);
-                                setDeleteAccountDialogOpen(true);
-                              }}
-                              sx={{ border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #E2E8F0" }}
-                            >
-                              <DeleteIcon sx={{ fontSize: 15, color: "#EF4444" }} />
-                            </IconButton>
-                          </Tooltip>
+                        <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, flexWrap: "wrap" }}>
+                          <Typography sx={{ fontFamily: MONO, fontWeight: 600, fontSize: "1.35rem", color: tk.text, fontVariantNumeric: "tabular-nums" }}>
+                            {money(current)}
+                          </Typography>
+                          <Box
+                            component="span"
+                            sx={{ fontFamily: MONO, fontSize: "0.7rem", fontWeight: 600, color: growthColor, bgcolor: netProfit === 0 ? tk.tint : netProfit > 0 ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", px: 0.7, py: 0.15, borderRadius: "4px" }}
+                          >
+                            {growthPct > 0 ? "+" : growthPct < 0 ? "−" : ""}
+                            {Math.abs(growthPct).toFixed(2)}%
+                          </Box>
                         </Box>
                       </Box>
-                    </Card>
-                  </Grid>
-                );
-              })}
+
+                      {/* Stats */}
+                      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0.8 }}>
+                        {[
+                          { label: "Starting capital", value: money(starting), color: tk.text },
+                          { label: "Net P&L", value: `${netProfit > 0 ? "+" : netProfit < 0 ? "−" : ""}${money(netProfit)}`, color: growthColor },
+                        ].map((s) => (
+                          <Box key={s.label} sx={{ p: 0.9, borderRadius: "6px", bgcolor: tk.tint, border: `1px solid ${tk.border}` }}>
+                            <Typography sx={{ fontSize: "0.62rem", color: tk.textMuted }}>{s.label}</Typography>
+                            <Typography sx={{ fontFamily: MONO, fontWeight: 600, fontSize: "0.85rem", color: s.color, mt: 0.2 }}>{s.value}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Box>
+
+                    {/* Actions */}
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", px: 1.6, py: 0.9, borderTop: `1px solid ${tk.border}`, bgcolor: tk.tint }}>
+                      {isActive ? (
+                        <Typography sx={{ fontSize: "0.72rem", fontWeight: 600, color: tk.accent }}>Viewing this account</Typography>
+                      ) : (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => setSelectedAccountId(acc.id)}
+                          sx={{ fontSize: "0.72rem", height: 28, px: 1.4, textTransform: "none", fontWeight: 600, borderRadius: "6px" }}
+                        >
+                          Set as active
+                        </Button>
+                      )}
+
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        <Tooltip title="Edit account" arrow>
+                          <IconButton size="small" onClick={() => handleOpenEditAccount(acc)} sx={{ width: 28, height: 28, borderRadius: "6px", border: `1px solid ${tk.border}`, color: tk.textSec, "&:hover": { color: tk.accent, borderColor: tk.accent } }}>
+                            <EditIcon sx={{ fontSize: 15 }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete account" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setAccountToDelete(acc);
+                              setDeleteAccountDialogOpen(true);
+                            }}
+                            sx={{ width: 28, height: 28, borderRadius: "6px", border: `1px solid ${tk.border}`, color: tk.textSec, "&:hover": { color: tk.neg, borderColor: tk.neg } }}
+                          >
+                            <DeleteIcon sx={{ fontSize: 15 }} />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+              );
+            })}
+
+            {/* Add account tile */}
+            <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+              <Box
+                role="button"
+                tabIndex={0}
+                onClick={handleOpenCreateAccount}
+                onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleOpenCreateAccount()}
+                sx={{
+                  height: "100%",
+                  minHeight: 220,
+                  borderRadius: "8px",
+                  border: `1px dashed ${tk.borderHover}`,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 0.8,
+                  color: tk.textMuted,
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                  "&:hover, &:focus-visible": { color: tk.accent, borderColor: tk.accent, bgcolor: tk.hoverTint, outline: "none" },
+                }}
+              >
+                <Box sx={{ width: 36, height: 36, borderRadius: "8px", display: "grid", placeItems: "center", border: "1px solid currentColor" }}>
+                  <AddIcon sx={{ fontSize: 20 }} />
+                </Box>
+                <Typography sx={{ fontSize: "0.8rem", fontWeight: 600 }}>Add trading account</Typography>
+                <Typography sx={{ fontSize: "0.68rem", color: tk.textMuted }}>Live, demo, funded or backtest</Typography>
+              </Box>
             </Grid>
-          </Box>
+          </Grid>
         )}
 
       </Box>

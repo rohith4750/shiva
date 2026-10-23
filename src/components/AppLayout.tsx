@@ -4,8 +4,6 @@ import React, { useEffect, useState } from "react";
 import { Box, Typography, Tooltip, IconButton, Drawer } from "@mui/material";
 import {
   Menu as MenuIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
   ChevronRight as ChevronRightIcon,
 } from "@mui/icons-material";
 import Sidebar, { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from "./Sidebar";
@@ -51,7 +49,7 @@ export default function AppLayout({
   onOpenChangePassword,
   onOpenProfile,
 }: AppLayoutProps) {
-  const { mode, toggleColorMode } = useColorMode();
+  const { mode } = useColorMode();
   const isDark = mode === "dark";
   const [now, setNow] = useState<Date | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -244,25 +242,6 @@ export default function AppLayout({
                 </Box>
               </Tooltip>
             )}
-
-            <Tooltip title={isDark ? "Switch to light mode" : "Switch to dark mode"} arrow>
-              <IconButton
-                onClick={toggleColorMode}
-                aria-label="Toggle color theme"
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: "10px",
-                  color: isDark ? "#F59E0B" : "#0284C7",
-                  bgcolor: isDark ? "rgba(245, 158, 11, 0.1)" : "rgba(2, 132, 199, 0.08)",
-                  border: isDark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid rgba(2, 132, 199, 0.2)",
-                  transition: "all 0.25s ease",
-                  "&:hover": { bgcolor: isDark ? "rgba(245, 158, 11, 0.18)" : "rgba(2, 132, 199, 0.14)" },
-                }}
-              >
-                {isDark ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
-              </IconButton>
-            </Tooltip>
           </Box>
         </Box>
 

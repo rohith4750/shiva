@@ -43,6 +43,7 @@ import { useColorMode } from "./ThemeRegistry";
 import {
   useUserStore,
   ROW_HEIGHTS,
+  type RowDensity,
   SortField,
 } from "@/store/useUserStore";
 
@@ -76,7 +77,8 @@ export default function VirtualizedUserTable({
   const toggleSelectUser = useUserStore((s) => s.toggleSelectUser);
   const selectAllUsers = useUserStore((s) => s.selectAllUsers);
   const clearSelection = useUserStore((s) => s.clearSelection);
-  const rowDensity = useUserStore((s) => s.rowDensity);
+  // Density is fixed to compact across the platform
+  const rowDensity = "compact" as RowDensity;
   const virtualOverscan = useUserStore((s) => s.virtualOverscan);
   const openModal = useUserStore((s) => s.openModal);
   const resetFilters = useUserStore((s) => s.resetFilters);
@@ -196,12 +198,15 @@ export default function VirtualizedUserTable({
   return (
     <Card
       sx={{
-        borderRadius: "6px",
-        border: isDark ? "1px solid rgba(56, 189, 248, 0.25)" : "1px solid #E2E8F0",
-        bgcolor: isDark ? "#0B152B" : "#FFFFFF",
+        borderRadius: "10px",
+        border: isDark ? "1px solid rgba(56, 189, 248, 0.28)" : "1px solid #CBD5E1",
+        bgcolor: isDark ? "#0A1124" : "#FFFFFF",
+        boxShadow: isDark
+          ? "0 4px 20px rgba(0, 0, 0, 0.4)"
+          : "0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.04)",
       }}
     >
-      <CardContent sx={{ p: { xs: 1.5, md: 2 } }}>
+      <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
         {/* Top Header & Fast Action Bar */}
         <Box
           sx={{
@@ -275,16 +280,16 @@ export default function VirtualizedUserTable({
         <Paper
           elevation={0}
           sx={{
-            p: 1.5,
+            p: 1.8,
             mb: 2,
-            borderRadius: "6px",
-            bgcolor: isDark ? "rgba(14, 22, 43, 0.7)" : "#F8FAFC",
-            border: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #E2E8F0",
+            borderRadius: "8px",
+            bgcolor: isDark ? "rgba(14, 26, 51, 0.7)" : "#F8FAFC",
+            border: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #CBD5E1",
             display: "flex",
             flexDirection: { xs: "column", md: "row" },
             alignItems: { xs: "stretch", md: "center" },
             justifyContent: "space-between",
-            gap: 1.5,
+            gap: 2,
           }}
         >
           {/* Search Input */}
@@ -309,19 +314,30 @@ export default function VirtualizedUserTable({
                 ) : null,
               },
             }}
-            sx={{ minWidth: { xs: "100%", md: 280 } }}
+            sx={{
+              minWidth: { xs: "100%", md: 300 },
+              "& .MuiOutlinedInput-root": {
+                bgcolor: isDark ? "#070E1E" : "#FFFFFF",
+                borderRadius: "6px",
+              },
+            }}
           />
 
           {/* Quick Filters & Controls */}
           <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
             {/* Role Filter */}
-            <FormControl size="small" sx={{ minWidth: 110 }}>
+            <FormControl size="small" sx={{ minWidth: 125 }}>
               <InputLabel sx={{ fontSize: "0.8rem" }}>Role</InputLabel>
               <Select
                 value={selectedRole}
                 label="Role"
                 onChange={(e) => setSelectedRole(e.target.value)}
-                sx={{ fontSize: "0.8rem", height: 36 }}
+                sx={{
+                  fontSize: "0.8rem",
+                  height: 36,
+                  bgcolor: isDark ? "#070E1E" : "#FFFFFF",
+                  borderRadius: "6px",
+                }}
               >
                 <MenuItem value="All">All Roles</MenuItem>
                 <MenuItem value="ADMIN">ADMIN</MenuItem>
@@ -381,27 +397,30 @@ export default function VirtualizedUserTable({
         <Paper
           elevation={0}
           sx={{
-            borderRadius: "6px",
-            border: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #E2E8F0",
+            borderRadius: "8px",
+            border: isDark ? "1px solid rgba(56, 189, 248, 0.28)" : "1px solid #CBD5E1",
             overflow: "hidden",
             bgcolor: isDark ? "#050912" : "#FFFFFF",
+            boxShadow: isDark
+              ? "0 4px 16px rgba(0, 0, 0, 0.3)"
+              : "0 1px 3px rgba(15, 23, 42, 0.05), 0 2px 8px rgba(15, 23, 42, 0.02)",
           }}
         >
           {/* Table Header: Sticky */}
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "48px minmax(180px, 1.4fr) minmax(180px, 1.5fr) 130px 130px 100px",
+              gridTemplateColumns: "56px minmax(220px, 1.5fr) minmax(240px, 1.8fr) 150px 150px 110px",
               alignItems: "center",
-              py: 1.2,
-              px: 1.5,
-              bgcolor: isDark ? "#0B152B" : "#F0F9FF",
-              borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.25)" : "1px solid #E2E8F0",
-              fontWeight: 600,
-              fontSize: "0.74rem",
+              py: 1.5,
+              px: 2,
+              bgcolor: isDark ? "#0D1933" : "#F8FAFC",
+              borderBottom: isDark ? "2px solid rgba(56, 189, 248, 0.3)" : "2px solid #CBD5E1",
+              fontWeight: 700,
+              fontSize: "0.76rem",
               textTransform: "uppercase",
-              letterSpacing: "0.05em",
-              color: isDark ? "#94A3B8" : "#475569",
+              letterSpacing: "0.06em",
+              color: isDark ? "#94A3B8" : "#334155",
               userSelect: "none",
             }}
           >
@@ -485,14 +504,15 @@ export default function VirtualizedUserTable({
             </Box>
 
             {/* Actions */}
-            <Box sx={{ textAlign: "right", pr: 1 }}>Actions</Box>
+            <Box sx={{ textAlign: "right", pr: 1.5 }}>Actions</Box>
           </Box>
 
           {/* Virtual Scroll Area */}
           <Box
             ref={parentRef}
             sx={{
-              height: 480,
+              minHeight: 280,
+              maxHeight: 560,
               overflowY: "auto",
               position: "relative",
               "&::-webkit-scrollbar": { width: 6 },
@@ -510,6 +530,7 @@ export default function VirtualizedUserTable({
                   alignItems: "center",
                   justifyContent: "center",
                   height: "100%",
+                  minHeight: 280,
                   gap: 1.5,
                 }}
               >
@@ -526,6 +547,7 @@ export default function VirtualizedUserTable({
                   alignItems: "center",
                   justifyContent: "center",
                   height: "100%",
+                  minHeight: 280,
                   gap: 1,
                   p: 3,
                 }}
@@ -566,25 +588,25 @@ export default function VirtualizedUserTable({
                         height: `${virtualRow.size}px`,
                         transform: `translateY(${virtualRow.start}px)`,
                         display: "grid",
-                        gridTemplateColumns: "48px minmax(180px, 1.4fr) minmax(180px, 1.5fr) 130px 130px 100px",
+                        gridTemplateColumns: "56px minmax(220px, 1.5fr) minmax(240px, 1.8fr) 150px 150px 110px",
                         alignItems: "center",
-                        px: 1.5,
+                        px: 2,
                         borderBottom: isDark
-                          ? "1px solid rgba(56, 189, 248, 0.08)"
-                          : "1px solid #F1F5F9",
+                          ? "1px solid rgba(56, 189, 248, 0.12)"
+                          : "1px solid #E2E8F0",
                         bgcolor: isSelected
                           ? isDark
-                            ? "rgba(56, 189, 248, 0.14)"
+                            ? "rgba(56, 189, 248, 0.16)"
                             : "#F0F9FF"
                           : virtualRow.index % 2 === 0
                           ? "transparent"
                           : isDark
                           ? "rgba(255, 255, 255, 0.015)"
-                          : "rgba(0, 0, 0, 0.01)",
+                          : "#F8FAFC",
                         "&:hover": {
                           bgcolor: isDark
-                            ? "rgba(56, 189, 248, 0.18)"
-                            : "rgba(2, 132, 199, 0.05)",
+                            ? "rgba(56, 189, 248, 0.15)"
+                            : "#F1F5F9",
                         },
                         transition: "background-color 0.12s ease",
                       }}
@@ -600,15 +622,16 @@ export default function VirtualizedUserTable({
                       </Box>
 
                       {/* Name & Avatar */}
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, minWidth: 0 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
                         <Avatar
                           sx={{
-                            width: rowDensity === "compact" ? 26 : 32,
-                            height: rowDensity === "compact" ? 26 : 32,
-                            bgcolor: isDark ? "#1E293B" : "#E2E8F0",
+                            width: rowDensity === "compact" ? 28 : rowDensity === "spacious" ? 42 : 36,
+                            height: rowDensity === "compact" ? 28 : rowDensity === "spacious" ? 42 : 36,
+                            bgcolor: isDark ? "#1E293B" : "#E0F2FE",
                             color: isDark ? "#38BDF8" : "#0284C7",
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
+                            fontSize: rowDensity === "spacious" ? "0.95rem" : "0.82rem",
+                            fontWeight: 700,
+                            border: isDark ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid #BAE6FD",
                           }}
                         >
                           {user.name.charAt(0).toUpperCase()}
@@ -622,7 +645,7 @@ export default function VirtualizedUserTable({
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
-                              fontSize: rowDensity === "compact" ? "0.8rem" : "0.86rem",
+                              fontSize: rowDensity === "compact" ? "0.82rem" : rowDensity === "spacious" ? "0.92rem" : "0.88rem",
                             }}
                           >
                             {user.name}
@@ -643,12 +666,12 @@ export default function VirtualizedUserTable({
                       </Box>
 
                       {/* Email */}
-                      <Box sx={{ minWidth: 0, overflow: "hidden", pr: 1 }}>
+                      <Box sx={{ minWidth: 0, overflow: "hidden", pr: 1.5 }}>
                         <Typography
                           variant="body2"
                           sx={{
                             color: isDark ? "#CBD5E1" : "#334155",
-                            fontSize: "0.82rem",
+                            fontSize: rowDensity === "compact" ? "0.8rem" : "0.86rem",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -668,8 +691,10 @@ export default function VirtualizedUserTable({
                             color: roleStyle.text,
                             border: `1px solid ${roleStyle.border}`,
                             fontWeight: 600,
-                            fontSize: "0.68rem",
-                            height: 22,
+                            fontSize: "0.72rem",
+                            height: 24,
+                            borderRadius: "6px",
+                            px: 0.5,
                           }}
                         />
                       </Box>
@@ -677,10 +702,11 @@ export default function VirtualizedUserTable({
                       {/* Department */}
                       <Box sx={{ minWidth: 0, overflow: "hidden" }}>
                         <Typography
-                          variant="caption"
+                          variant="body2"
                           sx={{
                             color: isDark ? "#94A3B8" : "#64748B",
                             fontWeight: 500,
+                            fontSize: "0.84rem",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
@@ -692,15 +718,20 @@ export default function VirtualizedUserTable({
                       </Box>
 
                       {/* Actions */}
-                      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5, pr: 0.5 }}>
+                      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.8, pr: 0.5 }}>
                         <Tooltip title="Edit User">
                           <IconButton
                             size="small"
                             onClick={() => openModal("edit", user)}
                             sx={{
-                              p: 0.5,
+                              p: 0.7,
+                              borderRadius: "6px",
+                              border: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #CBD5E1",
                               color: isDark ? "#7DD3FC" : "#0284C7",
-                              "&:hover": { bgcolor: "rgba(56, 189, 248, 0.15)" },
+                              "&:hover": {
+                                bgcolor: isDark ? "rgba(56, 189, 248, 0.15)" : "#E0F2FE",
+                                borderColor: isDark ? "#38BDF8" : "#0284C7",
+                              },
                             }}
                           >
                             <EditIcon sx={{ fontSize: 16 }} />
@@ -711,9 +742,14 @@ export default function VirtualizedUserTable({
                             size="small"
                             onClick={() => openModal("delete", user)}
                             sx={{
-                              p: 0.5,
+                              p: 0.7,
+                              borderRadius: "6px",
+                              border: isDark ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid #FECACA",
                               color: "#EF4444",
-                              "&:hover": { bgcolor: "rgba(239, 68, 68, 0.15)" },
+                              "&:hover": {
+                                bgcolor: "rgba(239, 68, 68, 0.1)",
+                                borderColor: "#EF4444",
+                              },
                             }}
                           >
                             <DeleteIcon sx={{ fontSize: 16 }} />
@@ -725,6 +761,28 @@ export default function VirtualizedUserTable({
                 })}
               </Box>
             )}
+          </Box>
+
+          {/* Pinned Table Status & Summary Footer */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 1.5,
+              py: 1.4,
+              px: 2.5,
+              bgcolor: isDark ? "#0B152B" : "#F8FAFC",
+              borderTop: isDark ? "1px solid rgba(56, 189, 248, 0.25)" : "1px solid #CBD5E1",
+              fontSize: "0.78rem",
+              color: isDark ? "#94A3B8" : "#475569",
+            }}
+          >
+            <Typography sx={{ fontSize: "0.8rem", color: isDark ? "#CBD5E1" : "#334155" }}>
+              Showing <strong>{filteredUsers.length}</strong> of <strong>{allUsersPool.length}</strong> total users
+              {selectedUserIds.length > 0 && ` • (${selectedUserIds.length} selected)`}
+            </Typography>
           </Box>
         </Paper>
       </CardContent>

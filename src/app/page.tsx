@@ -18,8 +18,6 @@ import {
   Chip,
   Avatar,
   Divider,
-  Tooltip,
-  IconButton,
   CircularProgress,
 } from "@mui/material";
 import {
@@ -38,8 +36,6 @@ import {
   ShowChart as AnalyticsChartIcon,
   Checklist as RoutineIcon,
   VerifiedUser as VerifiedUserIcon,
-  LightMode as LightModeIcon,
-  DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "@/components/ThemeRegistry";
 import AppLayout from "@/components/AppLayout";
@@ -106,7 +102,7 @@ const getInitialTab = (): number => {
 };
 
 export default function Home() {
-  const { mode, toggleColorMode } = useColorMode();
+  const { mode } = useColorMode();
   // Authentication session state
   const [currentUser, setCurrentUser] = useState<AuthSession | null>(null);
   const [authChecking, setAuthChecking] = useState<boolean>(true);
@@ -657,35 +653,6 @@ export default function Home() {
                 : "radial-gradient(ellipse 85% 70% at 50% 25%, #F0F9FF 0%, #F8FAFC 65%, #E2E8F0 100%)",
           }}
         >
-          {/* Floating Theme Toggle on Login Screen */}
-          <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 100 }}>
-            <Tooltip title={mode === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}>
-              <IconButton
-                onClick={toggleColorMode}
-                size="small"
-                aria-label="Toggle theme mode"
-                sx={{
-                  color: mode === "dark" ? "#F59E0B" : "#0284C7",
-                  backgroundColor:
-                    mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(2, 132, 199, 0.08)",
-                  border:
-                    mode === "dark"
-                      ? "1px solid rgba(245, 158, 11, 0.28)"
-                      : "1px solid rgba(2, 132, 199, 0.25)",
-                  borderRadius: "6px",
-                  width: 34,
-                  height: 34,
-                  "&:hover": {
-                    backgroundColor:
-                      mode === "dark" ? "rgba(245, 158, 11, 0.22)" : "rgba(2, 132, 199, 0.16)",
-                  },
-                }}
-              >
-                {mode === "dark" ? <LightModeIcon sx={{ fontSize: 18 }} /> : <DarkModeIcon sx={{ fontSize: 18 }} />}
-              </IconButton>
-            </Tooltip>
-          </Box>
-
           <Box
             sx={{
               maxWidth: 960,

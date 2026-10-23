@@ -282,19 +282,19 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
             <Table stickyHeader size="small" className="app-table">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 65 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 75 }}>
                     ROLE ID
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 180 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 200 }}>
                     ROLE NAME
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5 }}>
                     DESCRIPTION
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5 }}>
                     ASSIGNED PERMISSIONS
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 140 }}>
+                  <TableCell sx={{ fontWeight: 700, fontSize: "0.76rem", py: 1.5, width: 150 }}>
                     ASSIGNED USERS
                   </TableCell>
                 </TableRow>
@@ -302,31 +302,32 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 3 }}>
-                      <CircularProgress size={22} sx={{ color: "#38BDF8" }} />
+                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 4 }}>
+                      <CircularProgress size={24} sx={{ color: "#38BDF8" }} />
                     </TableCell>
                   </TableRow>
                 ) : roles.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 2.5, color: "#94A3B8" }}>
+                    <TableCell colSpan={5} sx={{ textAlign: "center", py: 3, color: "#94A3B8" }}>
                       No roles found in database.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  roles.map((r) => {
+                  roles.map((r, idx) => {
                     const style = getRoleBadgeStyle(r.name);
                     return (
                       <TableRow
                         key={r.id}
                         sx={{
-                          "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.02)" },
-                          borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+                          bgcolor: idx % 2 === 0 ? "transparent" : (isDark ? "rgba(255, 255, 255, 0.015)" : "#F8FAFC"),
+                          "&:hover": { backgroundColor: isDark ? "rgba(56, 189, 248, 0.1)" : "#F1F5F9" },
+                          borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.12)" : "1px solid #E2E8F0",
                         }}
                       >
-                        <TableCell sx={{ color: "text.secondary", fontSize: "0.78rem", fontWeight: 600, py: 0.9 }}>
+                        <TableCell sx={{ color: "text.secondary", fontSize: "0.82rem", fontWeight: 600, py: 1.5 }}>
                           #{r.id}
                         </TableCell>
-                        <TableCell sx={{ py: 0.9 }}>
+                        <TableCell sx={{ py: 1.5 }}>
                           <Chip
                             label={r.name}
                             size="small"
@@ -335,17 +336,18 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                               color: style.text,
                               border: `1px solid ${style.border}`,
                               fontWeight: 600,
-                              fontSize: "0.72rem",
+                              fontSize: "0.74rem",
                               borderRadius: "6px",
-                              height: 22,
+                              height: 24,
+                              px: 0.5,
                             }}
                           />
                         </TableCell>
-                        <TableCell sx={{ color: "text.secondary", fontSize: "0.78rem", py: 0.9 }}>
+                        <TableCell sx={{ color: "text.secondary", fontSize: "0.84rem", py: 1.5 }}>
                           {r.description || "—"}
                         </TableCell>
-                        <TableCell sx={{ py: 0.9 }}>
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.4, maxWidth: 500 }}>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, maxWidth: 520 }}>
                             {r.permissions.length === 0 ? (
                               <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
                                 No permissions assigned
@@ -357,8 +359,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                                   label={p.name}
                                   size="small"
                                   sx={{
-                                    height: 20,
-                                    fontSize: "0.68rem",
+                                    height: 22,
+                                    fontSize: "0.7rem",
                                     fontWeight: 600,
                                     backgroundColor: isDark ? "rgba(56, 189, 248, 0.1)" : "#F0F9FF",
                                     color: isDark ? "#38BDF8" : "#0284C7",
@@ -370,17 +372,17 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                             )}
                           </Box>
                         </TableCell>
-                        <TableCell sx={{ py: 0.9 }}>
+                        <TableCell sx={{ py: 1.5 }}>
                           <Chip
                             label={`${r.user_count} Users`}
                             size="small"
                             variant="outlined"
                             sx={{
-                              height: 20,
+                              height: 24,
                               borderColor: isDark ? "rgba(148, 163, 184, 0.25)" : "#CBD5E1",
                               color: "text.primary",
                               fontWeight: 600,
-                              fontSize: "0.7rem",
+                              fontSize: "0.74rem",
                               borderRadius: "6px",
                             }}
                           />
