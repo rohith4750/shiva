@@ -13,15 +13,13 @@
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  box-shadow: var(--shadow-card);
   overflow: hidden;
   position: relative;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 
   .app-card-ribbon {
-    height: 3px;
+    height: 2px;
     width: 100%;
-    background: linear-gradient(90deg, var(--accent-cyan), var(--brand-blue), var(--accent-purple));
+    background: var(--brand-blue);
   }
 
   .app-card-body {
@@ -48,10 +46,6 @@
   min-height: 52px;
   transition: transform 0.15s ease, border-color 0.2s ease;
 
-  &:hover {
-    border-color: var(--brand-blue);
-  }
-
   .app-stat-icon {
     width: 36px;
     height: 36px;
@@ -72,8 +66,10 @@
   }
 
   .app-stat-value {
-    font-size: 1.25rem;
-    font-weight: 800;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.2rem;
+    font-weight: 700;
     color: var(--text-primary);
     line-height: 1.1;
     margin-top: 2px;

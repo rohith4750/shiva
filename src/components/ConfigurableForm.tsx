@@ -78,7 +78,7 @@ export default function ConfigurableForm({
   title,
   subtitle,
   icon,
-  accentGradient = "linear-gradient(90deg, #06B6D4, #3B82F6, #8B5CF6)",
+  accentGradient = "linear-gradient(90deg, #22D3EE, #38BDF8, #8B5CF6)",
   fields,
   submitLabel,
   submitIcon,
@@ -175,13 +175,12 @@ export default function ConfigurableForm({
                 width: 44,
                 height: 44,
                 borderRadius: "6px",
-                background: "linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2))",
-                border: "1px solid rgba(59, 130, 246, 0.3)",
+                background: "linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(56, 189, 248, 0.2))",
+                border: "1px solid rgba(56, 189, 248, 0.3)",
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
                 mb: 1.2,
-                boxShadow: "0 4px 16px rgba(59, 130, 246, 0.2)",
               }}
             >
               {icon}
@@ -190,7 +189,7 @@ export default function ConfigurableForm({
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 800,
+              fontWeight: 600,
               fontSize: "1.25rem",
               letterSpacing: "-0.01em",
               color: forceDark ? "#F8FAFC" : "text.primary",
@@ -310,13 +309,13 @@ export default function ConfigurableForm({
                           backgroundColor: "rgba(10, 15, 28, 0.75) !important",
                           color: "#F8FAFC !important",
                           "& .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "rgba(59, 130, 246, 0.3) !important",
+                            borderColor: "rgba(56, 189, 248, 0.3) !important",
                           },
                           "&:hover .MuiOutlinedInput-notchedOutline": {
                             borderColor: "#38BDF8 !important",
                           },
                           "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "#3B82F6 !important",
+                            borderColor: "#38BDF8 !important",
                           },
                           "& input": {
                             color: "#F8FAFC !important",
@@ -362,11 +361,10 @@ export default function ConfigurableForm({
           py: 1,
           borderRadius: "6px",
           fontSize: "0.9rem",
-          fontWeight: 700,
-          background: "linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)",
-          boxShadow: "0 2px 12px rgba(59, 130, 246, 0.35)",
+          fontWeight: 600,
+          background: "linear-gradient(135deg, #38BDF8 0%, #0369A1 100%)",
           "&:hover": {
-            background: "linear-gradient(135deg, #2563EB 0%, #1E40AF 100%)",
+            background: "linear-gradient(135deg, #0284C7 0%, #1E40AF 100%)",
           },
         }}
       >
@@ -384,7 +382,7 @@ export default function ConfigurableForm({
           sx={{
             mt: 1.2,
             borderRadius: "6px",
-            borderColor: forceDark ? "rgba(59, 130, 246, 0.3)" : (theme) => theme.palette.divider,
+            borderColor: forceDark ? "rgba(56, 189, 248, 0.3)" : (theme) => theme.palette.divider,
             color: forceDark ? "#94A3B8" : "text.secondary",
             fontSize: "0.82rem",
             "&:hover": {
@@ -422,14 +420,14 @@ export default function ConfigurableForm({
               sx={{
                 color: forceDark
                   ? "#38BDF8"
-                  : (theme) => (theme.palette.mode === "dark" ? "#94A3B8" : "#2563EB"),
+                  : (theme) => (theme.palette.mode === "dark" ? "#94A3B8" : "#0284C7"),
                 fontSize: "0.78rem",
                 borderRadius: "6px",
                 p: "4px 8px",
                 "&:hover": {
                   color: forceDark
                     ? "#7DD3FC"
-                    : (theme) => (theme.palette.mode === "dark" ? "#38BDF8" : "#1D4ED8"),
+                    : (theme) => (theme.palette.mode === "dark" ? "#38BDF8" : "#0369A1"),
                 },
               }}
             >
@@ -452,12 +450,8 @@ export default function ConfigurableForm({
         sx={{
           borderRadius: "6px", // 6px fixed
           backgroundColor: (theme) =>
-            theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+            theme.palette.mode === "dark" ? "#0A1124" : "#FFFFFF",
           border: (theme) => `1px solid ${theme.palette.divider}`,
-          boxShadow: (theme) =>
-            theme.palette.mode === "dark"
-              ? "0 16px 36px rgba(0, 0, 0, 0.55), 0 0 20px rgba(59, 130, 246, 0.08)"
-              : "0 10px 30px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(37, 99, 235, 0.04)",
           overflow: "hidden",
         }}
       >

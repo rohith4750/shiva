@@ -1,5 +1,5 @@
 /* ==========================================================================
-   NEXVANTA DESIGN SYSTEM TOKENS & VARIABLES
+   TRADING TERMINAL DESIGN SYSTEM TOKENS & VARIABLES
    ==========================================================================
    Centralized design tokens for consistent spacing, layout, typography,
    and theme colors across the entire application.
@@ -17,6 +17,11 @@
   --border-radius: 6px;                    /* 6px strict radius across whole app */
   
   --header-height: 52px;
+
+  /* Trading accents (same in both modes) */
+  --profit: #10B981;
+  --loss: #EF4444;
+  --brand-gradient: linear-gradient(135deg, #38BDF8 0%, #6366F1 100%);
   --footer-height: 38px;
 
   /* ==========================================
@@ -31,47 +36,47 @@
      ========================================== */
   --scrollbar-width: 4px;
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(59, 130, 246, 0.4);
-  --scrollbar-thumb-hover: rgba(59, 130, 246, 0.85);
+  --scrollbar-thumb: rgba(56, 189, 248, 0.3);
+  --scrollbar-thumb-hover: rgba(56, 189, 248, 0.7);
 
   /* ==========================================
      3. DARK MODE (DEFAULT) COLOR TOKENS
      ========================================== */
-  --bg-app: #070A13;
-  --bg-surface: #0E162B;
-  --bg-surface-elevated: #111D38;
-  --bg-surface-card: #0B1226;
-  --bg-surface-header: #0B1120;
-  --bg-surface-hover: rgba(59, 130, 246, 0.08);
-  --bg-surface-active: rgba(59, 130, 246, 0.18);
+  --bg-app: #050912;
+  --bg-surface: #0A1124;
+  --bg-surface-elevated: #0E1A33;
+  --bg-surface-card: #0A1124;
+  --bg-surface-header: #0B152B;
+  --bg-surface-hover: rgba(56, 189, 248, 0.08);
+  --bg-surface-active: rgba(56, 189, 248, 0.16);
 
   /* Dark mode fonts: Luminous crisp text */
-  --text-primary: #F8FAFC;
+  --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
   --text-inverse: #0F172A;
 
   /* Brand Accents */
-  --brand-blue: #3B82F6;
-  --brand-blue-hover: #2563EB;
-  --accent-cyan: #06B6D4;
+  --brand-blue: #38BDF8;
+  --brand-blue-hover: #0EA5E9;
+  --accent-cyan: #22D3EE;
   --accent-cyan-hover: #0891B2;
-  --accent-purple: #8B5CF6;
-  --accent-purple-hover: #7C3AED;
+  --accent-purple: #818CF8;
+  --accent-purple-hover: #6366F1;
 
   /* Borders & Dividers */
-  --border-color: rgba(59, 130, 246, 0.22);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(59, 130, 246, 0.4);
+  --border-color: rgba(56, 189, 248, 0.14);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(56, 189, 248, 0.4);
 
   /* Card Shadows */
-  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.45);
-  --shadow-modal: 0 16px 48px rgba(0, 0, 0, 0.7);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 28px rgba(0, 0, 0, 0.45);
+  --shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.75);
 
   /* Status Badges */
-  --badge-admin-bg: rgba(59, 130, 246, 0.2);
-  --badge-admin-text: #60A5FA;
-  --badge-admin-border: rgba(59, 130, 246, 0.4);
+  --badge-admin-bg: rgba(56, 189, 248, 0.15);
+  --badge-admin-text: #7DD3FC;
+  --badge-admin-border: rgba(56, 189, 248, 0.35);
 
   --badge-super-bg: rgba(168, 85, 247, 0.2);
   --badge-super-text: #C084FC;
@@ -95,40 +100,40 @@
    ========================================================================== */
 [data-theme="light"],
 .light-mode {
-  --bg-app: #F8FAFC;
+  --bg-app: #F4F7FB;
   --bg-surface: #FFFFFF;
-  --bg-surface-elevated: #EFF6FF;
+  --bg-surface-elevated: #F0F9FF;
   --bg-surface-card: #FFFFFF;
-  --bg-surface-header: #EFF6FF;
+  --bg-surface-header: #F1F5F9;
   --bg-surface-hover: #F1F5F9;
-  --bg-surface-active: #DBEAFE;
+  --bg-surface-active: #E0F2FE;
 
   /* Light mode fonts: DEEP NAVY & SLATE DARK FONTS FOR MAXIMUM LEGIBILITY */
-  --text-primary: #0F172A;       /* Deep Navy Slate 900 - Crisp Dark Primary */
+  --text-primary: #0B1220;       /* Deep Navy - Crisp Dark Primary */
   --text-secondary: #334155;     /* Slate 700 - Legible Dark Secondary */
   --text-muted: #64748B;         /* Slate 500 - Clear Muted */
   --text-inverse: #FFFFFF;
 
   /* Brand Accents for Light Mode */
-  --brand-blue: #2563EB;
-  --brand-blue-hover: #1D4ED8;
+  --brand-blue: #0284C7;
+  --brand-blue-hover: #0369A1;
   --accent-cyan: #0891B2;
   --accent-cyan-hover: #0E7490;
-  --accent-purple: #7C3AED;
-  --accent-purple-hover: #6D28D9;
+  --accent-purple: #6366F1;
+  --accent-purple-hover: #4F46E5;
 
   /* Borders & Dividers */
   --border-color: #E2E8F0;
   --border-subtle: #E2E8F0;
-  --border-glow: rgba(37, 99, 235, 0.25);
+  --border-glow: rgba(2, 132, 199, 0.25);
 
   /* Card Shadows */
   --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.03);
   --shadow-modal: 0 12px 36px rgba(15, 23, 42, 0.12);
 
   /* Scrollbars for Light Mode */
-  --scrollbar-thumb: rgba(37, 99, 235, 0.35);
-  --scrollbar-thumb-hover: rgba(37, 99, 235, 0.7);
+  --scrollbar-thumb: rgba(2, 132, 199, 0.35);
+  --scrollbar-thumb-hover: rgba(2, 132, 199, 0.7);
 
   /* Status Badges for Light Mode: High-contrast Dark Text on Pastel Tint */
   --badge-admin-bg: #EFF6FF;

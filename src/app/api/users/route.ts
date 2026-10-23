@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { randomUUID } from "crypto";
+import { DEFAULT_USER_PASSWORD } from "@/lib/brand";
 
 const db = prisma as any;
 
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const rawPassword = password || "Nexvanta@2026";
+    const rawPassword = password || DEFAULT_USER_PASSWORD;
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
     const id = randomUUID();
 

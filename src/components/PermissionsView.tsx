@@ -380,9 +380,9 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
     if (!isDark) {
       return {
         ...found,
-        color: found.color === "#38BDF8" ? "#0284C7" : found.color === "#60A5FA" ? "#1D4ED8" : found.color === "#34D399" ? "#047857" : found.color === "#F87171" ? "#B91C1C" : "#6B21A8",
-        bg: found.color === "#38BDF8" ? "#E0F2FE" : found.color === "#60A5FA" ? "#EFF6FF" : found.color === "#34D399" ? "#ECFDF5" : found.color === "#F87171" ? "#FEF2F2" : "#FAF5FF",
-        border: found.color === "#38BDF8" ? "#BAE6FD" : found.color === "#60A5FA" ? "#BFDBFE" : found.color === "#34D399" ? "#A7F3D0" : found.color === "#F87171" ? "#FECACA" : "#E9D5FF",
+        color: found.color === "#38BDF8" ? "#0284C7" : found.color === "#7DD3FC" ? "#0369A1" : found.color === "#34D399" ? "#047857" : found.color === "#F87171" ? "#B91C1C" : "#6B21A8",
+        bg: found.color === "#38BDF8" ? "#E0F2FE" : found.color === "#7DD3FC" ? "#F0F9FF" : found.color === "#34D399" ? "#ECFDF5" : found.color === "#F87171" ? "#FEF2F2" : "#FAF5FF",
+        border: found.color === "#38BDF8" ? "#BAE6FD" : found.color === "#7DD3FC" ? "#BAE6FD" : found.color === "#34D399" ? "#A7F3D0" : found.color === "#F87171" ? "#FECACA" : "#E9D5FF",
       };
     }
     return found;
@@ -396,7 +396,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
           <Avatar
             sx={{
               bgcolor: isDark ? "rgba(6, 182, 212, 0.2)" : "#CFFAFE",
-              color: isDark ? "#06B6D4" : "#0891B2",
+              color: isDark ? "#22D3EE" : "#0891B2",
               width: 32,
               height: 32,
               borderRadius: "6px",
@@ -431,8 +431,8 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
         <Box className="app-stat-card">
           <Avatar
             sx={{
-              bgcolor: isDark ? "rgba(59, 130, 246, 0.2)" : "#DBEAFE",
-              color: isDark ? "#3B82F6" : "#2563EB",
+              bgcolor: isDark ? "rgba(56, 189, 248, 0.2)" : "#E0F2FE",
+              color: isDark ? "#38BDF8" : "#0284C7",
               width: 32,
               height: 32,
               borderRadius: "6px",
@@ -464,7 +464,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
             />
             <Typography
               variant="subtitle1"
-              sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.95rem" }}
+              sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.95rem" }}
             >
               Permissions Architecture
             </Typography>
@@ -474,7 +474,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
               sx={{
                 height: 20,
                 fontSize: "0.7rem",
-                fontWeight: 700,
+                fontWeight: 600,
                 backgroundColor: isDark ? "rgba(6, 182, 212, 0.15)" : "#ECFEFF",
                 color: isDark ? "#22D3EE" : "#0E7490",
                 border: `1px solid ${isDark ? "rgba(6, 182, 212, 0.3)" : "#A5F3FC"}`,
@@ -512,7 +512,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
               sx={{
                 height: 30,
                 borderRadius: "6px",
-                borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#CBD5E1",
+                borderColor: isDark ? "rgba(56, 189, 248, 0.3)" : "#CBD5E1",
                 color: isDark ? "#94A3B8" : "#475569",
                 fontSize: "0.78rem",
                 px: 1.2,
@@ -555,7 +555,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
         >
           <Typography
             variant="caption"
-            sx={{ color: "text.secondary", fontWeight: 700, mr: 0.5, flexShrink: 0 }}
+            sx={{ color: "text.secondary", fontWeight: 600, mr: 0.5, flexShrink: 0 }}
           >
             FILTER BY MODULE:
           </Typography>
@@ -567,20 +567,20 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
             sx={{
               height: 22,
               fontSize: "0.7rem",
-              fontWeight: 700,
+              fontWeight: 600,
               borderRadius: "6px",
               backgroundColor:
                 selectedModuleFilter === "ALL"
                   ? isDark
-                    ? "rgba(59, 130, 246, 0.25)"
-                    : "#EFF6FF"
+                    ? "rgba(56, 189, 248, 0.25)"
+                    : "#F0F9FF"
                   : isDark
                   ? "rgba(255, 255, 255, 0.04)"
                   : "#FFFFFF",
-              color: selectedModuleFilter === "ALL" ? (isDark ? "#60A5FA" : "#2563EB") : (isDark ? "#94A3B8" : "#475569"),
+              color: selectedModuleFilter === "ALL" ? (isDark ? "#7DD3FC" : "#0284C7") : (isDark ? "#94A3B8" : "#475569"),
               border:
                 selectedModuleFilter === "ALL"
-                  ? `1px solid ${isDark ? "rgba(59, 130, 246, 0.5)" : "#BFDBFE"}`
+                  ? `1px solid ${isDark ? "rgba(56, 189, 248, 0.5)" : "#BAE6FD"}`
                   : `1px solid ${isDark ? "rgba(255, 255, 255, 0.08)" : "#CBD5E1"}`,
             }}
           />
@@ -616,22 +616,22 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
             <Table stickyHeader size="small" className="app-table">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 65 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 65 }}>
                     ID
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 170 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 170 }}>
                     MODULE
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 130 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 130 }}>
                     ACTION
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 180 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 180 }}>
                     PERMISSION KEY
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2 }}>
                     DESCRIPTION
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 190 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 190 }}>
                     ASSIGNED TO ROLES
                   </TableCell>
                 </TableRow>
@@ -640,7 +640,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
-                      <CircularProgress size={24} sx={{ color: "#06B6D4" }} />
+                      <CircularProgress size={24} sx={{ color: "#22D3EE" }} />
                     </TableCell>
                   </TableRow>
                 ) : filteredPermissions.length === 0 ? (
@@ -677,7 +677,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                             sx={{
                               height: 22,
                               fontSize: "0.72rem",
-                              fontWeight: 700,
+                              fontWeight: 600,
                               backgroundColor: modStyle.bg,
                               color: modStyle.color,
                               border: `1px solid ${modStyle.border}`,
@@ -696,7 +696,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                             sx={{
                               height: 22,
                               fontSize: "0.7rem",
-                              fontWeight: 800,
+                              fontWeight: 600,
                               letterSpacing: "0.02em",
                               backgroundColor: actStyle.bg,
                               color: actStyle.color,
@@ -752,7 +752,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                                   sx={{
                                     height: 20,
                                     fontSize: "0.68rem",
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     backgroundColor: isDark ? "rgba(168, 85, 247, 0.12)" : "#FAF5FF",
                                     color: isDark ? "#C084FC" : "#6B21A8",
                                     border: `1px solid ${isDark ? "rgba(168, 85, 247, 0.25)" : "#E9D5FF"}`,
@@ -794,7 +794,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
         slotProps={{
           paper: {
             sx: {
-              backgroundColor: isDark ? "#0E162B" : "#FFFFFF",
+              backgroundColor: isDark ? "#0A1124" : "#FFFFFF",
               border: `1px solid ${isDark ? "rgba(6, 182, 212, 0.3)" : "#E2E8F0"}`,
               borderRadius: "6px",
               p: 2,
@@ -813,7 +813,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
           }}
         >
           <PermissionIcon sx={{ color: isDark ? "#22D3EE" : "#0891B2" }} />
-          <Box component="span" sx={{ fontWeight: 800, color: "text.primary" }}>
+          <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
             Add New System Permission
           </Box>
         </DialogTitle>
@@ -836,7 +836,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                       borderRadius: "6px",
                       color: "#F8FAFC",
                       "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        borderColor: "rgba(56, 189, 248, 0.3)",
                       },
                       "&:hover .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#38BDF8",
@@ -893,7 +893,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                       borderRadius: "6px",
                       color: "#F8FAFC",
                       "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "rgba(59, 130, 246, 0.3)",
+                        borderColor: "rgba(56, 189, 248, 0.3)",
                       },
                       "&:hover .MuiOutlinedInput-notchedOutline": {
                         borderColor: "#38BDF8",
@@ -982,7 +982,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                     p: 1.5,
                     borderRadius: "6px",
                     backgroundColor: "rgba(10, 15, 28, 0.7)",
-                    border: "1px dashed rgba(59, 130, 246, 0.3)",
+                    border: "1px dashed rgba(56, 189, 248, 0.3)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
@@ -1002,7 +1002,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         borderRadius: "6px",
                         backgroundColor: "rgba(56, 189, 248, 0.15)",
                         color: "#38BDF8",
-                        fontWeight: 700,
+                        fontWeight: 600,
                         fontSize: "0.7rem",
                       }}
                     />
@@ -1015,7 +1015,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         borderRadius: "6px",
                         backgroundColor: "rgba(52, 211, 153, 0.15)",
                         color: "#34D399",
-                        fontWeight: 700,
+                        fontWeight: 600,
                         fontSize: "0.7rem",
                       }}
                     />
@@ -1029,7 +1029,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
                         px: 0.8,
                         py: 0.2,
                         borderRadius: "4px",
-                        fontWeight: 700,
+                        fontWeight: 600,
                       }}
                     >
                       {formKey || "..."}
@@ -1069,7 +1069,7 @@ export default function PermissionsView({ onShowToast }: PermissionsViewProps) {
               sx={{
                 borderRadius: "6px",
                 backgroundColor: "#0284C7",
-                fontWeight: 700,
+                fontWeight: 600,
                 px: 2,
                 "&:hover": { backgroundColor: "#0369A1" },
               }}

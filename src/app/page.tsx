@@ -34,41 +34,34 @@ import {
   Insights as AnalyticsIcon,
   CheckCircle as CheckCircleIcon,
   Security as SecurityIcon,
-  RocketLaunch as RocketLaunchIcon,
-  People as PeopleGroupIcon,
-  SettingsSuggest as SettingsSuggestIcon,
+  MenuBook as JournalIcon,
+  ShowChart as AnalyticsChartIcon,
+  Checklist as RoutineIcon,
   VerifiedUser as VerifiedUserIcon,
   LightMode as LightModeIcon,
   DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "@/components/ThemeRegistry";
-import Navbar from "@/components/Navbar";
 import AppLayout from "@/components/AppLayout";
 import ConfigurableForm, { FormFieldConfig } from "@/components/ConfigurableForm";
-import ConfigurableTable from "@/components/ConfigurableTable";
 import VirtualizedUserTable from "@/components/VirtualizedUserTable";
 import RolesView from "@/components/RolesView";
 import PermissionsView from "@/components/PermissionsView";
-import CompanyDashboardView from "@/components/CompanyDashboardView";
-import NexvantaLogo from "@/components/NexvantaLogo";
+import BrandLogo from "@/components/BrandLogo";
+import { APP_NAME, APP_FULL_NAME, STORAGE_PREFIX, DEFAULT_USER_PASSWORD } from "@/lib/brand";
 import { User, AuthSession } from "@/types/user";
 import {
   useUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
-  useResetSeedMutation,
 } from "@/hooks/useUsers";
 import { useUserStore } from "@/store/useUserStore";
-import {
-  ElectricBolt as BoltIcon,
-  TableRows as TableRowsIcon,
-} from "@mui/icons-material";
 import TradingJournalView from "@/components/TradingJournalView";
 
 // Mapping between tab indices and clean URL hash slugs
 const TAB_MAP: Record<string, number> = {
-  overview: 0,
+  overview: 6,
   users: 1,
   roles: 2,
   permissions: 3,
@@ -88,24 +81,28 @@ const TAB_TO_HASH: Record<number, string> = {
   6: "journal",
 };
 
+// Landing page after sign-in (the old Home overview, tab 0, was removed)
+const DEFAULT_TAB = 6;
+const VALID_TABS = [1, 2, 3, 6];
+
 const getInitialTab = (): number => {
-  if (typeof window === "undefined") return 0;
+  if (typeof window === "undefined") return DEFAULT_TAB;
   try {
     const hash = window.location.hash.replace("#", "").toLowerCase();
     if (hash && TAB_MAP[hash] !== undefined) {
       return TAB_MAP[hash];
     }
-    const saved = localStorage.getItem("nexvanta_active_tab");
+    const saved = localStorage.getItem(`${STORAGE_PREFIX}_active_tab`);
     if (saved !== null) {
       const parsed = parseInt(saved, 10);
-      if (!isNaN(parsed) && parsed >= 0 && parsed <= 6) {
+      if (VALID_TABS.includes(parsed)) {
         return parsed;
       }
     }
   } catch {
     // Safe fallback
   }
-  return 0;
+  return DEFAULT_TAB;
 };
 
 export default function Home() {
@@ -120,7 +117,7 @@ export default function Home() {
   const [sharedEmail, setSharedEmail] = useState("");
 
   // Active view tab state (persisted across page refresh via localStorage & URL hash)
-  const [landingTab, setLandingTab] = useState<number>(0);
+  const [landingTab, setLandingTab] = useState<number>(DEFAULT_TAB);
 
   // --- TanStack Query: Caching, Invalidation, Optimistic Updates ---
   const {
@@ -133,14 +130,10 @@ export default function Home() {
   const createUserMutation = useCreateUserMutation();
   const updateUserMutation = useUpdateUserMutation();
   const deleteUserMutation = useDeleteUserMutation();
-  const resetSeedMutation = useResetSeedMutation();
 
   // --- Zustand Store: UI preferences, view mode, modals ---
-  const viewMode = useUserStore((s) => s.viewMode);
-  const setViewMode = useUserStore((s) => s.setViewMode);
   const activeModal = useUserStore((s) => s.activeModal);
   const targetUser = useUserStore((s) => s.targetUser);
-  const openModal = useUserStore((s) => s.openModal);
   const closeModal = useUserStore((s) => s.closeModal);
 
   // Auth & form loading state
@@ -177,7 +170,7 @@ export default function Home() {
     setLandingTab(newTab);
     if (typeof window !== "undefined") {
       try {
-        localStorage.setItem("nexvanta_active_tab", String(newTab));
+        localStorage.setItem(`${STORAGE_PREFIX}_active_tab`, String(newTab));
         const hash = TAB_TO_HASH[newTab] || "overview";
         window.history.replaceState(null, "", `#${hash}`);
       } catch {
@@ -196,7 +189,7 @@ export default function Home() {
       if (hash && TAB_MAP[hash] !== undefined) {
         setLandingTab(TAB_MAP[hash]);
         try {
-          localStorage.setItem("nexvanta_active_tab", String(TAB_MAP[hash]));
+          localStorage.setItem(`${STORAGE_PREFIX}_active_tab`, String(TAB_MAP[hash]));
         } catch {}
       }
     };
@@ -265,7 +258,7 @@ export default function Home() {
         setLandingTab(targetTab);
         if (typeof window !== "undefined") {
           try {
-            localStorage.setItem("nexvanta_active_tab", String(targetTab));
+            localStorage.setItem(`${STORAGE_PREFIX}_active_tab`, String(targetTab));
             window.history.replaceState(null, "", `#${TAB_TO_HASH[targetTab] || "overview"}`);
           } catch {}
         }
@@ -294,7 +287,7 @@ export default function Home() {
       setAuthMode("login");
       if (typeof window !== "undefined") {
         try {
-          localStorage.removeItem("nexvanta_active_tab");
+          localStorage.removeItem(`${STORAGE_PREFIX}_active_tab`);
           window.history.replaceState(null, "", window.location.pathname);
         } catch {}
       }
@@ -434,16 +427,6 @@ export default function Home() {
     }
   };
 
-  const handleResetSeed = async () => {
-    try {
-      await resetSeedMutation.mutateAsync();
-      showToast("App.db seeded with initial demo users!", "success");
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Error resetting demo database";
-      showToast(msg, "error");
-    }
-  };
-
   // --- FORM FIELD CONFIGURATIONS ---
 
   const loginFields: FormFieldConfig[] = [
@@ -553,9 +536,9 @@ export default function Home() {
       name: "password",
       label: "Password",
       type: "password",
-      placeholder: "•••••••• (defaults to Nexvanta@2026 if blank)",
+      placeholder: `•••••••• (defaults to ${DEFAULT_USER_PASSWORD} if blank)`,
       required: false,
-      helperText: "Initial password (or leave blank for default: Nexvanta@2026)",
+      helperText: `Initial password (or leave blank for default: ${DEFAULT_USER_PASSWORD})`,
     },
     {
       name: "role",
@@ -639,14 +622,14 @@ export default function Home() {
           alignItems: "center",
           justifyContent: "center",
           gap: 2,
-          backgroundColor: mode === "dark" ? "#070A13" : "#F8FAFC",
+          backgroundColor: mode === "dark" ? "#050912" : "#F8FAFC",
         }}
       >
-        <NexvantaLogo size={42} showTagline={true} />
+        <BrandLogo size={42} showTagline={true} />
         <CircularProgress
           size={28}
           thickness={4}
-          sx={{ color: mode === "dark" ? "#38BDF8" : "#2563EB", mt: 1 }}
+          sx={{ color: mode === "dark" ? "#38BDF8" : "#0284C7", mt: 1 }}
         />
       </Box>
     );
@@ -667,11 +650,11 @@ export default function Home() {
             position: "relative",
             px: 2,
             py: 4,
-            backgroundColor: mode === "dark" ? "#070A13" : "#F8FAFC",
+            backgroundColor: mode === "dark" ? "#050912" : "#F8FAFC",
             backgroundImage:
               mode === "dark"
                 ? "radial-gradient(ellipse 85% 70% at 50% 25%, #0B172E 0%, #070B14 65%, #03060A 100%)"
-                : "radial-gradient(ellipse 85% 70% at 50% 25%, #EFF6FF 0%, #F8FAFC 65%, #E2E8F0 100%)",
+                : "radial-gradient(ellipse 85% 70% at 50% 25%, #F0F9FF 0%, #F8FAFC 65%, #E2E8F0 100%)",
           }}
         >
           {/* Floating Theme Toggle on Login Screen */}
@@ -682,23 +665,19 @@ export default function Home() {
                 size="small"
                 aria-label="Toggle theme mode"
                 sx={{
-                  color: mode === "dark" ? "#F59E0B" : "#2563EB",
+                  color: mode === "dark" ? "#F59E0B" : "#0284C7",
                   backgroundColor:
-                    mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(37, 99, 235, 0.08)",
+                    mode === "dark" ? "rgba(245, 158, 11, 0.12)" : "rgba(2, 132, 199, 0.08)",
                   border:
                     mode === "dark"
                       ? "1px solid rgba(245, 158, 11, 0.28)"
-                      : "1px solid rgba(37, 99, 235, 0.25)",
+                      : "1px solid rgba(2, 132, 199, 0.25)",
                   borderRadius: "6px",
                   width: 34,
                   height: 34,
-                  boxShadow:
-                    mode === "dark"
-                      ? "0 2px 12px rgba(0, 0, 0, 0.4)"
-                      : "0 2px 8px rgba(37, 99, 235, 0.15)",
                   "&:hover": {
                     backgroundColor:
-                      mode === "dark" ? "rgba(245, 158, 11, 0.22)" : "rgba(37, 99, 235, 0.16)",
+                      mode === "dark" ? "rgba(245, 158, 11, 0.22)" : "rgba(2, 132, 199, 0.16)",
                   },
                 }}
               >
@@ -715,12 +694,8 @@ export default function Home() {
               flexDirection: { xs: "column", md: "row" },
               borderRadius: "6px",
               overflow: "hidden",
-              backgroundColor: mode === "dark" ? "#0B1226" : "#FFFFFF",
-              border: mode === "dark" ? "1px solid rgba(59, 130, 246, 0.28)" : "1px solid #E2E8F0",
-              boxShadow:
-                mode === "dark"
-                  ? "0 24px 64px rgba(0, 0, 0, 0.8), 0 0 32px rgba(59, 130, 246, 0.12)"
-                  : "0 20px 48px rgba(15, 23, 42, 0.08), 0 4px 16px rgba(37, 99, 235, 0.04)",
+              backgroundColor: mode === "dark" ? "#0B152B" : "#FFFFFF",
+              border: mode === "dark" ? "1px solid rgba(56, 189, 248, 0.28)" : "1px solid #E2E8F0",
             }}
           >
             {/* LEFT SIDE: Information & Brand Showcase */}
@@ -730,13 +705,13 @@ export default function Home() {
                 p: { xs: 3, md: 3.5 },
                 background:
                   mode === "dark"
-                    ? "linear-gradient(145deg, #070B16 0%, #0E172E 100%)"
-                    : "linear-gradient(145deg, #EFF6FF 0%, #DBEAFE 100%)",
+                    ? "linear-gradient(145deg, #050912 0%, #0E172E 100%)"
+                    : "linear-gradient(145deg, #F0F9FF 0%, #E0F2FE 100%)",
                 borderRight: {
-                  md: mode === "dark" ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #BFDBFE",
+                  md: mode === "dark" ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #BAE6FD",
                 },
                 borderBottom: {
-                  xs: mode === "dark" ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #BFDBFE",
+                  xs: mode === "dark" ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #BAE6FD",
                   md: "none",
                 },
                 display: "flex",
@@ -745,12 +720,12 @@ export default function Home() {
               }}
             >
               <Box>
-                <NexvantaLogo size={36} showTagline={true} />
+                <BrandLogo size={36} showTagline={true} />
                 <Box sx={{ mt: 2.5 }}>
                   <Typography
                     variant="h5"
                     sx={{
-                      fontWeight: 900,
+                      fontWeight: 600,
                       fontSize: { xs: "1.3rem", md: "1.55rem" },
                       color: mode === "dark" ? "#F8FAFC" : "#0F172A",
                       letterSpacing: "-0.02em",
@@ -758,7 +733,7 @@ export default function Home() {
                       mb: 0.8,
                     }}
                   >
-                    Build Beyond Boundaries
+                    Trade with Discipline &amp; Edge
                   </Typography>
                   <Typography
                     variant="body2"
@@ -769,7 +744,7 @@ export default function Home() {
                       mb: 2.5,
                     }}
                   >
-                    We design and build modern web applications, scalable enterprise systems, and client-centric digital products.
+                    Your personal trading terminal — journal every trade, review your execution, and compound your edge.
                   </Typography>
 
                   {/* Information Pillars from reference image */}
@@ -780,27 +755,27 @@ export default function Home() {
                           width: 30,
                           height: 30,
                           borderRadius: "6px",
-                          bgcolor: mode === "dark" ? "rgba(59, 130, 246, 0.15)" : "#FFFFFF",
-                          border: mode === "dark" ? "none" : "1px solid #BFDBFE",
-                          color: "#2563EB",
+                          bgcolor: mode === "dark" ? "rgba(56, 189, 248, 0.15)" : "#FFFFFF",
+                          border: mode === "dark" ? "none" : "1px solid #BAE6FD",
+                          color: "#0284C7",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        <RocketLaunchIcon sx={{ fontSize: 16 }} />
+                        <JournalIcon sx={{ fontSize: 16 }} />
                       </Box>
                       <Box>
                         <Typography
                           variant="subtitle2"
                           sx={{
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: mode === "dark" ? "#F8FAFC" : "#0F172A",
                             fontSize: "0.82rem",
                           }}
                         >
-                          Modern Solutions
+                          Trade Journal
                         </Typography>
                         <Typography
                           variant="caption"
@@ -809,7 +784,7 @@ export default function Home() {
                             fontSize: "0.72rem",
                           }}
                         >
-                          For Today and Tomorrow
+                          Log entries, exits, R:R and emotions in seconds
                         </Typography>
                       </Box>
                     </Box>
@@ -822,25 +797,25 @@ export default function Home() {
                           borderRadius: "6px",
                           bgcolor: mode === "dark" ? "rgba(6, 182, 212, 0.15)" : "#FFFFFF",
                           border: mode === "dark" ? "none" : "1px solid #BAE6FD",
-                          color: mode === "dark" ? "#06B6D4" : "#0891B2",
+                          color: mode === "dark" ? "#22D3EE" : "#0891B2",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        <PeopleGroupIcon sx={{ fontSize: 16 }} />
+                        <AnalyticsChartIcon sx={{ fontSize: 16 }} />
                       </Box>
                       <Box>
                         <Typography
                           variant="subtitle2"
                           sx={{
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: mode === "dark" ? "#F8FAFC" : "#0F172A",
                             fontSize: "0.82rem",
                           }}
                         >
-                          Client Focused
+                          Performance Analytics
                         </Typography>
                         <Typography
                           variant="caption"
@@ -849,7 +824,7 @@ export default function Home() {
                             fontSize: "0.72rem",
                           }}
                         >
-                          Your Goals, Our Commitment
+                          Equity curve, win rate, profit factor & more
                         </Typography>
                       </Box>
                     </Box>
@@ -869,18 +844,18 @@ export default function Home() {
                           flexShrink: 0,
                         }}
                       >
-                        <SettingsSuggestIcon sx={{ fontSize: 16 }} />
+                        <RoutineIcon sx={{ fontSize: 16 }} />
                       </Box>
                       <Box>
                         <Typography
                           variant="subtitle2"
                           sx={{
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: mode === "dark" ? "#F8FAFC" : "#0F172A",
                             fontSize: "0.82rem",
                           }}
                         >
-                          Scalable Architecture
+                          Routine & Discipline
                         </Typography>
                         <Typography
                           variant="caption"
@@ -889,7 +864,7 @@ export default function Home() {
                             fontSize: "0.72rem",
                           }}
                         >
-                          Built for Growth
+                          Pre-market checklists and rule tracking
                         </Typography>
                       </Box>
                     </Box>
@@ -915,12 +890,12 @@ export default function Home() {
                         <Typography
                           variant="subtitle2"
                           sx={{
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: mode === "dark" ? "#F8FAFC" : "#0F172A",
                             fontSize: "0.82rem",
                           }}
                         >
-                          Reliable & Transparent
+                          Multi-Account & Secure
                         </Typography>
                         <Typography
                           variant="caption"
@@ -929,7 +904,7 @@ export default function Home() {
                             fontSize: "0.72rem",
                           }}
                         >
-                          A Partner You Can Trust
+                          Separate accounts, encrypted sessions, role-based access
                         </Typography>
                       </Box>
                     </Box>
@@ -943,7 +918,7 @@ export default function Home() {
                   variant="caption"
                   sx={{ color: mode === "dark" ? "#64748B" : "#475569", fontSize: "0.7rem" }}
                 >
-                  Nexvanta Technologies Portal • Secure Client Access
+                  {APP_FULL_NAME} • Secure Trader Access
                 </Typography>
               </Box>
             </Box>
@@ -967,7 +942,7 @@ export default function Home() {
                   subtitle="Enter your work email and password to continue"
                   icon={
                     <LoginIcon
-                      sx={{ color: mode === "dark" ? "#38BDF8" : "#2563EB", fontSize: 22 }}
+                      sx={{ color: mode === "dark" ? "#38BDF8" : "#0284C7", fontSize: 22 }}
                     />
                   }
                   fields={loginFields}
@@ -1051,7 +1026,6 @@ export default function Home() {
               sx={{
                 borderRadius: "6px",
                 fontWeight: 600,
-                boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                 border: "1px solid rgba(255,255,255,0.1)",
               }}
             >
@@ -1077,226 +1051,14 @@ export default function Home() {
     >
       <Fade in={Boolean(currentUser)}>
         <Box sx={{ width: "100%" }}>
-          {/* Standardized compact session info bar */}
-          <Box className="app-session-bar" sx={{ mb: 0.5, px: 0.2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.82rem" }}>
-                Authenticated as <Box component="strong" sx={{ color: "text.primary" }}>{currentUser.email}</Box>
-              </Typography>
-              <Chip
-                label={currentUser.role}
-                size="small"
-                sx={{
-                  height: 20,
-                  backgroundColor: mode === "dark" ? "rgba(6, 182, 212, 0.15)" : "#EFF6FF",
-                  color: mode === "dark" ? "#22D3EE" : "#0891B2",
-                  fontWeight: 700,
-                  fontSize: "0.68rem",
-                  borderRadius: "6px",
-                  border: mode === "dark" ? "1px solid rgba(6, 182, 212, 0.3)" : "1px solid #BAE6FD",
-                }}
-              />
-            </Box>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
-                size="small"
-                startIcon={<VpnKeyIcon sx={{ fontSize: "14px !important" }} />}
-                onClick={() => setIsChangePasswordOpen(true)}
-                sx={{
-                  height: 26,
-                  fontSize: "0.75rem",
-                  borderRadius: "6px",
-                  color: mode === "dark" ? "#C4B5FD" : "#7C3AED",
-                  backgroundColor: mode === "dark" ? "transparent" : "rgba(124, 58, 237, 0.06)",
-                  "&:hover": {
-                    backgroundColor: mode === "dark" ? "rgba(139, 92, 246, 0.1)" : "rgba(124, 58, 237, 0.12)",
-                  },
-                }}
-              >
-                Change Password
-              </Button>
-              <Button
-                size="small"
-                startIcon={<PersonIcon sx={{ fontSize: "14px !important" }} />}
-                onClick={() => setIsProfileOpen(true)}
-                sx={{
-                  height: 26,
-                  fontSize: "0.75rem",
-                  borderRadius: "6px",
-                  color: mode === "dark" ? "#60A5FA" : "#2563EB",
-                  backgroundColor: mode === "dark" ? "transparent" : "rgba(37, 99, 235, 0.06)",
-                  "&:hover": {
-                    backgroundColor: mode === "dark" ? "rgba(59, 130, 246, 0.1)" : "rgba(37, 99, 235, 0.12)",
-                  },
-                }}
-              >
-                My Profile
-              </Button>
-            </Box>
-          </Box>
-
-          {/* TAB 0: COMPANY OVERVIEW & INFORMATION HOMEPAGE */}
-          {landingTab === 0 && (
-            <CompanyDashboardView
-              onNavigateTab={handleTabChange}
-            />
-          )}
-
           {/* TAB 1: USER MANAGEMENT (TanStack Virtualized / Standard Table) */}
           {landingTab === 1 && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Segmented View Mode Toggle Bar */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  flexWrap: "wrap",
-                  gap: 1.5,
-                  p: 1.2,
-                  borderRadius: "6px",
-                  bgcolor: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "rgba(11, 18, 38, 0.7)"
-                      : "#FFFFFF",
-                  border: (theme) =>
-                    theme.palette.mode === "dark"
-                      ? "1px solid rgba(59, 130, 246, 0.2)"
-                      : "1px solid #E2E8F0",
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.06em",
-                      color: (theme) =>
-                        theme.palette.mode === "dark" ? "#94A3B8" : "#64748B",
-                      mr: 1,
-                    }}
-                  >
-                    Engine:
-                  </Typography>
-
-                  <Button
-                    size="small"
-                    variant={viewMode === "virtualized" ? "contained" : "text"}
-                    startIcon={<BoltIcon />}
-                    onClick={() => setViewMode("virtualized")}
-                    sx={{
-                      fontSize: "0.78rem",
-                      fontWeight: 700,
-                      borderRadius: "6px",
-                      bgcolor:
-                        viewMode === "virtualized"
-                          ? "#2563EB"
-                          : "transparent",
-                      color:
-                        viewMode === "virtualized"
-                          ? "#FFFFFF"
-                          : (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "#94A3B8"
-                                : "#475569",
-                      "&:hover": {
-                        bgcolor:
-                          viewMode === "virtualized"
-                            ? "#1D4ED8"
-                            : "rgba(59, 130, 246, 0.08)",
-                      },
-                    }}
-                  >
-                    TanStack Virtualized (60fps)
-                  </Button>
-
-                  <Button
-                    size="small"
-                    variant={viewMode === "standard" ? "contained" : "text"}
-                    startIcon={<TableRowsIcon />}
-                    onClick={() => setViewMode("standard")}
-                    sx={{
-                      fontSize: "0.78rem",
-                      fontWeight: 700,
-                      borderRadius: "6px",
-                      bgcolor:
-                        viewMode === "standard"
-                          ? "#2563EB"
-                          : "transparent",
-                      color:
-                        viewMode === "standard"
-                          ? "#FFFFFF"
-                          : (theme) =>
-                              theme.palette.mode === "dark"
-                                ? "#94A3B8"
-                                : "#475569",
-                      "&:hover": {
-                        bgcolor:
-                          viewMode === "standard"
-                            ? "#1D4ED8"
-                            : "rgba(59, 130, 246, 0.08)",
-                      },
-                    }}
-                  >
-                    Standard Paginated
-                  </Button>
-                </Box>
-
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Chip
-                    label={`TanStack Query: ${users.length} Cached`}
-                    size="small"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "0.7rem",
-                      height: 22,
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "rgba(59, 130, 246, 0.15)"
-                          : "#EFF6FF",
-                      color: (theme) =>
-                        theme.palette.mode === "dark" ? "#60A5FA" : "#1D4ED8",
-                    }}
-                  />
-                  <Chip
-                    label="Zustand Store Active"
-                    size="small"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "0.7rem",
-                      height: 22,
-                      bgcolor: (theme) =>
-                        theme.palette.mode === "dark"
-                          ? "rgba(16, 185, 129, 0.15)"
-                          : "#ECFDF5",
-                      color: (theme) =>
-                        theme.palette.mode === "dark" ? "#34D399" : "#047857",
-                    }}
-                  />
-                </Box>
-              </Box>
-
-              {viewMode === "virtualized" ? (
-                <VirtualizedUserTable
-                  users={users}
-                  isLoading={isUsersLoading}
-                  isFetching={isFetching}
-                  onRefresh={fetchUsers}
-                  onResetSeed={handleResetSeed}
-                />
-              ) : (
-                <ConfigurableTable
-                  users={users}
-                  loading={isUsersLoading}
-                  onRefresh={fetchUsers}
-                  onAddUser={() => openModal("add")}
-                  onEditUser={(user) => openModal("edit", user)}
-                  onDeleteUser={(user) => openModal("delete", user)}
-                  onResetSeed={handleResetSeed}
-                />
-              )}
-            </Box>
+            <VirtualizedUserTable
+              users={users}
+              isLoading={isUsersLoading}
+              isFetching={isFetching}
+              onRefresh={fetchUsers}
+            />
           )}
 
           {/* TAB 2: ROLES ARCHITECTURE */}
@@ -1318,13 +1080,13 @@ export default function Home() {
                   sx={{
                     fontSize: 40,
                     color: (theme) =>
-                      theme.palette.mode === "dark" ? "#38BDF8" : "#2563EB",
+                      theme.palette.mode === "dark" ? "#38BDF8" : "#0284C7",
                     mb: 1,
                   }}
                 />
                 <Typography
                   variant="h6"
-                  sx={{ fontWeight: 800, color: "text.primary", mb: 0.8 }}
+                  sx={{ fontWeight: 600, color: "text.primary", mb: 0.8 }}
                 >
                   Customer Services Hub
                 </Typography>
@@ -1343,16 +1105,16 @@ export default function Home() {
                         backgroundColor: (theme) =>
                           theme.palette.mode === "dark"
                             ? "rgba(10, 15, 28, 0.6)"
-                            : "#EFF6FF",
+                            : "#F0F9FF",
                         border: (theme) =>
                           theme.palette.mode === "dark"
                             ? "1px solid rgba(59,130,246,0.15)"
-                            : "1px solid #DBEAFE",
+                            : "1px solid #E0F2FE",
                         textAlign: "left",
                       }}
                     >
                       <CheckCircleIcon sx={{ color: "#10B981", mb: 0.5, fontSize: 20 }} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }}>
                         Database: App (PostgreSQL)
                       </Typography>
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -1368,23 +1130,23 @@ export default function Home() {
                         backgroundColor: (theme) =>
                           theme.palette.mode === "dark"
                             ? "rgba(10, 15, 28, 0.6)"
-                            : "#EFF6FF",
+                            : "#F0F9FF",
                         border: (theme) =>
                           theme.palette.mode === "dark"
                             ? "1px solid rgba(6,182,212,0.15)"
-                            : "1px solid #DBEAFE",
+                            : "1px solid #E0F2FE",
                         textAlign: "left",
                       }}
                     >
                       <SecurityIcon
                         sx={{
                           color: (theme) =>
-                            theme.palette.mode === "dark" ? "#06B6D4" : "#0891B2",
+                            theme.palette.mode === "dark" ? "#22D3EE" : "#0891B2",
                           mb: 0.5,
                           fontSize: 20,
                         }}
                       />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }}>
                         Roles & Permissions
                       </Typography>
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -1400,11 +1162,11 @@ export default function Home() {
                         backgroundColor: (theme) =>
                           theme.palette.mode === "dark"
                             ? "rgba(10, 15, 28, 0.6)"
-                            : "#EFF6FF",
+                            : "#F0F9FF",
                         border: (theme) =>
                           theme.palette.mode === "dark"
                             ? "1px solid rgba(139,92,246,0.15)"
-                            : "1px solid #DBEAFE",
+                            : "1px solid #E0F2FE",
                         textAlign: "left",
                       }}
                     >
@@ -1416,7 +1178,7 @@ export default function Home() {
                           fontSize: 20,
                         }}
                       />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary" }}>
                         Bcrypt Password Security
                       </Typography>
                       <Typography variant="caption" sx={{ color: "text.secondary" }}>
@@ -1444,7 +1206,7 @@ export default function Home() {
                 />
                 <Typography
                   variant="h6"
-                  sx={{ fontWeight: 800, color: "text.primary", mb: 0.8 }}
+                  sx={{ fontWeight: 600, color: "text.primary", mb: 0.8 }}
                 >
                   Customer Analytics & Activity Logs
                 </Typography>
@@ -1452,7 +1214,7 @@ export default function Home() {
                   variant="body2"
                   sx={{ color: "text.secondary", maxWidth: 640, mx: "auto", mb: 2 }}
                 >
-                  Monitor active user sign-ins, password updates, and customer CRUD operations across the Nexvanta portal.
+                  Monitor active user sign-ins, password updates, and customer CRUD operations across the {APP_NAME} terminal.
                 </Typography>
                 <Button
                   variant="contained"
@@ -1469,7 +1231,7 @@ export default function Home() {
           {/* TAB 6: MANUAL TRADING JOURNAL PLATFORM */}
           {landingTab === 6 && (
             <Box sx={{ width: "100%", mt: -1 }}>
-              <TradingJournalView onBackToHome={() => handleTabChange(0)} />
+              <TradingJournalView />
             </Box>
           )}
         </Box>
@@ -1487,10 +1249,10 @@ export default function Home() {
           paper: {
             sx: {
               backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                theme.palette.mode === "dark" ? "#0A1124" : "#FFFFFF",
               border: (theme) =>
                 theme.palette.mode === "dark"
-                  ? "1px solid rgba(59, 130, 246, 0.25)"
+                  ? "1px solid rgba(56, 189, 248, 0.25)"
                   : "1px solid #E2E8F0",
               borderRadius: "6px", // 6px fixed
               p: 2,
@@ -1502,10 +1264,10 @@ export default function Home() {
           <PersonIcon
             sx={{
               color: (theme) =>
-                theme.palette.mode === "dark" ? "#38BDF8" : "#2563EB",
+                theme.palette.mode === "dark" ? "#38BDF8" : "#0284C7",
             }}
           />
-          <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+          <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
             User Profile
           </Box>
         </DialogTitle>
@@ -1519,7 +1281,7 @@ export default function Home() {
                     height: 56,
                     bgcolor: "primary.main",
                     fontSize: "1.3rem",
-                    fontWeight: 700,
+                    fontWeight: 600,
                     borderRadius: "6px", // 6px fixed
                     mx: "auto",
                     mb: 1.2,
@@ -1527,7 +1289,7 @@ export default function Home() {
                 >
                   {currentUser.name.charAt(0).toUpperCase()}
                 </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: 700, color: "text.primary", fontSize: "0.95rem" }}>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.95rem" }}>
                   {currentUser.name}
                 </Typography>
                 <Typography variant="body2" sx={{ color: "text.secondary", fontSize: "0.8rem" }}>
@@ -1537,17 +1299,17 @@ export default function Home() {
                   label={`Role: ${currentUser.role}`}
                   color="primary"
                   size="small"
-                  sx={{ mt: 1, fontWeight: 700, borderRadius: "6px" }}
+                  sx={{ mt: 1, fontWeight: 600, borderRadius: "6px" }}
                 />
               </Box>
               <Divider sx={{ borderColor: (theme) => theme.palette.divider }} />
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>Account ID:</Typography>
-                <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 700 }}>#{currentUser.id}</Typography>
+                <Typography variant="caption" sx={{ color: "text.primary", fontWeight: 600 }}>#{currentUser.id}</Typography>
               </Box>
               <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>Access Level:</Typography>
-                <Typography variant="caption" sx={{ color: "secondary.main", fontWeight: 700 }}>Verified User</Typography>
+                <Typography variant="caption" sx={{ color: "secondary.main", fontWeight: 600 }}>Verified User</Typography>
               </Box>
             </Box>
           )}
@@ -1592,7 +1354,7 @@ export default function Home() {
           paper: {
             sx: {
               backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                theme.palette.mode === "dark" ? "#0A1124" : "#FFFFFF",
               border: (theme) =>
                 theme.palette.mode === "dark"
                   ? "1px solid rgba(139, 92, 246, 0.3)"
@@ -1610,7 +1372,7 @@ export default function Home() {
                 theme.palette.mode === "dark" ? "#A78BFA" : "#7C3AED",
             }}
           />
-          <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+          <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
             Change Password ({currentUser?.email})
           </Box>
         </DialogTitle>
@@ -1647,10 +1409,10 @@ export default function Home() {
           paper: {
             sx: {
               backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                theme.palette.mode === "dark" ? "#0A1124" : "#FFFFFF",
               border: (theme) =>
                 theme.palette.mode === "dark"
-                  ? "1px solid rgba(59, 130, 246, 0.25)"
+                  ? "1px solid rgba(56, 189, 248, 0.25)"
                   : "1px solid #E2E8F0",
               borderRadius: "6px", // 6px fixed
               p: 2,
@@ -1662,10 +1424,10 @@ export default function Home() {
           <PersonAddIcon
             sx={{
               color: (theme) =>
-                theme.palette.mode === "dark" ? "#38BDF8" : "#2563EB",
+                theme.palette.mode === "dark" ? "#38BDF8" : "#0284C7",
             }}
           />
-          <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+          <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
             Add New User
           </Box>
         </DialogTitle>
@@ -1708,7 +1470,7 @@ export default function Home() {
               paper: {
                 sx: {
                   backgroundColor: (theme) =>
-                    theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                    theme.palette.mode === "dark" ? "#0A1124" : "#FFFFFF",
                   border: (theme) =>
                     theme.palette.mode === "dark"
                       ? "1px solid rgba(6, 182, 212, 0.25)"
@@ -1726,7 +1488,7 @@ export default function Home() {
                     theme.palette.mode === "dark" ? "#22D3EE" : "#0891B2",
                 }}
               />
-              <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+              <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
                 Edit User #{currentEditing?.id}
               </Box>
             </DialogTitle>
@@ -1779,7 +1541,7 @@ export default function Home() {
               paper: {
                 sx: {
                   backgroundColor: (theme) =>
-                    theme.palette.mode === "dark" ? "#0E162B" : "#FFFFFF",
+                    theme.palette.mode === "dark" ? "#0A1124" : "#FFFFFF",
                   border: (theme) =>
                     theme.palette.mode === "dark"
                       ? "1px solid rgba(239, 68, 68, 0.3)"
@@ -1792,7 +1554,7 @@ export default function Home() {
           >
             <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, color: "error.main" }}>
               <WarningIcon />
-              <Box component="span" sx={{ fontWeight: 700 }}>Confirm Deletion</Box>
+              <Box component="span" sx={{ fontWeight: 600 }}>Confirm Deletion</Box>
             </DialogTitle>
             <DialogContent>
               <Typography variant="body1" sx={{ color: "text.primary", fontSize: "0.9rem" }}>
@@ -1817,7 +1579,7 @@ export default function Home() {
                 variant="contained"
                 color="error"
                 onClick={handleDeleteUser}
-                sx={{ fontWeight: 700, borderRadius: "6px" }}
+                sx={{ fontWeight: 600, borderRadius: "6px" }}
               >
                 Delete
               </Button>
@@ -1838,7 +1600,6 @@ export default function Home() {
           sx={{
             borderRadius: "6px", // 6px fixed
             fontWeight: 600,
-            boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
             border: "1px solid rgba(255,255,255,0.1)",
           }}
         >

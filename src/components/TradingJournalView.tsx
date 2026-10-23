@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Box,
-  Container,
   Typography,
   Button,
   Card,
@@ -27,16 +26,12 @@ import {
   DialogContent,
   DialogActions,
   LinearProgress,
-  CircularProgress,
   Snackbar,
   Alert,
-  RadioGroup,
   FormControlLabel,
-  Radio,
   Rating,
   Switch,
   Slider,
-  Checkbox,
 } from "@mui/material";
 import {
   Dashboard as DashboardIcon,
@@ -47,39 +42,20 @@ import {
   Psychology as PsychologyIcon,
   AccountBalanceWallet as AccountsIcon,
   Download as ExportIcon,
-  ArrowBack as ArrowBackIcon,
-  TrendingUp as TrendingUpIcon,
-  TrendingDown as TrendingDownIcon,
-  CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
-  Speed as SpeedIcon,
   Refresh as RefreshIcon,
   FilterList as FilterIcon,
-  AttachMoney as MoneyIcon,
-  Timeline as TimelineIcon,
-  EmojiEmotions as EmotionIcon,
   Search as SearchIcon,
   MenuBook as BookIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Today as TodayIcon,
-  DateRange as DateRangeIcon,
-  ShowChart as ShowChartIcon,
-  BarChart as BarChartIcon,
-  SelfImprovement as MeditationIcon,
-  PlayArrow as PlayIcon,
-  Pause as PauseIcon,
-  RestartAlt as ResetIcon,
-  OpenInNew as OpenInNewIcon,
-  LocalFireDepartment as FireIcon,
-  AssignmentTurnedIn as ChecklistIcon,
-  Check as CheckIcon,
-  Spa as SpaIcon,
 } from "@mui/icons-material";
-import Link from "next/link";
 import { useColorMode } from "@/components/ThemeRegistry";
-import { TradeRecord, AnalyticsSummary, calculateTradingAnalytics } from "@/lib/tradingAnalytics";
+import { TradeRecord } from "@/lib/tradingAnalytics";
+import AdvancedTradingDashboard from "./AdvancedTradingDashboard";
+import WaveAnalyticsView from "./WaveAnalyticsView";
+import AnalyticsView from "./AnalyticsView";
 
 export const TRADING_SYMBOLS = [
   "XAUUSD",
@@ -143,7 +119,6 @@ export default function TradingJournalView({
   const [tags, setTags] = useState<any[]>([]);
   const [trades, setTrades] = useState<TradeRecord[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
-  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
 
   // Detail Modal
   const [selectedTrade, setSelectedTrade] = useState<TradeRecord | null>(null);
@@ -172,7 +147,6 @@ export default function TradingJournalView({
         setTags(data.tags || []);
         setTrades(data.trades || []);
         setReviews(data.reviews || []);
-        setAnalytics(data.analytics || null);
       } else {
         showToast(data.error || "Failed to load trading journal data", "error");
       }
@@ -203,10 +177,10 @@ export default function TradingJournalView({
   );
   const [overviewEndDate, setOverviewEndDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
+  // --- OVERVIEW VIEW MODE: "advanced" (Excel Dashboard) vs "wave" (Spline Wave & Streams) ---
+  const [overviewViewMode, setOverviewViewMode] = useState<"advanced" | "wave">("advanced");
+
   // --- OVERVIEW WAVE & SINE CHART STATE ---
-  const [waveChartMode, setWaveChartMode] = useState<"equity" | "sine">("equity");
-  const [hoveredWaveIndex, setHoveredWaveIndex] = useState<number | null>(null);
-  const [selectedWaveIndex, setSelectedWaveIndex] = useState<number | null>(null);
 
   // --- ACCOUNTS CRUD STATE ---
   const [accountDialogOpen, setAccountDialogOpen] = useState<boolean>(false);
@@ -327,174 +301,6 @@ export default function TradingJournalView({
       setAccountActionLoading(false);
     }
   };
-
-  // --- PRE-MARKET ROUTINE STATE & MEDITATION TIMER ---
-  const [routineDate, setRoutineDate] = useState<string>(new Date().toISOString().slice(0, 10));
-  const [routine, setRoutine] = useState({
-    economicCalendarReviewed: false,
-    economicCalendarNotes: "",
-    tradePlanReviewed: false,
-    dailyBias: "Neutral",
-    maxDailyLoss: "250",
-    tradePlanNotes: "",
-    chartsAnalyzed: false,
-    watchlist: ["XAUUSD", "EURUSD", "BTCUSD"] as string[],
-    chartNotes: "",
-    meditationCompleted: false,
-    meditationMinutes: 10,
-    mindsetRating: 5,
-  });
-  const [routineStreak, setRoutineStreak] = useState<number>(0);
-  const [routineSaving, setRoutineSaving] = useState<boolean>(false);
-
-  // 10 Mins Meditation Timer State (600 seconds)
-  const [meditationTimeLeft, setMeditationTimeLeft] = useState<number>(600);
-  const [meditationIsRunning, setMeditationIsRunning] = useState<boolean>(false);
-  const [breathingPhase, setBreathingPhase] = useState<"Inhale" | "Hold" | "Exhale" | "Pause">("Inhale");
-  const [breathingTimer, setBreathingTimer] = useState<number>(4);
-
-  // Meditation timer countdown
-  useEffect(() => {
-    let interval: any;
-    if (meditationIsRunning && meditationTimeLeft > 0) {
-      interval = setInterval(() => {
-        setMeditationTimeLeft((prev) => {
-          if (prev <= 1) {
-            setMeditationIsRunning(false);
-            setRoutine((r) => ({ ...r, meditationCompleted: true }));
-            showToast("🧘 10 Minutes Meditation Completed! Mind is calm and focused for trading.", "success");
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [meditationIsRunning, meditationTimeLeft]);
-
-  // Box Breathing cycle (4s Inhale -> 4s Hold -> 4s Exhale -> 4s Pause = 16s)
-  useEffect(() => {
-    let interval: any;
-    if (meditationIsRunning) {
-      interval = setInterval(() => {
-        const cycleSeconds = (600 - meditationTimeLeft) % 16;
-        if (cycleSeconds < 4) {
-          setBreathingPhase("Inhale");
-          setBreathingTimer(4 - (cycleSeconds % 4));
-        } else if (cycleSeconds < 8) {
-          setBreathingPhase("Hold");
-          setBreathingTimer(4 - (cycleSeconds % 4));
-        } else if (cycleSeconds < 12) {
-          setBreathingPhase("Exhale");
-          setBreathingTimer(4 - (cycleSeconds % 4));
-        } else {
-          setBreathingPhase("Pause");
-          setBreathingTimer(4 - (cycleSeconds % 4));
-        }
-      }, 500);
-    }
-    return () => clearInterval(interval);
-  }, [meditationIsRunning, meditationTimeLeft]);
-
-  // Fetch routine from API and localStorage
-  const fetchRoutine = useCallback(async (date: string) => {
-    try {
-      const localKey = `pre_market_routine_${date}`;
-      const cached = localStorage.getItem(localKey);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached);
-          setRoutine((prev) => ({ ...prev, ...parsed }));
-        } catch {}
-      }
-
-      const res = await fetch(`/api/journal/routine?date=${date}`);
-      const data = await res.json();
-      if (data && data.success) {
-        if (data.routine) {
-          const r = data.routine;
-          const loaded = {
-            economicCalendarReviewed: Boolean(r.economic_calendar_reviewed),
-            economicCalendarNotes: r.economic_calendar_notes || "",
-            tradePlanReviewed: Boolean(r.trade_plan_reviewed),
-            dailyBias: r.daily_bias || "Neutral",
-            maxDailyLoss: String(r.max_daily_loss || "250"),
-            tradePlanNotes: r.trade_plan_notes || "",
-            chartsAnalyzed: Boolean(r.charts_analyzed),
-            watchlist: r.watchlist ? r.watchlist.split(",") : ["XAUUSD", "EURUSD"],
-            chartNotes: r.chart_notes || "",
-            meditationCompleted: Boolean(r.meditation_completed),
-            meditationMinutes: r.meditation_minutes || 10,
-            mindsetRating: r.mindset_rating || 5,
-          };
-          setRoutine(loaded);
-          localStorage.setItem(localKey, JSON.stringify(loaded));
-        }
-        if (typeof data.streak === "number") {
-          setRoutineStreak(data.streak);
-        }
-      }
-    } catch {
-      // Offline fallback: rely on localStorage
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchRoutine(routineDate);
-  }, [fetchRoutine, routineDate]);
-
-  const handleSaveRoutine = async () => {
-    setRoutineSaving(true);
-    try {
-      const localKey = `pre_market_routine_${routineDate}`;
-      localStorage.setItem(localKey, JSON.stringify(routine));
-
-      const payload = {
-        routineDate,
-        accountId: selectedAccountId !== "all" ? selectedAccountId : null,
-        economicCalendarReviewed: routine.economicCalendarReviewed,
-        economicCalendarNotes: routine.economicCalendarNotes,
-        tradePlanReviewed: routine.tradePlanReviewed,
-        dailyBias: routine.dailyBias,
-        maxDailyLoss: parseFloat(routine.maxDailyLoss) || 0,
-        tradePlanNotes: routine.tradePlanNotes,
-        chartsAnalyzed: routine.chartsAnalyzed,
-        watchlist: routine.watchlist.join(","),
-        chartNotes: routine.chartNotes,
-        meditationCompleted: routine.meditationCompleted,
-        meditationMinutes: routine.meditationMinutes,
-        mindsetRating: routine.mindsetRating,
-      };
-
-      const res = await fetch("/api/journal/routine", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data && data.success) {
-        showToast("Pre-Market Routine saved & locked in successfully!", "success");
-        fetchRoutine(routineDate);
-      } else {
-        showToast((data && data.error) || "Failed to save routine to server", "error");
-      }
-    } catch {
-      showToast("Pre-Market Routine saved in local browser storage", "info");
-    } finally {
-      setRoutineSaving(false);
-    }
-  };
-
-  const routineCompletedCount = useMemo(() => {
-    let count = 0;
-    if (routine.economicCalendarReviewed) count++;
-    if (routine.tradePlanReviewed) count++;
-    if (routine.chartsAnalyzed) count++;
-    if (routine.meditationCompleted) count++;
-    return count;
-  }, [routine]);
-
-  const routineIsAllComplete = routineCompletedCount === 4;
 
   // --- TRADE ENTRY FORM STATE ---
   const [tradeForm, setTradeForm] = useState({
@@ -812,6 +618,12 @@ export default function TradingJournalView({
   const activeCurrencySymbol = activeAccount?.currency === "INR" ? "₹" : "$";
   const activeStartingBalance = activeAccount ? Number(activeAccount.starting_balance) : 10000;
 
+  // Trades for the selected account only (Analytics tab applies its own period filter)
+  const accountTrades = useMemo(
+    () => (selectedAccountId === "all" ? trades : trades.filter((t) => t.account_id === selectedAccountId)),
+    [trades, selectedAccountId]
+  );
+
   const overviewFilteredTrades = useMemo(() => {
     let list = trades;
     if (selectedAccountId !== "all") {
@@ -856,416 +668,180 @@ export default function TradingJournalView({
     return list;
   }, [trades, selectedAccountId, overviewPeriod, overviewDay, overviewStartDate, overviewEndDate]);
 
-  const overviewAnalytics = useMemo(() => {
-    return calculateTradingAnalytics(overviewFilteredTrades, activeStartingBalance);
-  }, [overviewFilteredTrades, activeStartingBalance]);
-
-  // Synchronized exact trade orders constituting the wave progression
-  const wavePointsWithTrades = useMemo(() => {
-    const closed = [...overviewFilteredTrades]
-      .filter((t) => t.status === "CLOSED" && t.net_pnl !== null)
-      .sort((a, b) => new Date(a.closed_at || a.opened_at).getTime() - new Date(b.closed_at || b.opened_at).getTime());
-
-    let runningEq = activeStartingBalance;
-    let peakEq = activeStartingBalance;
-
-    const list: Array<{
-      index: number;
-      trade?: TradeRecord;
-      date: string;
-      time: string;
-      symbol: string;
-      direction: string;
-      pnl: number;
-      equity: number;
-      peak: number;
-      drawdown: number;
-      isInitial: boolean;
-    }> = [
-      {
-        index: 0,
-        date: closed[0] ? new Date(closed[0].opened_at).toLocaleDateString([], { month: "short", day: "numeric" }) : "Start",
-        time: "00:00",
-        symbol: "Starting Capital",
-        direction: "—",
-        pnl: 0,
-        equity: activeStartingBalance,
-        peak: activeStartingBalance,
-        drawdown: 0,
-        isInitial: true,
-      },
-    ];
-
-    closed.forEach((t, i) => {
-      const pnl = Number(t.net_pnl) || 0;
-      runningEq += pnl;
-      peakEq = Math.max(peakEq, runningEq);
-      const dd = peakEq - runningEq;
-      const dObj = new Date(t.closed_at || t.opened_at);
-
-      list.push({
-        index: i + 1,
-        trade: t,
-        date: dObj.toLocaleDateString([], { month: "short", day: "numeric" }),
-        time: dObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        symbol: t.symbol,
-        direction: t.direction,
-        pnl,
-        equity: runningEq,
-        peak: peakEq,
-        drawdown: dd,
-        isInitial: false,
-      });
-    });
-
-    return list;
-  }, [overviewFilteredTrades, activeStartingBalance]);
-
-  // Direction analytics (BUY vs SELL)
-  const directionAnalytics = useMemo(() => {
-    const closed = overviewFilteredTrades.filter((t) => t.status === "CLOSED" && t.net_pnl !== null);
-    const buyTrades = closed.filter((t) => t.direction === "BUY");
-    const sellTrades = closed.filter((t) => t.direction === "SELL");
-
-    const calc = (arr: TradeRecord[]) => {
-      const count = arr.length;
-      const wins = arr.filter((t) => (t.net_pnl || 0) > 0).length;
-      const losses = arr.filter((t) => (t.net_pnl || 0) < 0).length;
-      const pnl = arr.reduce((acc, t) => acc + (t.net_pnl || 0), 0);
-      const wr = (wins + losses) > 0 ? (wins / (wins + losses)) * 100 : null;
-      return { count, wins, losses, pnl, wr };
-    };
-
-    return {
-      buy: calc(buyTrades),
-      sell: calc(sellTrades),
-    };
-  }, [overviewFilteredTrades]);
-
-  // Performance by symbols
-  const symbolStats = useMemo(() => {
-    const closed = overviewFilteredTrades.filter((t) => t.status === "CLOSED" && t.net_pnl !== null);
-    const map: Record<string, { count: number; wins: number; losses: number; pnl: number }> = {};
-
-    closed.forEach((t) => {
-      const sym = t.symbol.toUpperCase();
-      if (!map[sym]) map[sym] = { count: 0, wins: 0, losses: 0, pnl: 0 };
-      map[sym].count += 1;
-      const pnl = t.net_pnl || 0;
-      if (pnl > 0) map[sym].wins += 1;
-      else if (pnl < 0) map[sym].losses += 1;
-      map[sym].pnl += pnl;
-    });
-
-    return Object.entries(map).map(([symbol, s]) => {
-      const dec = s.wins + s.losses;
-      return {
-        symbol,
-        count: s.count,
-        winRate: dec > 0 ? (s.wins / dec) * 100 : null,
-        pnl: s.pnl,
-      };
-    }).sort((a, b) => b.pnl - a.pnl);
-  }, [overviewFilteredTrades]);
-
-  // Emotional performance (Entry emotion vs Exit emotion)
-  const emotionalStats = useMemo(() => {
-    const closed = overviewFilteredTrades.filter((t) => t.status === "CLOSED" && t.net_pnl !== null);
-    const entryMap: Record<string, { count: number; wins: number; pnl: number }> = {};
-    const exitMap: Record<string, { count: number; wins: number; pnl: number }> = {};
-
-    closed.forEach((t) => {
-      const eb = t.emotion_before || "Unspecified";
-      const ea = t.emotion_after || "Unspecified";
-      const pnl = t.net_pnl || 0;
-
-      if (!entryMap[eb]) entryMap[eb] = { count: 0, wins: 0, pnl: 0 };
-      entryMap[eb].count += 1;
-      if (pnl > 0) entryMap[eb].wins += 1;
-      entryMap[eb].pnl += pnl;
-
-      if (!exitMap[ea]) exitMap[ea] = { count: 0, wins: 0, pnl: 0 };
-      exitMap[ea].count += 1;
-      if (pnl > 0) exitMap[ea].wins += 1;
-      exitMap[ea].pnl += pnl;
-    });
-
-    return {
-      entry: Object.entries(entryMap).map(([emotion, s]) => ({
-        emotion,
-        count: s.count,
-        winRate: s.count > 0 ? (s.wins / s.count) * 100 : 0,
-        pnl: s.pnl,
-      })).sort((a, b) => b.pnl - a.pnl),
-      exit: Object.entries(exitMap).map(([emotion, s]) => ({
-        emotion,
-        count: s.count,
-        winRate: s.count > 0 ? (s.wins / s.count) * 100 : 0,
-        pnl: s.pnl,
-      })).sort((a, b) => b.pnl - a.pnl),
-    };
-  }, [overviewFilteredTrades]);
-
-  // Daily PnL distribution bars
-  const dailyPnlBars = useMemo(() => {
-    const closed = overviewFilteredTrades
-      .filter((t) => t.status === "CLOSED" && t.net_pnl !== null)
-      .sort((a, b) => new Date(a.closed_at || a.opened_at).getTime() - new Date(b.closed_at || b.opened_at).getTime());
-
-    const map: Record<string, number> = {};
-    closed.forEach((t) => {
-      const d = new Date(t.closed_at || t.opened_at).toLocaleDateString([], { month: "short", day: "numeric" });
-      map[d] = (map[d] || 0) + (t.net_pnl || 0);
-    });
-
-    return Object.entries(map).map(([date, pnl]) => ({ date, pnl }));
-  }, [overviewFilteredTrades]);
-
-  // Discipline & mistake stats
-  const disciplineStats = useMemo(() => {
-    const closed = overviewFilteredTrades.filter((t) => t.status === "CLOSED" && t.net_pnl !== null);
-    const disciplined = closed.filter((t) => !t.mistake_flag);
-    const mistakes = closed.filter((t) => t.mistake_flag);
-
-    const calc = (arr: TradeRecord[]) => {
-      const count = arr.length;
-      const wins = arr.filter((t) => (t.net_pnl || 0) > 0).length;
-      const pnl = arr.reduce((acc, t) => acc + (t.net_pnl || 0), 0);
-      const wr = count > 0 ? (wins / count) * 100 : null;
-      return { count, pnl, wr };
-    };
-
-    return {
-      disciplined: calc(disciplined),
-      mistakes: calc(mistakes),
-    };
-  }, [overviewFilteredTrades]);
+  // Single source of truth for every journal tab: nav label, icon and page header
+  const journalTabs: {
+    label: string;
+    badge?: string | number;
+    icon: React.ReactElement;
+    color: string;
+  }[] = [
+    { label: "Dashboard", icon: <DashboardIcon />, color: "#38BDF8" },
+    { label: "Add Trade", icon: <AddTradeIcon />, color: "#10B981" },
+    { label: "History", badge: trades.length, icon: <HistoryIcon />, color: "#818CF8" },
+    { label: "Calendar", icon: <CalendarIcon />, color: "#F59E0B" },
+    { label: "Analytics", icon: <AnalyticsIcon />, color: "#22D3EE" },
+    { label: "Psychology", icon: <PsychologyIcon />, color: "#A78BFA" },
+    { label: "Accounts", badge: accounts.length, icon: <AccountsIcon />, color: "#10B981" },
+  ];
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: isDark ? "#070A13" : "#F8FAFC",
+        minHeight: "100%",
+        bgcolor: "transparent",
         color: isDark ? "#F8FAFC" : "#0F172A",
         pb: 2,
       }}
     >
       {/* ============================================================== */}
-      {/* TOP HEADER: Breadcrumb, Account Filter, Live Status, Add Trade */}
+      {/* NAVIGATION COMMAND BAR (TABS + ACCOUNT CONTROLS) & PAGE HEADER */}
       {/* ============================================================== */}
-      <Box
-        sx={{
-          py: 1,
-          px: { xs: 1.5, md: 2.5 },
-          bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-          borderBottom: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          alignItems: { xs: "flex-start", md: "center" },
-          justifyContent: "space-between",
-          gap: 1.2,
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
-          {onBackToHome ? (
-            <Button
-              size="small"
-              onClick={onBackToHome}
-              startIcon={<ArrowBackIcon />}
-              sx={{
-                color: isDark ? "#94A3B8" : "#64748B",
-                textTransform: "none",
-                fontWeight: 600,
-                fontSize: "0.8rem",
-                py: 0.2,
-              }}
-            >
-              Back to Overview
-            </Button>
-          ) : (
-            <Link href="/" style={{ textDecoration: "none" }}>
-              <Button
-                size="small"
-                startIcon={<ArrowBackIcon />}
-                sx={{
-                  color: isDark ? "#94A3B8" : "#64748B",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  fontSize: "0.8rem",
-                  py: 0.2,
-                }}
-              >
-                Auth & User Portal
-              </Button>
-            </Link>
-          )}
-          <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-          <Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.05rem", letterSpacing: "-0.01em" }}>
-                Manual Trading Journal
-              </Typography>
-              <Chip
-                label="PostgreSQL: trade"
-                size="small"
-                sx={{
-                  bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5",
-                  color: isDark ? "#34D399" : "#059669",
-                  border: isDark ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid #A7F3D0",
-                  fontWeight: 700,
-                  fontSize: "0.65rem",
-                  height: 18,
-                }}
-              />
-            </Box>
-            <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: "0.7rem", lineHeight: 1 }}>
-              Independent multi-user trading platform. Zero MT5 or broker dependency.
-            </Typography>
-          </Box>
-        </Box>
-
-        {/* Account Selector, Refresh & Primary Add Trade Action */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel sx={{ fontSize: "0.78rem" }}>Active Account</InputLabel>
-            <Select
-              value={selectedAccountId}
-              label="Active Account"
-              onChange={(e) => setSelectedAccountId(e.target.value)}
-              sx={{ fontSize: "0.78rem", height: 32, bgcolor: isDark ? "#0E162B" : "#FFFFFF" }}
-            >
-              <MenuItem value="all">All Accounts ({accounts.length})</MenuItem>
-              {accounts.map((acc) => (
-                <MenuItem key={acc.id} value={acc.id}>
-                  {acc.name} ({acc.currency})
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Tooltip title="Refresh Data">
-            <IconButton
-              size="small"
-              onClick={fetchJournalData}
-              disabled={loading}
-              sx={{
-                border: isDark ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #CBD5E1",
-                borderRadius: "6px",
-                width: 32,
-                height: 32,
-              }}
-            >
-              <RefreshIcon sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Tooltip>
-
-          <Button
-            size="small"
-            startIcon={<MeditationIcon sx={{ fontSize: 16 }} />}
-            onClick={() => setActiveTab(7)}
-            sx={{
-              height: 32,
-              px: 1.5,
-              fontSize: "0.78rem",
-              fontWeight: 700,
-              borderRadius: "6px",
-              textTransform: "none",
-              bgcolor: routineIsAllComplete
-                ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5")
-                : (isDark ? "rgba(245, 158, 11, 0.15)" : "#FFFBEB"),
-              color: routineIsAllComplete ? "#10B981" : (isDark ? "#FBBF24" : "#D97706"),
-              border: routineIsAllComplete
-                ? "1px solid rgba(16, 185, 129, 0.4)"
-                : "1px solid rgba(245, 158, 11, 0.4)",
-              "&:hover": {
-                bgcolor: routineIsAllComplete
-                  ? (isDark ? "rgba(16, 185, 129, 0.25)" : "#D1FAE5")
-                  : (isDark ? "rgba(245, 158, 11, 0.25)" : "#FEF3C7"),
-              },
-            }}
-          >
-            Routine: {routineCompletedCount}/4 {routineIsAllComplete ? "✅" : "⏳"}
-          </Button>
-
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<AddTradeIcon sx={{ fontSize: 16 }} />}
-            onClick={() => {
-              if (accounts.length > 0 && !tradeForm.accountId) {
-                setTradeForm((prev) => ({ ...prev, accountId: accounts[0].id }));
-              }
-              setActiveTab(1);
-            }}
-            sx={{
-              bgcolor: "#2563EB",
-              fontWeight: 700,
-              fontSize: "0.78rem",
-              borderRadius: "6px",
-              height: 32,
-              px: 1.8,
-              "&:hover": { bgcolor: "#1D4ED8" },
-            }}
-          >
-            Add Trade
-          </Button>
-        </Box>
-      </Box>
-
-      {/* ============================================================== */}
-      {/* NAVIGATION TABS                                                */}
-      {/* ============================================================== */}
-      <Box
-        sx={{
-          px: { xs: 1.5, md: 2.5 },
-          bgcolor: isDark ? "#0A0F1D" : "#F1F5F9",
-          borderBottom: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0",
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={(_, val) => setActiveTab(val)}
-          variant="scrollable"
-          scrollButtons="auto"
+      <Box sx={{ px: { xs: 0.8, sm: 1.2, md: 1.5 }, pt: 1, display: "flex", flexDirection: "column", gap: 1.4 }}>
+        <Box
           sx={{
-            minHeight: 38,
-            "& .MuiTab-root": {
-              minHeight: 38,
-              py: 0.5,
-              px: 1.5,
-              fontSize: "0.78rem",
-              fontWeight: 700,
-              textTransform: "none",
-              color: isDark ? "#94A3B8" : "#64748B",
-              "&.Mui-selected": {
-                color: isDark ? "#38BDF8" : "#2563EB",
-              },
-            },
-            "& .MuiTabs-indicator": {
-              bgcolor: isDark ? "#38BDF8" : "#2563EB",
-              height: 2.5,
-            },
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+            flexWrap: "wrap",
+            borderBottom: isDark ? "1px solid rgba(148, 163, 184, 0.16)" : "1px solid #E2E8F0",
           }}
         >
-          <Tab icon={<DashboardIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Overview" />
-          <Tab icon={<AddTradeIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Add Trade (31 Fields)" />
-          <Tab icon={<HistoryIcon sx={{ fontSize: 16 }} />} iconPosition="start" label={`Trade History (${trades.length})`} />
-          <Tab icon={<CalendarIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Trading Calendar" />
-          <Tab icon={<AnalyticsIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Analytics & Algorithms" />
-          <Tab icon={<PsychologyIcon sx={{ fontSize: 16 }} />} iconPosition="start" label="Journal & Psychology" />
-          <Tab icon={<AccountsIcon sx={{ fontSize: 16 }} />} iconPosition="start" label={`Accounts (${accounts.length})`} />
-          <Tab
-            icon={<MeditationIcon sx={{ fontSize: 16, color: routineIsAllComplete ? "#10B981" : undefined }} />}
-            iconPosition="start"
-            label={`Pre-Market Routine (${routineCompletedCount}/4)`}
-          />
-        </Tabs>
+          <Tabs
+            value={activeTab}
+            onChange={(_, val) => setActiveTab(val)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              minHeight: 44,
+              "& .MuiTabs-flexContainer": { gap: 0.5 },
+              "& .MuiTabs-scrollButtons.Mui-disabled": { opacity: 0.3 },
+              "& .MuiTab-root": {
+                minHeight: 44,
+                py: 0,
+                px: 1.4,
+                fontSize: "0.82rem",
+                fontWeight: 500,
+                textTransform: "none",
+                color: isDark ? "#94A3B8" : "#64748B",
+                transition: "color 0.15s ease",
+                "& .MuiTab-iconWrapper": { fontSize: 17, mr: 0.8 },
+                "& .tab-badge": {
+                  ml: 0.7,
+                  px: 0.6,
+                  borderRadius: "8px",
+                  fontSize: "0.66rem",
+                  fontFamily: "var(--font-mono)",
+                  fontWeight: 500,
+                  lineHeight: 1.5,
+                  bgcolor: isDark ? "rgba(148, 163, 184, 0.14)" : "#F1F5F9",
+                  color: isDark ? "#94A3B8" : "#64748B",
+                },
+                "&:hover": { color: isDark ? "#E2E8F0" : "#0B1220" },
+                "&.Mui-selected": { color: isDark ? "#F8FAFC" : "#0B1220", fontWeight: 600 },
+              },
+              // Single underline under the active tab
+              "& .MuiTabs-indicator": {
+                height: 2,
+                borderRadius: "2px 2px 0 0",
+                backgroundColor: isDark ? "#38BDF8" : "#0284C7",
+              },
+            }}
+          >
+            {journalTabs.map((t, i) => (
+              <Tab
+                key={t.label}
+                iconPosition="start"
+                icon={React.cloneElement(t.icon as React.ReactElement<{ sx?: object }>, {
+                  sx: {
+                    fontSize: 17,
+                    color: activeTab === i ? (isDark ? "#38BDF8" : "#0284C7") : undefined,
+                  },
+                })}
+                label={
+                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center" }}>
+                    {t.label}
+                    {t.badge !== undefined && (
+                      <Box component="span" className="tab-badge">
+                        {t.badge}
+                      </Box>
+                    )}
+                  </Box>
+                }
+              />
+            ))}
+          </Tabs>
+
+          {/* Account selector + refresh */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6, pr: 0.4 }}>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <Select
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                displayEmpty
+                startAdornment={<AccountsIcon sx={{ fontSize: 16, mr: 0.8, color: isDark ? "#38BDF8" : "#0284C7" }} />}
+                sx={{
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  height: 34,
+                  borderRadius: "9px",
+                  bgcolor: isDark ? "rgba(5, 9, 18, 0.6)" : "#F8FAFC",
+                  "& .MuiSelect-select": { py: 0.4, pl: 0, pr: 3 },
+                }}
+              >
+                <MenuItem value="all" sx={{ fontSize: "0.78rem" }}>All Accounts ({accounts.length})</MenuItem>
+                {accounts.map((acc) => (
+                  <MenuItem key={acc.id} value={acc.id} sx={{ fontSize: "0.78rem" }}>
+                    {acc.name} ({acc.currency})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Tooltip title="Refresh data">
+              <span>
+                <IconButton
+                  size="small"
+                  onClick={fetchJournalData}
+                  disabled={loading}
+                  aria-label="Refresh journal data"
+                  sx={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: "9px",
+                    border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
+                    bgcolor: isDark ? "rgba(5, 9, 18, 0.6)" : "#F8FAFC",
+                    color: isDark ? "#38BDF8" : "#0284C7",
+                    transition: "all 0.2s ease",
+                    "&:hover": { bgcolor: isDark ? "rgba(56, 189, 248, 0.12)" : "#E0F2FE" },
+                    "& svg": { transition: "transform 0.4s ease" },
+                  }}
+                >
+                  <RefreshIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            {activeTab === 6 ? (
+              <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={handleOpenCreateAccount} sx={{ height: 34, px: 1.8, fontSize: "0.8rem", fontWeight: 500, borderRadius: "6px", whiteSpace: "nowrap" }}>
+                New Account
+              </Button>
+            ) : activeTab !== 1 ? (
+              <Button variant="contained" size="small" startIcon={<AddIcon />} onClick={() => setActiveTab(1)} sx={{ height: 34, px: 1.8, fontSize: "0.8rem", fontWeight: 500, borderRadius: "6px", whiteSpace: "nowrap" }}>
+                Log Trade
+              </Button>
+            ) : null}
+          </Box>
+        </Box>
       </Box>
 
       {/* ============================================================== */}
       {/* MAIN VIEW CONTAINER (100% FULL-WIDTH COMPACT VIEWPORT)         */}
       {/* ============================================================== */}
-      <Box sx={{ width: "100%", mt: 0.8, px: { xs: 0.8, sm: 1.2, md: 1.5 }, pb: 1.5 }}>
+      <Box key={`tab-${activeTab}`} sx={{ width: "100%", mt: 1, px: { xs: 0.8, sm: 1.2, md: 1.5 }, pb: 1.5, animation: "view-enter 0.35s ease-out both" }}>
         {loading && <LinearProgress sx={{ mb: 1, borderRadius: 1 }} />}
 
         {/* ============================================================ */}
@@ -1280,8 +856,8 @@ export default function TradingJournalView({
               sx={{
                 p: 1.2,
                 borderRadius: "8px",
-                bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
+                bgcolor: isDark ? "#0A1124" : "#FFFFFF",
+                border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
                 display: "flex",
                 flexWrap: "wrap",
                 alignItems: "center",
@@ -1291,7 +867,7 @@ export default function TradingJournalView({
             >
               {/* Period Selection Buttons */}
               <Box sx={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.6 }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: isDark ? "#94A3B8" : "#64748B", mr: 0.5, fontSize: "0.72rem", textTransform: "uppercase" }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: isDark ? "#94A3B8" : "#64748B", mr: 0.5, fontSize: "0.72rem", textTransform: "uppercase" }}>
                   <FilterIcon sx={{ fontSize: 13, verticalAlign: "middle", mr: 0.4 }} />
                   Filter Period:
                 </Typography>
@@ -1315,14 +891,14 @@ export default function TradingJournalView({
                       height: 26,
                       bgcolor:
                         overviewPeriod === p.id
-                          ? "#2563EB"
+                          ? "#0284C7"
                           : isDark
                           ? "rgba(255, 255, 255, 0.05)"
                           : "#F1F5F9",
                       color: overviewPeriod === p.id ? "#FFF" : "inherit",
-                      border: overviewPeriod === p.id ? "1px solid #3B82F6" : "1px solid transparent",
+                      border: overviewPeriod === p.id ? "1px solid #38BDF8" : "1px solid transparent",
                       "&:hover": {
-                        bgcolor: overviewPeriod === p.id ? "#1D4ED8" : isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
+                        bgcolor: overviewPeriod === p.id ? "#0369A1" : isDark ? "rgba(255, 255, 255, 0.1)" : "#E2E8F0",
                       },
                     }}
                   />
@@ -1376,1210 +952,74 @@ export default function TradingJournalView({
                   </Box>
                 )}
 
-                <Chip
-                  label={`${overviewFilteredTrades.length} Total Orders`}
-                  size="small"
-                  sx={{
-                    fontWeight: 700,
-                    fontSize: "0.7rem",
-                    height: 24,
-                    bgcolor: isDark ? "rgba(56, 189, 248, 0.15)" : "#E0F2FE",
-                    color: isDark ? "#38BDF8" : "#0284C7",
-                  }}
-                />
-              </Box>
-            </Card>
-
-            {/* Pre-Market Routine Daily Mindset & Readiness Banner */}
-            <Card
-              sx={{
-                p: 1.2,
-                borderRadius: "8px",
-                bgcolor: routineIsAllComplete
-                  ? (isDark ? "rgba(16, 185, 129, 0.08)" : "#F0FDF4")
-                  : (isDark ? "rgba(59, 130, 246, 0.08)" : "#EFF6FF"),
-                border: routineIsAllComplete
-                  ? (isDark ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid #BBF7D0")
-                  : (isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #BFDBFE"),
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 1.2,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap" }}>
+                {/* View Mode Toggle: Excel Advanced Dashboard vs Spline Wave View */}
                 <Box
                   sx={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: "8px",
-                    bgcolor: routineIsAllComplete ? "#10B981" : "#2563EB",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#FFF",
+                    p: 0.3,
+                    borderRadius: "6px",
+                    bgcolor: isDark ? "rgba(255,255,255,0.06)" : "#F1F5F9",
+                    border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #CBD5E1",
                   }}
                 >
-                  <MeditationIcon sx={{ fontSize: 20 }} />
-                </Box>
-                <Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.82rem" }}>
-                      Pre-Market Routine ({routineCompletedCount}/4 Steps Done)
-                    </Typography>
-                    {routineStreak > 0 && (
-                      <Chip
-                        icon={<FireIcon sx={{ fontSize: "14px !important", color: "#F97316 !important" }} />}
-                        label={`${routineStreak} Day Streak`}
-                        size="small"
-                        sx={{
-                          height: 20,
-                          fontSize: "0.68rem",
-                          fontWeight: 800,
-                          bgcolor: isDark ? "rgba(249, 115, 22, 0.15)" : "#FFEDD5",
-                          color: "#EA580C",
-                        }}
-                      />
-                    )}
-                    {routineIsAllComplete && (
-                      <Chip
-                        label="Ready to Trade ✅"
-                        size="small"
-                        sx={{
-                          height: 20,
-                          fontSize: "0.68rem",
-                          fontWeight: 800,
-                          bgcolor: isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7",
-                          color: "#10B981",
-                        }}
-                      />
-                    )}
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, mt: 0.3, flexWrap: "wrap" }}>
-                    <Chip
-                      size="small"
-                      label={`1. Calendar: ${routine.economicCalendarReviewed ? "✅ Reviewed" : "⏳ Pending"}`}
-                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`2. Trade Plan: ${routine.tradePlanReviewed ? "✅ Committed" : "⏳ Pending"}`}
-                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`3. Charts: ${routine.chartsAnalyzed ? "✅ Mapped" : "⏳ Pending"}`}
-                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`4. 10m Meditation: ${routine.meditationCompleted ? "✅ Done" : "⏳ Pending"}`}
-                      sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600 }}
-                    />
-                  </Box>
-                </Box>
-              </Box>
-
-              <Button
-                variant={routineIsAllComplete ? "outlined" : "contained"}
-                size="small"
-                onClick={() => setActiveTab(7)}
-                startIcon={<MeditationIcon sx={{ fontSize: 15 }} />}
-                sx={{
-                  height: 28,
-                  fontSize: "0.74rem",
-                  fontWeight: 700,
-                  textTransform: "none",
-                  borderRadius: "6px",
-                  bgcolor: routineIsAllComplete ? "transparent" : "#2563EB",
-                  color: routineIsAllComplete ? (isDark ? "#34D399" : "#059669") : "#FFF",
-                  borderColor: routineIsAllComplete ? "#10B981" : undefined,
-                }}
-              >
-                {routineIsAllComplete ? "View Pre-Market Routine" : "Complete Routine & Meditation"}
-              </Button>
-            </Card>
-
-            {/* ============================================================ */}
-            {/* HERO KPI CARDS: Net Profit, Closed Orders, Equity Prominence */}
-            {/* ============================================================ */}
-            <Grid container spacing={1.2}>
-              {/* 1. Net Profit (Emphasized Primary Metric) */}
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border:
-                      overviewAnalytics.netPnl > 0
-                        ? "1px solid rgba(16, 185, 129, 0.35)"
-                        : overviewAnalytics.netPnl < 0
-                        ? "1px solid rgba(239, 68, 68, 0.35)"
-                        : isDark
-                        ? "1px solid rgba(59, 130, 246, 0.2)"
-                        : "1px solid #E2E8F0",
-                    boxShadow:
-                      overviewAnalytics.netPnl > 0
-                        ? "0 4px 20px rgba(16, 185, 129, 0.08)"
-                        : overviewAnalytics.netPnl < 0
-                        ? "0 4px 20px rgba(239, 68, 68, 0.08)"
-                        : "none",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-                      Net Realized Profit
-                    </Typography>
-                    {overviewAnalytics.netPnl >= 0 ? (
-                      <TrendingUpIcon sx={{ fontSize: 18, color: "#10B981" }} />
-                    ) : (
-                      <TrendingDownIcon sx={{ fontSize: 18, color: "#EF4444" }} />
-                    )}
-                  </Box>
-
-                  <Typography
-                    variant="h5"
+                  <Button
+                    size="small"
+                    onClick={() => setOverviewViewMode("advanced")}
                     sx={{
-                      fontWeight: 900,
-                      my: 0.5,
-                      fontSize: "1.45rem",
-                      color: overviewAnalytics.netPnl >= 0 ? "#10B981" : "#EF4444",
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      py: 0.2,
+                      px: 1.2,
+                      height: 24,
+                      borderRadius: "5px",
+                      textTransform: "none",
+                      bgcolor: overviewViewMode === "advanced" ? "#0284C7" : "transparent",
+                      color: overviewViewMode === "advanced" ? "#FFF" : "inherit",
                     }}
                   >
-                    {overviewAnalytics.netPnl >= 0
-                      ? `+${activeCurrencySymbol}${overviewAnalytics.netPnl.toLocaleString()}`
-                      : `-${activeCurrencySymbol}${Math.abs(overviewAnalytics.netPnl).toLocaleString()}`}
-                  </Typography>
+                    📊 Advanced Dashboard
+                  </Button>
+                  <Button
+                    size="small"
+                    onClick={() => setOverviewViewMode("wave")}
+                    sx={{
+                      fontSize: "0.72rem",
+                      fontWeight: 600,
+                      py: 0.2,
+                      px: 1.2,
+                      height: 24,
+                      borderRadius: "5px",
+                      textTransform: "none",
+                      bgcolor: overviewViewMode === "wave" ? "#8B5CF6" : "transparent",
+                      color: overviewViewMode === "wave" ? "#FFF" : "inherit",
+                    }}
+                  >
+                    🌊 Wave Analytics
+                  </Button>
+                </Box>
+              </Box>
+            </Card>
 
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Chip
-                      size="small"
-                      label={`${overviewAnalytics.startingBalance > 0 ? ((overviewAnalytics.netPnl / overviewAnalytics.startingBalance) * 100).toFixed(2) : "0.00"}% ROI`}
-                      sx={{
-                        height: 18,
-                        fontSize: "0.65rem",
-                        fontWeight: 800,
-                        bgcolor: overviewAnalytics.netPnl >= 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                        color: overviewAnalytics.netPnl >= 0 ? "#10B981" : "#EF4444",
-                      }}
-                    />
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.68rem" }}>
-                      GP: +${overviewAnalytics.grossProfit} | GL: -${overviewAnalytics.grossLoss}
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-
-              {/* 2. Closed Orders (Emphasized Metric) */}
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-                      Closed Orders
-                    </Typography>
-                    <CheckCircleIcon sx={{ fontSize: 18, color: "#3B82F6" }} />
-                  </Box>
-
-                  <Typography variant="h5" sx={{ fontWeight: 900, my: 0.5, fontSize: "1.45rem", color: isDark ? "#F8FAFC" : "#0F172A" }}>
-                    {overviewAnalytics.totalClosedTrades}
-                  </Typography>
-
-                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", alignItems: "center" }}>
-                    <Chip
-                      size="small"
-                      label={`${overviewAnalytics.winningTrades}W`}
-                      sx={{ height: 18, fontSize: "0.65rem", fontWeight: 800, bgcolor: "rgba(16, 185, 129, 0.15)", color: "#10B981" }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`${overviewAnalytics.losingTrades}L`}
-                      sx={{ height: 18, fontSize: "0.65rem", fontWeight: 800, bgcolor: "rgba(239, 68, 68, 0.15)", color: "#EF4444" }}
-                    />
-                    <Chip
-                      size="small"
-                      label={`${overviewAnalytics.breakEvenTrades}BE`}
-                      sx={{ height: 18, fontSize: "0.65rem", fontWeight: 800, bgcolor: "rgba(245, 158, 11, 0.15)", color: "#F59E0B" }}
-                    />
-                    {overviewAnalytics.openTradesCount > 0 && (
-                      <Typography variant="caption" sx={{ color: "#F59E0B", fontWeight: 700, fontSize: "0.65rem", ml: "auto" }}>
-                        {overviewAnalytics.openTradesCount} Open
-                      </Typography>
-                    )}
-                  </Box>
-                </Card>
-              </Grid>
-
-              {/* 3. Account Equity (Emphasized Metric) */}
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(139, 92, 246, 0.3)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-                      Current Equity
-                    </Typography>
-                    <TimelineIcon sx={{ fontSize: 18, color: "#8B5CF6" }} />
-                  </Box>
-
-                  <Typography variant="h5" sx={{ fontWeight: 900, my: 0.5, fontSize: "1.45rem", color: "#8B5CF6" }}>
-                    {activeCurrencySymbol}{overviewAnalytics.endingBalance.toLocaleString()}
-                  </Typography>
-
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.68rem" }}>
-                      Start: {activeCurrencySymbol}{overviewAnalytics.startingBalance.toLocaleString()}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontSize: "0.68rem",
-                        fontWeight: 700,
-                        color: overviewAnalytics.maxDrawdown > 0 ? "#EF4444" : "#10B981",
-                      }}
-                    >
-                      Max DD: -{overviewAnalytics.maxDrawdownPercent}%
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-
-              {/* 4. Win Rate */}
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-                      Win Rate
-                    </Typography>
-                    <SpeedIcon sx={{ fontSize: 18, color: "#06B6D4" }} />
-                  </Box>
-
-                  <Typography variant="h5" sx={{ fontWeight: 900, my: 0.5, fontSize: "1.45rem", color: isDark ? "#F8FAFC" : "#0F172A" }}>
-                    {overviewAnalytics.winRate !== null ? `${overviewAnalytics.winRate}%` : "N/A"}
-                  </Typography>
-
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <LinearProgress
-                      variant="determinate"
-                      value={overviewAnalytics.winRate || 0}
-                      sx={{
-                        flex: 1,
-                        height: 6,
-                        borderRadius: 3,
-                        bgcolor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0",
-                        "& .MuiLinearProgress-bar": {
-                          bgcolor: (overviewAnalytics.winRate || 0) >= 50 ? "#10B981" : "#EF4444",
-                          borderRadius: 3,
-                        },
-                      }}
-                    />
-                    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.68rem" }}>
-                      Streak: {overviewAnalytics.consecutiveWins}W
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-
-              {/* 5. Profit Factor & Avg R */}
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 2.4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontWeight: 800, textTransform: "uppercase", fontSize: "0.7rem", letterSpacing: "0.05em" }}>
-                      Profit Factor & R
-                    </Typography>
-                    <MoneyIcon sx={{ fontSize: 18, color: "#10B981" }} />
-                  </Box>
-
-                  <Typography variant="h5" sx={{ fontWeight: 900, my: 0.5, fontSize: "1.45rem", color: "#3B82F6" }}>
-                    {overviewAnalytics.profitFactor !== null
-                      ? overviewAnalytics.profitFactor
-                      : overviewAnalytics.grossProfit > 0
-                      ? "∞"
-                      : "0.00"}
-                  </Typography>
-
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.68rem" }}>
-                      Avg R: {overviewAnalytics.avgActualR !== null ? `${overviewAnalytics.avgActualR}R` : "N/A"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "#10B981", fontSize: "0.68rem" }}>
-                      Exp: {overviewAnalytics.expectancy !== null ? `${activeCurrencySymbol}${overviewAnalytics.expectancy.toFixed(0)}` : "N/A"}
-                    </Typography>
-                  </Box>
-                </Card>
-              </Grid>
-            </Grid>
-
-            {/* ============================================================ */}
-            {/* ANALYTIC VISUALIZATIONS: Equity Curve & PnL Distribution     */}
-            {/* ============================================================ */}
-            <Grid container spacing={1.2}>
-              {/* ============================================================ */}
-              {/* WAVE & SINE ANALYTICS: Fluid Spline Wave & Exact Orders Stream */}
-              {/* ============================================================ */}
-              <Grid size={{ xs: 12 }}>
-                <Card
-                  sx={{
-                    p: 2,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0A1124" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #CBD5E1",
-                    boxShadow: isDark ? "0 8px 32px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.06)",
-                  }}
-                >
-                  {/* Top Bar: Title, Mode Toggles (Equity Wave vs Sine Oscillator) */}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1.2, mb: 1.5 }}>
-                    <Box>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, fontSize: "0.98rem", letterSpacing: "-0.01em" }}>
-                          🌊 Performance Wave & Sine Trade Analytics
-                        </Typography>
-                        <Chip
-                          label={waveChartMode === "equity" ? "Smooth Equity Wave" : "P&L Sine Wave Oscillator"}
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: "0.68rem",
-                            height: 20,
-                            bgcolor: isDark ? "rgba(56, 189, 248, 0.15)" : "#E0F2FE",
-                            color: isDark ? "#38BDF8" : "#0284C7",
-                          }}
-                        />
-                      </Box>
-                      <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", fontSize: "0.72rem" }}>
-                        Continuous cubic spline wave tracking every trade order execution, capital progression & return variance.
-                      </Typography>
-                    </Box>
-
-                    {/* Mode Toggle & High Watermark Badges */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          p: 0.3,
-                          borderRadius: "6px",
-                          bgcolor: isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9",
-                          border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0",
-                        }}
-                      >
-                        <Button
-                          size="small"
-                          onClick={() => setWaveChartMode("equity")}
-                          sx={{
-                            fontSize: "0.7rem",
-                            fontWeight: 700,
-                            py: 0.2,
-                            px: 1.2,
-                            height: 24,
-                            borderRadius: "5px",
-                            textTransform: "none",
-                            bgcolor: waveChartMode === "equity" ? "#2563EB" : "transparent",
-                            color: waveChartMode === "equity" ? "#FFF" : "inherit",
-                          }}
-                        >
-                          🌊 Equity Wave
-                        </Button>
-                        <Button
-                          size="small"
-                          onClick={() => setWaveChartMode("sine")}
-                          sx={{
-                            fontSize: "0.7rem",
-                            fontWeight: 700,
-                            py: 0.2,
-                            px: 1.2,
-                            height: 24,
-                            borderRadius: "5px",
-                            textTransform: "none",
-                            bgcolor: waveChartMode === "sine" ? "#8B5CF6" : "transparent",
-                            color: waveChartMode === "sine" ? "#FFF" : "inherit",
-                          }}
-                        >
-                          〰️ P&L Sine Oscillator
-                        </Button>
-                      </Box>
-
-                      <Chip
-                        icon={<ShowChartIcon sx={{ fontSize: 13 }} />}
-                        label={`Peak Equity: ${activeCurrencySymbol}${overviewAnalytics.endingBalance.toLocaleString()}`}
-                        size="small"
-                        sx={{
-                          fontWeight: 700,
-                          bgcolor: "rgba(16, 185, 129, 0.15)",
-                          color: "#10B981",
-                          height: 24,
-                          fontSize: "0.72rem",
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  {/* ACTIVE HOVER / SELECTED TRADE ORDER INSPECTION BANNER */}
-                  {(() => {
-                    const pts = wavePointsWithTrades;
-                    const activeIndex = hoveredWaveIndex !== null ? hoveredWaveIndex : selectedWaveIndex !== null ? selectedWaveIndex : pts.length - 1;
-                    const activePoint = pts[activeIndex] || pts[pts.length - 1];
-                    const activeTrade = activePoint?.trade;
-
-                    return (
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 1.2,
-                          mb: 1.5,
-                          borderRadius: "6px",
-                          bgcolor: isDark ? "#060A17" : "#F8FAFC",
-                          border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                          display: "flex",
-                          flexWrap: "wrap",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          gap: 1.2,
-                        }}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap" }}>
-                          {/* Order Number Badge */}
-                          <Chip
-                            label={activePoint?.isInitial ? "Deposit Anchor" : `Order #${activeTrade?.trade_num || activeIndex}`}
-                            size="small"
-                            sx={{
-                              fontWeight: 800,
-                              fontSize: "0.72rem",
-                              height: 24,
-                              bgcolor: activePoint?.isInitial
-                                ? (isDark ? "rgba(59, 130, 246, 0.2)" : "#DBEAFE")
-                                : (activePoint?.pnl >= 0 ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)"),
-                              color: activePoint?.isInitial ? "#3B82F6" : (activePoint?.pnl >= 0 ? "#10B981" : "#EF4444"),
-                            }}
-                          />
-
-                          {/* Symbol & Direction */}
-                          <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.85rem" }}>
-                            {activePoint?.symbol}
-                          </Typography>
-
-                          {activeTrade && (
-                            <Chip
-                              label={activeTrade.direction}
-                              size="small"
-                              sx={{
-                                fontWeight: 800,
-                                fontSize: "0.68rem",
-                                height: 20,
-                                bgcolor: activeTrade.direction === "BUY" ? "#10B981" : "#EF4444",
-                                color: "#FFF",
-                              }}
-                            />
-                          )}
-
-                          {/* Execution Prices */}
-                          {activeTrade && (
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.75rem" }}>
-                              Entry: <b>{activeTrade.entry_price}</b> ➔ Exit: <b>{activeTrade.exit_price || "—"}</b> {activeTrade.volume ? `(${activeTrade.volume} Lots)` : ""}
-                            </Typography>
-                          )}
-
-                          {/* Realized PnL & Equity Progression */}
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 900,
-                                fontSize: "0.86rem",
-                                color: activePoint?.pnl > 0 ? "#10B981" : activePoint?.pnl < 0 ? "#EF4444" : "#94A3B8",
-                              }}
-                            >
-                              {activePoint?.pnl > 0 ? `+${activeCurrencySymbol}${activePoint.pnl.toLocaleString()}` : activePoint?.pnl < 0 ? `-${activeCurrencySymbol}${Math.abs(activePoint.pnl).toLocaleString()}` : `${activeCurrencySymbol}0`}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                              ➔ Running Equity: <b style={{ color: isDark ? "#38BDF8" : "#2563EB" }}>{activeCurrencySymbol}{activePoint?.equity.toLocaleString()}</b>
-                            </Typography>
-                          </Box>
-                        </Box>
-
-                        {/* Strategy, Timestamp & Inspect Button */}
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                          {activeTrade?.strategy_name && (
-                            <Chip
-                              label={activeTrade.strategy_name}
-                              size="small"
-                              sx={{ height: 20, fontSize: "0.66rem", fontWeight: 700 }}
-                            />
-                          )}
-                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
-                            {activePoint?.date} {activePoint?.time}
-                          </Typography>
-
-                          {activeTrade && (
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              onClick={() => setSelectedTrade(activeTrade)}
-                              sx={{
-                                height: 24,
-                                fontSize: "0.68rem",
-                                fontWeight: 700,
-                                textTransform: "none",
-                                px: 1,
-                              }}
-                            >
-                              Inspect Order Details
-                            </Button>
-                          )}
-                        </Box>
-                      </Paper>
-                    );
-                  })()}
-
-                  {/* SVG SMOOTH SPLINE WAVE & SINE OSCILLATOR GRAPH */}
-                  {wavePointsWithTrades.length > 1 ? (
-                    <Box sx={{ width: "100%", height: 220, position: "relative", my: 1 }}>
-                      {(() => {
-                        const pts = wavePointsWithTrades;
-                        const svgWidth = 920;
-                        const svgHeight = 210;
-
-                        // Range calculation
-                        const minEq = Math.min(...pts.map((p) => p.equity)) * 0.98;
-                        const maxEq = Math.max(...pts.map((p) => p.equity)) * 1.02;
-                        const eqRange = maxEq - minEq || 1;
-
-                        const maxAbsPnl = Math.max(1, ...pts.map((p) => Math.abs(p.pnl)));
-
-                        // Map coordinates
-                        const coordinates = pts.map((p, idx) => {
-                          const x = (idx / (pts.length - 1)) * (svgWidth - 60) + 30;
-                          let y = svgHeight / 2;
-                          if (waveChartMode === "equity") {
-                            y = svgHeight - 35 - ((p.equity - minEq) / eqRange) * (svgHeight - 70);
-                          } else {
-                            const norm = (p.pnl / maxAbsPnl) * (svgHeight / 2 - 35);
-                            y = svgHeight / 2 - norm;
-                          }
-                          return { x, y, pt: p, idx };
-                        });
-
-                        // Catmull-Rom to Cubic Bezier Spline Wave Algorithm
-                        const generateSpline = (coords: typeof coordinates) => {
-                          if (coords.length === 0) return "";
-                          if (coords.length === 1) return `M ${coords[0].x} ${coords[0].y}`;
-                          if (coords.length === 2) {
-                            const cpX = (coords[0].x + coords[1].x) / 2;
-                            return `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)} C ${cpX.toFixed(1)} ${coords[0].y.toFixed(1)}, ${cpX.toFixed(1)} ${coords[1].y.toFixed(1)}, ${coords[1].x.toFixed(1)} ${coords[1].y.toFixed(1)}`;
-                          }
-                          let d = `M ${coords[0].x.toFixed(1)} ${coords[0].y.toFixed(1)}`;
-                          for (let i = 0; i < coords.length - 1; i++) {
-                            const p0 = i > 0 ? coords[i - 1] : coords[i];
-                            const p1 = coords[i];
-                            const p2 = coords[i + 1];
-                            const p3 = i < coords.length - 2 ? coords[i + 2] : p2;
-                            const cp1x = p1.x + (p2.x - p0.x) / 4.5;
-                            const cp1y = p1.y + (p2.y - p0.y) / 4.5;
-                            const cp2x = p2.x - (p3.x - p1.x) / 4.5;
-                            const cp2y = p2.y - (p3.y - p1.y) / 4.5;
-                            d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-                          }
-                          return d;
-                        };
-
-                        const splineD = generateSpline(coordinates);
-                        const baselineY = waveChartMode === "equity"
-                          ? svgHeight - 35 - ((activeStartingBalance - minEq) / eqRange) * (svgHeight - 70)
-                          : svgHeight / 2;
-
-                        const areaD = `${splineD} L ${coordinates[coordinates.length - 1].x.toFixed(1)} ${svgHeight - 15} L ${coordinates[0].x.toFixed(1)} ${svgHeight - 15} Z`;
-
-                        // Secondary harmonic wave for depth
-                        const harmonicCoords = coordinates.map((c) => ({
-                          ...c,
-                          y: c.y + Math.sin(c.x / 40) * 8,
-                        }));
-                        const harmonicSplineD = generateSpline(harmonicCoords);
-
-                        const activeCoord = hoveredWaveIndex !== null
-                          ? coordinates[hoveredWaveIndex]
-                          : selectedWaveIndex !== null
-                          ? coordinates[selectedWaveIndex]
-                          : null;
-
-                        return (
-                          <svg
-                            viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                            style={{ width: "100%", height: "100%", overflow: "visible" }}
-                            onMouseLeave={() => setHoveredWaveIndex(null)}
-                          >
-                            <defs>
-                              {/* Glowing Wave Gradient */}
-                              <linearGradient id="waveFillGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#38BDF8" stopOpacity={isDark ? "0.45" : "0.35"} />
-                                <stop offset="50%" stopColor="#2563EB" stopOpacity="0.15" />
-                                <stop offset="100%" stopColor="#1E40AF" stopOpacity="0.0" />
-                              </linearGradient>
-
-                              {/* Sine Win/Loss Gradients */}
-                              <linearGradient id="sineGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="#10B981" stopOpacity="0.4" />
-                                <stop offset="50%" stopColor="#8B5CF6" stopOpacity="0.15" />
-                                <stop offset="100%" stopColor="#EF4444" stopOpacity="0.4" />
-                              </linearGradient>
-
-                              {/* Neon Glow Filter */}
-                              <filter id="neonWaveGlow" x="-20%" y="-20%" width="140%" height="140%">
-                                <feGaussianBlur stdDeviation="3" result="blur" />
-                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                              </filter>
-                            </defs>
-
-                            {/* Reference Baseline Grid */}
-                            <line
-                              x1="20"
-                              y1={baselineY}
-                              x2={svgWidth - 20}
-                              y2={baselineY}
-                              stroke={isDark ? "rgba(255,255,255,0.2)" : "#CBD5E1"}
-                              strokeDasharray="4 4"
-                              strokeWidth="1.2"
-                            />
-                            <text
-                              x={svgWidth - 25}
-                              y={baselineY - 5}
-                              fill={isDark ? "#94A3B8" : "#64748B"}
-                              fontSize="10"
-                              fontWeight="700"
-                              textAnchor="end"
-                            >
-                              {waveChartMode === "equity"
-                                ? `Starting: ${activeCurrencySymbol}${activeStartingBalance.toLocaleString()}`
-                                : `Zero Baseline ($0.00)`}
-                            </text>
-
-                            {/* Secondary Translucent Harmonic Resonance Wave */}
-                            <path
-                              d={harmonicSplineD}
-                              fill="none"
-                              stroke="#60A5FA"
-                              strokeWidth="1"
-                              strokeOpacity="0.25"
-                              strokeDasharray="2 2"
-                            />
-
-                            {/* Luminous Wave Area Fill */}
-                            <path
-                              d={areaD}
-                              fill={waveChartMode === "equity" ? "url(#waveFillGrad)" : "url(#sineGrad)"}
-                            />
-
-                            {/* Primary Fluid Spline Wave Line */}
-                            <path
-                              d={splineD}
-                              fill="none"
-                              stroke={waveChartMode === "equity" ? "#38BDF8" : "#A78BFA"}
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              filter="url(#neonWaveGlow)"
-                            />
-
-                            {/* Interactive Hover Crosshair */}
-                            {activeCoord && (
-                              <g>
-                                <line
-                                  x1={activeCoord.x}
-                                  y1={15}
-                                  x2={activeCoord.x}
-                                  y2={svgHeight - 15}
-                                  stroke="#38BDF8"
-                                  strokeDasharray="3 3"
-                                  strokeWidth="1.5"
-                                />
-                                <line
-                                  x1={20}
-                                  y1={activeCoord.y}
-                                  x2={svgWidth - 20}
-                                  y2={activeCoord.y}
-                                  stroke="rgba(56, 189, 248, 0.4)"
-                                  strokeDasharray="3 3"
-                                  strokeWidth="1"
-                                />
-                              </g>
-                            )}
-
-                            {/* Trade Order Nodes Along the Wave */}
-                            {coordinates.map((c) => {
-                              const isHovered = hoveredWaveIndex === c.idx;
-                              const isSelected = selectedWaveIndex === c.idx;
-                              const isWin = c.pt.pnl > 0;
-                              const isLoss = c.pt.pnl < 0;
-
-                              const nodeFill = c.pt.isInitial
-                                ? "#3B82F6"
-                                : isWin
-                                ? "#10B981"
-                                : isLoss
-                                ? "#EF4444"
-                                : "#F59E0B";
-
-                              return (
-                                <g
-                                  key={c.idx}
-                                  style={{ cursor: "pointer" }}
-                                  onMouseEnter={() => setHoveredWaveIndex(c.idx)}
-                                  onClick={() => {
-                                    setSelectedWaveIndex(c.idx);
-                                    if (c.pt.trade) setSelectedTrade(c.pt.trade);
-                                  }}
-                                >
-                                  {/* Pulse Aura on Active Node */}
-                                  {(isHovered || isSelected) && (
-                                    <circle
-                                      cx={c.x}
-                                      cy={c.y}
-                                      r="11"
-                                      fill={nodeFill}
-                                      fillOpacity="0.3"
-                                    />
-                                  )}
-
-                                  {/* Node Core */}
-                                  <circle
-                                    cx={c.x}
-                                    cy={c.y}
-                                    r={isHovered || isSelected ? 6 : 4}
-                                    fill={nodeFill}
-                                    stroke={isDark ? "#0A1124" : "#FFFFFF"}
-                                    strokeWidth="2"
-                                  />
-
-                                  {/* Point label on hover or endpoints */}
-                                  {(isHovered || isSelected || c.idx === coordinates.length - 1) && (
-                                    <text
-                                      x={c.x}
-                                      y={c.y - 10}
-                                      fill={isDark ? "#F8FAFC" : "#0F172A"}
-                                      fontSize="10"
-                                      fontWeight="800"
-                                      textAnchor="middle"
-                                    >
-                                      {c.pt.isInitial ? "Start" : `${c.pt.pnl >= 0 ? "+" : ""}${activeCurrencySymbol}${c.pt.pnl.toLocaleString()}`}
-                                    </text>
-                                  )}
-                                </g>
-                              );
-                            })}
-                          </svg>
-                        );
-                      })()}
-                    </Box>
-                  ) : (
-                    <Box sx={{ p: 4, textAlign: "center", color: "text.secondary" }}>
-                      <Typography variant="body2">No closed trades in this period to plot wave progression.</Typography>
-                    </Box>
-                  )}
-
-                  {/* SYNCHRONIZED EXACT TRADE ORDERS STREAM TABLE */}
-                  <Box sx={{ mt: 2, pt: 1.5, borderTop: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.84rem" }}>
-                        📋 Exact Trade Orders on Wave ({wavePointsWithTrades.filter((p) => !p.isInitial).length} Closed Orders)
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
-                        Click any order to inspect or locate on the wave graph
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ overflowX: "auto", maxHeight: 220, overflowY: "auto" }}>
-                      <Box
-                        component="table"
-                        sx={{
-                          width: "100%",
-                          borderCollapse: "collapse",
-                          fontSize: "0.75rem",
-                          "& th": {
-                            py: 0.6,
-                            px: 1,
-                            textAlign: "left",
-                            fontWeight: 800,
-                            color: isDark ? "#94A3B8" : "#64748B",
-                            borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0",
-                            bgcolor: isDark ? "#060A17" : "#F8FAFC",
-                          },
-                          "& td": {
-                            py: 0.6,
-                            px: 1,
-                            borderBottom: isDark ? "1px solid rgba(255,255,255,0.04)" : "1px solid #F1F5F9",
-                          },
-                        }}
-                      >
-                        <thead>
-                          <tr>
-                            <th># Order</th>
-                            <th>Date / Time</th>
-                            <th>Symbol</th>
-                            <th>Direction</th>
-                            <th>Entry ➔ Exit</th>
-                            <th>Volume</th>
-                            <th>Net Realized P&L</th>
-                            <th>Equity After Order</th>
-                            <th>Strategy</th>
-                            <th>Action</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {wavePointsWithTrades.map((pt) => {
-                            if (pt.isInitial) return null;
-                            const t = pt.trade;
-                            const isSelected = selectedWaveIndex === pt.index || hoveredWaveIndex === pt.index;
-                            const isWin = pt.pnl > 0;
-                            const isLoss = pt.pnl < 0;
-
-                            return (
-                              <Box
-                                component="tr"
-                                key={pt.index}
-                                onMouseEnter={() => setHoveredWaveIndex(pt.index)}
-                                onMouseLeave={() => setHoveredWaveIndex(null)}
-                                onClick={() => {
-                                  setSelectedWaveIndex(pt.index);
-                                  if (t) setSelectedTrade(t);
-                                }}
-                                sx={{
-                                  cursor: "pointer",
-                                  bgcolor: isSelected
-                                    ? (isDark ? "rgba(59, 130, 246, 0.18)" : "#EFF6FF")
-                                    : "transparent",
-                                  "&:hover": {
-                                    bgcolor: isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9",
-                                  },
-                                }}
-                              >
-                                <td>
-                                  <Chip
-                                    label={`#${t?.trade_num || pt.index}`}
-                                    size="small"
-                                    sx={{
-                                      height: 18,
-                                      fontSize: "0.65rem",
-                                      fontWeight: 800,
-                                      bgcolor: isWin ? "rgba(16, 185, 129, 0.15)" : isLoss ? "rgba(239, 68, 68, 0.15)" : "#F1F5F9",
-                                      color: isWin ? "#10B981" : isLoss ? "#EF4444" : "inherit",
-                                    }}
-                                  />
-                                </td>
-                                <td>
-                                  <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.72rem" }}>
-                                    {pt.date} {pt.time}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.74rem" }}>
-                                    {pt.symbol}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Chip
-                                    label={pt.direction}
-                                    size="small"
-                                    sx={{
-                                      height: 18,
-                                      fontSize: "0.65rem",
-                                      fontWeight: 800,
-                                      bgcolor: pt.direction === "BUY" ? "#10B981" : "#EF4444",
-                                      color: "#FFF",
-                                    }}
-                                  />
-                                </td>
-                                <td>
-                                  <Typography variant="caption" sx={{ fontSize: "0.72rem" }}>
-                                    {t?.entry_price || "—"} ➔ {t?.exit_price || "—"}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Typography variant="caption" sx={{ fontSize: "0.72rem" }}>
-                                    {t?.volume ? `${t.volume} Lots` : "—"}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      fontWeight: 800,
-                                      fontSize: "0.75rem",
-                                      color: isWin ? "#10B981" : isLoss ? "#EF4444" : "#94A3B8",
-                                    }}
-                                  >
-                                    {isWin ? `+${activeCurrencySymbol}${pt.pnl.toLocaleString()}` : isLoss ? `-${activeCurrencySymbol}${Math.abs(pt.pnl).toLocaleString()}` : `${activeCurrencySymbol}0`}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.74rem", color: isDark ? "#38BDF8" : "#2563EB" }}>
-                                    {activeCurrencySymbol}{pt.equity.toLocaleString()}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "text.secondary" }}>
-                                    {t?.strategy_name || "Standard"}
-                                  </Typography>
-                                </td>
-                                <td>
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (t) setSelectedTrade(t);
-                                    }}
-                                    sx={{ height: 20, fontSize: "0.65rem", py: 0, px: 0.8, textTransform: "none", fontWeight: 700 }}
-                                  >
-                                    Inspect
-                                  </Button>
-                                </td>
-                              </Box>
-                            );
-                          })}
-                        </tbody>
-                      </Box>
-                    </Box>
-                  </Box>
-                </Card>
-              </Grid>
-            </Grid>
-
-            {/* ============================================================ */}
-            {/* PERFORMANCE BREAKDOWN: Daily P&L, Symbols, BUY vs SELL        */}
-            {/* ============================================================ */}
-            <Grid container spacing={1.2}>
-              {/* 1. Day / Trade P&L Distribution Bar Chart */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-                    height: "100%",
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.88rem" }}>
-                      Daily P&L Distribution
-                    </Typography>
-                    <BarChartIcon sx={{ fontSize: 18, color: "#10B981" }} />
-                  </Box>
-
-                  {dailyPnlBars.length > 0 ? (
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8, maxHeight: 220, overflowY: "auto" }}>
-                      {dailyPnlBars.map((bar, idx) => {
-                        const maxAbs = Math.max(...dailyPnlBars.map((b) => Math.abs(b.pnl))) || 1;
-                        const pct = Math.min(100, Math.max(10, (Math.abs(bar.pnl) / maxAbs) * 100));
-                        const isWin = bar.pnl >= 0;
-
-                        return (
-                          <Box key={idx} sx={{ p: 0.6, px: 0.8, borderRadius: "5px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(255,255,255,0.05)" : "1px solid #E2E8F0" }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.3 }}>
-                              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.72rem" }}>
-                                {bar.date}
-                              </Typography>
-                              <Typography variant="caption" sx={{ fontWeight: 800, fontSize: "0.72rem", color: isWin ? "#10B981" : "#EF4444" }}>
-                                {isWin ? `+$${bar.pnl}` : `-$${Math.abs(bar.pnl)}`}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ width: "100%", height: 6, bgcolor: isDark ? "rgba(255,255,255,0.05)" : "#E2E8F0", borderRadius: 3, overflow: "hidden" }}>
-                              <Box
-                                sx={{
-                                  width: `${pct}%`,
-                                  height: "100%",
-                                  bgcolor: isWin ? "#10B981" : "#EF4444",
-                                  borderRadius: 3,
-                                }}
-                              />
-                            </Box>
-                          </Box>
-                        );
-                      })}
-                    </Box>
-                  ) : (
-                    <Box sx={{ p: 3, textAlign: "center", color: "text.secondary" }}>
-                      <Typography variant="body2" sx={{ fontSize: "0.75rem" }}>No closed trades to distribute.</Typography>
-                    </Box>
-                  )}
-                </Card>
-              </Grid>
-
-              {/* 2. Symbol Performance Breakdown */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                    height: "100%",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, fontSize: "0.85rem" }}>
-                    Performance by Symbol
-                  </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8, maxHeight: 250, overflowY: "auto" }}>
-                    {symbolStats.length > 0 ? (
-                      symbolStats.map((s, idx) => (
-                        <Box key={idx} sx={{ p: 0.8, borderRadius: "5px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.1)" : "1px solid #E2E8F0" }}>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.78rem" }}>
-                              {s.symbol}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.78rem", color: s.pnl >= 0 ? "#10B981" : "#EF4444" }}>
-                              {s.pnl >= 0 ? `+$${s.pnl}` : `-$${Math.abs(s.pnl)}`}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.2 }}>
-                            <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.68rem" }}>
-                              {s.count} trades (Win Rate: {s.winRate !== null ? `${s.winRate.toFixed(1)}%` : "N/A"})
-                            </Typography>
-                          </Box>
-                        </Box>
-                      ))
-                    ) : (
-                      <Typography variant="caption" sx={{ color: "text.secondary", p: 1 }}>No symbol data available.</Typography>
-                    )}
-                  </Box>
-                </Card>
-              </Grid>
-
-              {/* BUY vs SELL Direction Analysis */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                    height: "100%",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, fontSize: "0.85rem" }}>
-                    Directional Edge (BUY vs SELL)
-                  </Typography>
-                  <Grid container spacing={1}>
-                    {/* BUY Side */}
-                    <Grid size={{ xs: 6 }}>
-                      <Paper sx={{ p: 1, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: "1px solid rgba(16, 185, 129, 0.2)", textAlign: "center" }}>
-                        <Chip label="BUY ORDERS" size="small" sx={{ fontWeight: 800, fontSize: "0.62rem", height: 18, bgcolor: "rgba(16, 185, 129, 0.15)", color: "#10B981", mb: 0.5 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 900, fontSize: "1.1rem", color: directionAnalytics.buy.pnl >= 0 ? "#10B981" : "#EF4444" }}>
-                          {directionAnalytics.buy.pnl >= 0 ? `+$${directionAnalytics.buy.pnl}` : `-$${Math.abs(directionAnalytics.buy.pnl)}`}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.68rem", mt: 0.2 }}>
-                          {directionAnalytics.buy.count} trades | {directionAnalytics.buy.wr !== null ? `${directionAnalytics.buy.wr.toFixed(0)}% WR` : "N/A"}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-
-                    {/* SELL Side */}
-                    <Grid size={{ xs: 6 }}>
-                      <Paper sx={{ p: 1, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: "1px solid rgba(239, 68, 68, 0.2)", textAlign: "center" }}>
-                        <Chip label="SELL ORDERS" size="small" sx={{ fontWeight: 800, fontSize: "0.62rem", height: 18, bgcolor: "rgba(239, 68, 68, 0.15)", color: "#EF4444", mb: 0.5 }} />
-                        <Typography variant="h6" sx={{ fontWeight: 900, fontSize: "1.1rem", color: directionAnalytics.sell.pnl >= 0 ? "#10B981" : "#EF4444" }}>
-                          {directionAnalytics.sell.pnl >= 0 ? `+$${directionAnalytics.sell.pnl}` : `-$${Math.abs(directionAnalytics.sell.pnl)}`}
-                        </Typography>
-                        <Typography variant="caption" sx={{ display: "block", color: "text.secondary", fontSize: "0.68rem", mt: 0.2 }}>
-                          {directionAnalytics.sell.count} trades | {directionAnalytics.sell.wr !== null ? `${directionAnalytics.sell.wr.toFixed(0)}% WR` : "N/A"}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  </Grid>
-
-                  {/* Discipline Impact Card */}
-                  <Box sx={{ mt: 1.5, p: 1, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(255,255,255,0.06)" : "1px solid #E2E8F0" }}>
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#38BDF8", display: "block", mb: 0.4, fontSize: "0.72rem" }}>
-                      COST OF MISTAKES:
-                    </Typography>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
-                        Plan Followed ({disciplineStats.disciplined.count}t):
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: disciplineStats.disciplined.pnl >= 0 ? "#10B981" : "#EF4444" }}>
-                        {disciplineStats.disciplined.pnl >= 0 ? `+$${disciplineStats.disciplined.pnl}` : `-$${Math.abs(disciplineStats.disciplined.pnl)}`}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.2 }}>
-                      <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.7rem" }}>
-                        Mistakes Made ({disciplineStats.mistakes.count}t):
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: disciplineStats.mistakes.pnl >= 0 ? "#10B981" : "#EF4444" }}>
-                        {disciplineStats.mistakes.pnl >= 0 ? `+$${disciplineStats.mistakes.pnl}` : `-$${Math.abs(disciplineStats.mistakes.pnl)}`}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Card>
-              </Grid>
-
-              {/* Psychological Edge (Entry Emotion Impact) */}
-              <Grid size={{ xs: 12, md: 4 }}>
-                <Card
-                  sx={{
-                    p: 1.5,
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0E162B" : "#FFFFFF",
-                    border: isDark ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid #E2E8F0",
-                    height: "100%",
-                  }}
-                >
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, fontSize: "0.85rem" }}>
-                    Psychological Edge (Entry Emotion)
-                  </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.8, maxHeight: 250, overflowY: "auto" }}>
-                    {emotionalStats.entry.length > 0 ? (
-                      emotionalStats.entry.map((e, idx) => (
-                        <Box key={idx} sx={{ p: 0.8, borderRadius: "5px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(139, 92, 246, 0.1)" : "1px solid #E2E8F0" }}>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <Typography variant="body2" sx={{ fontWeight: 700, fontSize: "0.78rem" }}>
-                              {e.emotion}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.78rem", color: e.pnl >= 0 ? "#10B981" : "#EF4444" }}>
-                              {e.pnl >= 0 ? `+$${e.pnl}` : `-$${Math.abs(e.pnl)}`}
-                            </Typography>
-                          </Box>
-                          <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.68rem" }}>
-                            {e.count} trades | {e.winRate.toFixed(0)}% Win Rate
-                          </Typography>
-                        </Box>
-                      ))
-                    ) : (
-                      <Typography variant="caption" sx={{ color: "text.secondary", p: 1 }}>No emotional records found.</Typography>
-                    )}
-                  </Box>
-                </Card>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
+            {/* CONDITIONAL DASHBOARD VIEW: ADVANCED DASHBOARD (EXCEL STYLE) VS WAVE ANALYTICS */}
+            {overviewViewMode === "advanced" ? (
+              <AdvancedTradingDashboard
+                trades={overviewFilteredTrades}
+                currencySymbol={activeCurrencySymbol}
+                startingBalance={activeStartingBalance}
+                isDark={isDark}
+                onSelectTrade={(trade) => setSelectedTrade(trade)}
+              />
+            ) : (
+              <WaveAnalyticsView
+                trades={overviewFilteredTrades}
+                currencySymbol={activeCurrencySymbol}
+                startingBalance={activeStartingBalance}
+                isDark={isDark}
+                onSelectTrade={(trade) => setSelectedTrade(trade)}
+              />
+            )}
+      </Box>
+    )}
 
         {/* ============================================================ */}
         {/* TAB 1: ADD TRADE (COMPLETE 31-FIELD SINGLE-FORM ENGINE)      */}
@@ -2589,15 +1029,14 @@ export default function TradingJournalView({
             sx={{
               width: "100%",
               borderRadius: "8px",
-              bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-              border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-              boxShadow: "0 12px 40px rgba(0,0,0,0.25)",
+              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
+              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
             }}
           >
             <CardContent
               sx={{
-                p: { xs: 1.5, sm: 2.2 },
-                "&:last-child": { pb: 2.2 },
+                p: { xs: 1.2, sm: 1.5 },
+                "&:last-child": { pb: 1.5 },
                 "& .MuiInputLabel-root": { fontSize: "0.70rem" },
                 "& .MuiInputLabel-root.MuiInputLabel-shrink": { fontSize: "0.72rem" },
                 "& .MuiInputBase-root:not(.MuiInputBase-multiline)": {
@@ -2622,69 +1061,20 @@ export default function TradingJournalView({
                 },
               }}
             >
-              {/* Form Title & Top Banner */}
-              <Box sx={{ mb: 1.5, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
-                <Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, fontSize: "0.95rem", letterSpacing: "-0.01em" }}>
-                      Trade Entry Form
-                    </Typography>
-                    <Chip
-                      label={`Trade #${tradeForm.tradeNum || "1"}`}
-                      sx={{ bgcolor: "#2563EB", color: "#FFF", fontWeight: 800, fontSize: "0.66rem", height: 20 }}
-                      size="small"
-                    />
-                    <Chip
-                      label={tradeForm.result}
-                      size="small"
-                      sx={{
-                        fontWeight: 800,
-                        fontSize: "0.66rem",
-                        height: 20,
-                        bgcolor:
-                          tradeForm.result === "WIN"
-                            ? "rgba(16, 185, 129, 0.2)"
-                            : tradeForm.result === "LOSS"
-                            ? "rgba(239, 68, 68, 0.2)"
-                            : "rgba(245, 158, 11, 0.2)",
-                        color:
-                          tradeForm.result === "WIN"
-                            ? "#10B981"
-                            : tradeForm.result === "LOSS"
-                            ? "#EF4444"
-                            : "#F59E0B",
-                      }}
-                    />
-                    <Chip
-                      clickable
-                      onClick={() => setActiveTab(7)}
-                      icon={<MeditationIcon sx={{ fontSize: "14px !important", color: routineIsAllComplete ? "#10B981 !important" : "#D97706 !important" }} />}
-                      label={routineIsAllComplete ? "Pre-Market: 4/4 Ready ✅" : `Pre-Market: ${routineCompletedCount}/4 (Click to Complete)`}
-                      size="small"
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: "0.66rem",
-                        height: 20,
-                        bgcolor: routineIsAllComplete
-                          ? (isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7")
-                          : (isDark ? "rgba(245, 158, 11, 0.2)" : "#FEF3C7"),
-                        color: routineIsAllComplete ? "#10B981" : "#D97706",
-                      }}
-                    />
-                  </Box>
-                  <Typography variant="caption" sx={{ color: isDark ? "#94A3B8" : "#64748B", display: "block", fontSize: "0.68rem", mt: 0.2 }}>
-                    Complete 31-field trading journal entry with Indian Rupee (₹) & point auto-calculations.
-                  </Typography>
-                </Box>
+              {/* Form Title & Clean Header */}
+              <Box sx={{ mb: 1.2, pb: 1, borderBottom: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 1.5 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.08em", color: isDark ? "#94A3B8" : "#64748B" }}>
+                  New trade entry
+                </Typography>
 
                 {/* Account Selection */}
-                <FormControl size="small" sx={{ minWidth: 200 }} required>
-                  <InputLabel sx={{ fontSize: "0.72rem" }}>Trading Account</InputLabel>
+                <FormControl size="small" sx={{ minWidth: 220 }} required>
+                  <InputLabel sx={{ fontSize: "0.74rem" }}>Trading Account</InputLabel>
                   <Select
                     value={tradeForm.accountId}
                     label="Trading Account"
                     onChange={(e) => updateTradeField("accountId", e.target.value)}
-                    sx={{ fontSize: "0.75rem", height: 32 }}
+                    sx={{ fontSize: "0.76rem", height: 32 }}
                   >
                     {accounts.map((a) => (
                       <MenuItem key={a.id} value={a.id} sx={{ fontSize: "0.75rem" }}>
@@ -2695,57 +1085,29 @@ export default function TradingJournalView({
                 </FormControl>
               </Box>
 
-              {/* Quick Symbol Chips */}
-              <Box sx={{ mb: 1.8, display: "flex", alignItems: "center", flexWrap: "wrap", gap: 0.6 }}>
-                <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? "#94A3B8" : "#64748B", mr: 0.5, fontSize: "0.66rem", textTransform: "uppercase" }}>
-                  QUICK SYMBOLS:
-                </Typography>
-                {TRADING_SYMBOLS.map((sym) => (
-                  <Chip
-                    key={sym}
-                    label={sym}
-                    size="small"
-                    onClick={() => updateTradeField("symbol", sym)}
-                    sx={{
-                      cursor: "pointer",
-                      fontSize: "0.66rem",
-                      height: 22,
-                      fontWeight: tradeForm.symbol === sym ? 800 : 500,
-                      bgcolor:
-                        tradeForm.symbol === sym
-                          ? "#2563EB"
-                          : isDark
-                          ? "rgba(255, 255, 255, 0.05)"
-                          : "#F1F5F9",
-                      color: tradeForm.symbol === sym ? "#FFF" : "inherit",
-                    }}
-                  />
-                ))}
-              </Box>
-
               <form onSubmit={handleCreateTrade}>
-                <Grid container spacing={2}>
+                <Grid container spacing={1.5}>
                   {/* ============================================================ */}
                   {/* LEFT COLUMN: SETUP, PRICING & FINANCIAL ENGINE (PARTS 1, 2, 3) */}
                   {/* ============================================================ */}
-                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 1.8 }}>
+                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     {/* SECTION 1: TRADE SETUP & EXECUTION */}
                     <Paper
                       sx={{
-                        p: 1.6,
+                        p: 1.2,
                         borderRadius: "8px",
-                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
-                        border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
+                        bgcolor: isDark ? "#050912" : "#F8FAFC",
+                        border: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #E2E8F0",
                       }}
                     >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#38BDF8", mb: 1.2, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#38BDF8", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
                         <Box component="span" sx={{ bgcolor: "#0284C7", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
                           PART 1
                         </Box>
                         Trade Setup & Execution
                       </Typography>
 
-                      <Grid container spacing={1.4}>
+                      <Grid container spacing={1.2}>
                         {/* 1. Trade # */}
                         <Grid size={{ xs: 6, sm: 3 }}>
                           <TextField
@@ -2794,7 +1156,7 @@ export default function TradingJournalView({
                               onChange={(e) => updateTradeField("symbol", e.target.value)}
                             >
                               {TRADING_SYMBOLS.map((sym) => (
-                                <MenuItem key={sym} value={sym} sx={{ fontWeight: 700, fontSize: "0.75rem" }}>
+                                <MenuItem key={sym} value={sym} sx={{ fontWeight: 600, fontSize: "0.75rem" }}>
                                   {sym}
                                 </MenuItem>
                               ))}
@@ -2811,8 +1173,8 @@ export default function TradingJournalView({
                               label="5. Direction"
                               onChange={(e) => updateTradeField("direction", e.target.value)}
                             >
-                              <MenuItem value="BUY" sx={{ color: "#10B981", fontWeight: 800, fontSize: "0.75rem" }}>BUY</MenuItem>
-                              <MenuItem value="SELL" sx={{ color: "#EF4444", fontWeight: 800, fontSize: "0.75rem" }}>SELL</MenuItem>
+                              <MenuItem value="BUY" sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.75rem" }}>BUY</MenuItem>
+                              <MenuItem value="SELL" sx={{ color: "#EF4444", fontWeight: 600, fontSize: "0.75rem" }}>SELL</MenuItem>
                             </Select>
                           </FormControl>
                         </Grid>
@@ -2837,7 +1199,7 @@ export default function TradingJournalView({
                                   {s.name}
                                 </MenuItem>
                               ))}
-                              <MenuItem value="other" sx={{ fontWeight: 800, color: "#3B82F6" }}>
+                              <MenuItem value="other" sx={{ fontWeight: 600, color: "#38BDF8" }}>
                                 + Other (Enter Details Manually)
                               </MenuItem>
                             </Select>
@@ -2878,24 +1240,24 @@ export default function TradingJournalView({
                     </Paper>
 
                     {/* ======================================================== */}
-                    {/* SECTION 2: PRICE LEVELS & SIZING (Fields 9 - 13)          */}
+                    {/* SECTION 2: PRICE LEVELS & SIZING          */}
                     {/* ======================================================== */}
                     <Paper
                       sx={{
-                        p: 1.6,
+                        p: 1.2,
                         borderRadius: "8px",
-                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        bgcolor: isDark ? "#050912" : "#F8FAFC",
                         border: isDark ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid #E2E8F0",
                       }}
                     >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981", mb: 1.2, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#10B981", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
                         <Box component="span" sx={{ bgcolor: "#059669", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
                           PART 2
                         </Box>
-                        Price Levels & Position Sizing (Fields 9 – 13)
+                        Price Levels & Position Sizing
                       </Typography>
 
-                      <Grid container spacing={1.4}>
+                      <Grid container spacing={1.2}>
                         {/* 9. Entry */}
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <TextField
@@ -2965,34 +1327,35 @@ export default function TradingJournalView({
                     </Paper>
 
                     {/* ======================================================== */}
-                    {/* SECTION 3: RISK & FINANCIAL ENGINE (Fields 14 - 20)      */}
+                    {/* SECTION 3: RISK & FINANCIAL ENGINE      */}
                     {/* ======================================================== */}
                     <Paper
                       sx={{
-                        p: 1.6,
+                        p: 1.2,
+                        flex: 1,
                         borderRadius: "8px",
                         bgcolor: isDark ? "rgba(245, 158, 11, 0.04)" : "#FFFBEB",
                         border: isDark ? "1px solid rgba(245, 158, 11, 0.25)" : "1px solid #FDE68A",
                       }}
                     >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#D97706", mb: 1.2, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#D97706", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
                         <Box component="span" sx={{ bgcolor: "#D97706", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
                           PART 3
                         </Box>
-                        Risk, Reward & Auto-Calculated Financials (Fields 14 – 20)
+                        Risk, Reward & Auto-Calculated Financials
                       </Typography>
 
-                      <Grid container spacing={1.4}>
-                        {/* 14. Risk ₹ */}
+                      <Grid container spacing={1.2}>
+                        {/* 14. Risk */}
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <TextField
                             fullWidth
                             size="small"
-                            label="14. Risk ₹"
+                            label={`14. Planned Risk (${activeCurrencySymbol})`}
                             type="number"
                             value={tradeForm.plannedRiskAmount}
                             onChange={(e) => updateTradeField("plannedRiskAmount", e.target.value)}
-                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>₹</span></InputAdornment> } }}
+                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>{activeCurrencySymbol}</span></InputAdornment> } }}
                           />
                         </Grid>
 
@@ -3001,7 +1364,7 @@ export default function TradingJournalView({
                           <TextField
                             fullWidth
                             size="small"
-                            label="15. SL Points"
+                            label="15. SL Points (Auto)"
                             value={tradeForm.slPoints}
                             onChange={(e) => updateTradeField("slPoints", e.target.value)}
                             placeholder="Auto |Entry - SL|"
@@ -3013,7 +1376,7 @@ export default function TradingJournalView({
                           <TextField
                             fullWidth
                             size="small"
-                            label="16. TP Points"
+                            label="16. TP Points (Auto)"
                             value={tradeForm.tpPoints}
                             onChange={(e) => updateTradeField("tpPoints", e.target.value)}
                             placeholder="Auto |TP - Entry|"
@@ -3025,22 +1388,22 @@ export default function TradingJournalView({
                           <TextField
                             fullWidth
                             size="small"
-                            label="17. Planned R:R"
+                            label="17. Planned R:R (Auto)"
                             value={tradeForm.plannedRR}
                             onChange={(e) => updateTradeField("plannedRR", e.target.value)}
                           />
                         </Grid>
 
-                        {/* 18. P&L ₹ */}
+                        {/* 18. P&L */}
                         <Grid size={{ xs: 6, sm: 3 }}>
                           <TextField
                             fullWidth
                             size="small"
-                            label="18. P&L ₹"
+                            label={`18. Net P&L (${activeCurrencySymbol})`}
                             type="number"
                             value={tradeForm.netPnl}
                             onChange={(e) => updateTradeField("netPnl", e.target.value)}
-                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>₹</span></InputAdornment> } }}
+                            slotProps={{ input: { startAdornment: <InputAdornment position="start"><span style={{ fontSize: "0.75rem" }}>{activeCurrencySymbol}</span></InputAdornment> } }}
                           />
                         </Grid>
 
@@ -3049,7 +1412,7 @@ export default function TradingJournalView({
                           <TextField
                             fullWidth
                             size="small"
-                            label="19. Actual R:R"
+                            label="19. Actual R:R (Auto)"
                             value={tradeForm.actualRR}
                             onChange={(e) => updateTradeField("actualRR", e.target.value)}
                           />
@@ -3064,10 +1427,10 @@ export default function TradingJournalView({
                               label="20. Result"
                               onChange={(e) => updateTradeField("result", e.target.value)}
                             >
-                              <MenuItem value="WIN" sx={{ color: "#10B981", fontWeight: 700, fontSize: "0.75rem" }}>WIN</MenuItem>
-                              <MenuItem value="LOSS" sx={{ color: "#EF4444", fontWeight: 700, fontSize: "0.75rem" }}>LOSS</MenuItem>
-                              <MenuItem value="BREAK_EVEN" sx={{ color: "#64748B", fontWeight: 700, fontSize: "0.75rem" }}>BREAK_EVEN</MenuItem>
-                              <MenuItem value="OPEN" sx={{ color: "#F59E0B", fontWeight: 700, fontSize: "0.75rem" }}>OPEN</MenuItem>
+                              <MenuItem value="WIN" sx={{ color: "#10B981", fontWeight: 600, fontSize: "0.75rem" }}>WIN</MenuItem>
+                              <MenuItem value="LOSS" sx={{ color: "#EF4444", fontWeight: 600, fontSize: "0.75rem" }}>LOSS</MenuItem>
+                              <MenuItem value="BREAK_EVEN" sx={{ color: "#64748B", fontWeight: 600, fontSize: "0.75rem" }}>BREAK_EVEN</MenuItem>
+                              <MenuItem value="OPEN" sx={{ color: "#F59E0B", fontWeight: 600, fontSize: "0.75rem" }}>OPEN</MenuItem>
                             </Select>
                           </FormControl>
                         </Grid>
@@ -3078,24 +1441,24 @@ export default function TradingJournalView({
                   {/* ============================================================ */}
                   {/* RIGHT COLUMN: PSYCHOLOGY & MARKET CONTEXT (PARTS 4, 5)        */}
                   {/* ============================================================ */}
-                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 1.8 }}>
-                    {/* SECTION 4: PSYCHOLOGY & DISCIPLINE (Fields 21 - 27) */}
+                  <Grid size={{ xs: 12, lg: 6 }} sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    {/* SECTION 4: PSYCHOLOGY & DISCIPLINE */}
                     <Paper
                       sx={{
-                        p: 1.6,
+                        p: 1.2,
                         borderRadius: "8px",
-                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        bgcolor: isDark ? "#050912" : "#F8FAFC",
                         border: isDark ? "1px solid rgba(139, 92, 246, 0.2)" : "1px solid #E2E8F0",
                       }}
                     >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#8B5CF6", mb: 1.2, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#8B5CF6", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
                         <Box component="span" sx={{ bgcolor: "#7C3AED", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
                           PART 4
                         </Box>
-                        Trading Psychology & Mindset (Fields 21 – 27)
+                        Trading Psychology & Mindset
                       </Typography>
 
-                      <Grid container spacing={1.4}>
+                      <Grid container spacing={1.2}>
                         {/* 21. Entry Emotion */}
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <FormControl fullWidth size="small">
@@ -3136,10 +1499,10 @@ export default function TradingJournalView({
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <Box sx={{ p: 1, py: 0.6, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.3 }}>
-                              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.70rem" }}>
+                              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.70rem" }}>
                                 23. Confidence (1–5):
                               </Typography>
-                              <Chip label={`${tradeForm.confidenceRating}/5`} size="small" sx={{ fontWeight: 800, bgcolor: "#38BDF8", color: "#000", height: 16, fontSize: "0.62rem" }} />
+                              <Chip label={`${tradeForm.confidenceRating}/5`} size="small" sx={{ fontWeight: 600, bgcolor: "#38BDF8", color: "#000", height: 16, fontSize: "0.62rem" }} />
                             </Box>
                             <Slider
                               size="small"
@@ -3159,10 +1522,10 @@ export default function TradingJournalView({
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <Box sx={{ p: 1, py: 0.6, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.3 }}>
-                              <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.70rem" }}>
+                              <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.70rem" }}>
                                 24. Discipline (1–5):
                               </Typography>
-                              <Chip label={`${tradeForm.disciplineRating}/5`} size="small" sx={{ fontWeight: 800, bgcolor: "#10B981", color: "#FFF", height: 16, fontSize: "0.62rem" }} />
+                              <Chip label={`${tradeForm.disciplineRating}/5`} size="small" sx={{ fontWeight: 600, bgcolor: "#10B981", color: "#FFF", height: 16, fontSize: "0.62rem" }} />
                             </Box>
                             <Slider
                               size="small"
@@ -3181,7 +1544,7 @@ export default function TradingJournalView({
                         {/* 25. Mistake? */}
                         <Grid size={{ xs: 12, sm: 4 }}>
                           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: "100%", p: 1, py: 0.5, borderRadius: "6px", border: isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0" }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.70rem" }}>
+                            <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.70rem" }}>
                               25. Mistake?
                             </Typography>
                             <FormControlLabel
@@ -3194,7 +1557,7 @@ export default function TradingJournalView({
                                   color="error"
                                 />
                               }
-                              label={<Typography variant="caption" sx={{ fontWeight: 700, fontSize: "0.68rem" }}>{tradeForm.mistakeFlag ? "YES" : "NO"}</Typography>}
+                              label={<Typography variant="caption" sx={{ fontWeight: 600, fontSize: "0.68rem" }}>{tradeForm.mistakeFlag ? "YES" : "NO"}</Typography>}
                             />
                           </Box>
                         </Grid>
@@ -3218,7 +1581,7 @@ export default function TradingJournalView({
                               <MenuItem value="Revenge Trade">Revenge Trade</MenuItem>
                               <MenuItem value="Traded Outside Rules">Traded Outside Rules</MenuItem>
                               <MenuItem value="Ignored Market Trend">Ignored Market Trend</MenuItem>
-                              <MenuItem value="Other" sx={{ fontWeight: 800, color: "#EF4444" }}>
+                              <MenuItem value="Other" sx={{ fontWeight: 600, color: "#EF4444" }}>
                                 Other (Enter Details Manually)
                               </MenuItem>
                             </Select>
@@ -3239,23 +1602,24 @@ export default function TradingJournalView({
                       </Grid>
                     </Paper>
 
-                    {/* SECTION 5: MARKET CONTEXT & NOTES (Fields 28 - 31) */}
+                    {/* SECTION 5: MARKET CONTEXT & NOTES */}
                     <Paper
                       sx={{
-                        p: 1.6,
+                        p: 1.2,
+                        flex: 1,
                         borderRadius: "8px",
-                        bgcolor: isDark ? "#070B16" : "#F8FAFC",
+                        bgcolor: isDark ? "#050912" : "#F8FAFC",
                         border: isDark ? "1px solid rgba(6, 182, 212, 0.2)" : "1px solid #E2E8F0",
                       }}
                     >
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#06B6D4", mb: 1.2, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#22D3EE", mb: 0.9, display: "flex", alignItems: "center", gap: 0.8, fontSize: "0.78rem" }}>
                         <Box component="span" sx={{ bgcolor: "#0891B2", color: "#FFF", px: 0.6, py: 0.1, borderRadius: "4px", fontSize: "0.62rem" }}>
                           PART 5
                         </Box>
-                        Market Context & Retrospective Journal (Fields 28 – 31)
+                        Market Context & Retrospective Journal
                       </Typography>
 
-                      <Grid container spacing={1.4}>
+                      <Grid container spacing={1.2}>
                         {/* 28. Market Condition */}
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <FormControl fullWidth size="small">
@@ -3326,8 +1690,8 @@ export default function TradingJournalView({
                         p: 1.4,
                         mt: 0.5,
                         borderRadius: "8px",
-                        bgcolor: isDark ? "#0E162B" : "#EFF6FF",
-                        border: isDark ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #BFDBFE",
+                        bgcolor: isDark ? "#0A1124" : "#F0F9FF",
+                        border: isDark ? "1px solid rgba(56, 189, 248, 0.3)" : "1px solid #BAE6FD",
                         display: "flex",
                         flexDirection: { xs: "column", sm: "row" },
                         justifyContent: "space-between",
@@ -3336,17 +1700,17 @@ export default function TradingJournalView({
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
-                        <Typography variant="body2" sx={{ fontWeight: 800, fontSize: "0.75rem" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.75rem" }}>
                           Live Preview:
                         </Typography>
-                        <Chip label={`${tradeForm.symbol} • ${tradeForm.direction}`} size="small" sx={{ fontWeight: 700, height: 22, fontSize: "0.68rem" }} />
-                        <Chip label={`Risk: ₹${tradeForm.plannedRiskAmount || "0"}`} size="small" sx={{ fontWeight: 700, height: 22, fontSize: "0.68rem", bgcolor: "rgba(239,68,68,0.15)", color: "#EF4444" }} />
+                        <Chip label={`${tradeForm.symbol} • ${tradeForm.direction}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem" }} />
+                        <Chip label={`Risk: ₹${tradeForm.plannedRiskAmount || "0"}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem", bgcolor: "rgba(239,68,68,0.15)", color: "#EF4444" }} />
                         {tradeForm.netPnl !== "" && (
                           <Chip
                             label={`P&L: ${Number(tradeForm.netPnl) >= 0 ? "+" : ""}₹${tradeForm.netPnl} (${tradeForm.actualRR})`}
                             size="small"
                             sx={{
-                              fontWeight: 800,
+                              fontWeight: 600,
                               height: 22,
                               fontSize: "0.68rem",
                               bgcolor: Number(tradeForm.netPnl) >= 0 ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
@@ -3354,7 +1718,7 @@ export default function TradingJournalView({
                             }}
                           />
                         )}
-                        <Chip label={`Result: ${tradeForm.result}`} size="small" sx={{ fontWeight: 700, height: 22, fontSize: "0.68rem" }} />
+                        <Chip label={`Result: ${tradeForm.result}`} size="small" sx={{ fontWeight: 600, height: 22, fontSize: "0.68rem" }} />
                       </Box>
 
                       <Box sx={{ display: "flex", gap: 1 }}>
@@ -3378,7 +1742,7 @@ export default function TradingJournalView({
                             px: 2.2,
                             height: 32,
                             fontSize: "0.74rem",
-                            fontWeight: 800,
+                            fontWeight: 600,
                             textTransform: "none",
                             "&:hover": { bgcolor: "#059669" },
                           }}
@@ -3400,12 +1764,12 @@ export default function TradingJournalView({
         {activeTab === 2 && (
           <Card
             sx={{
-              borderRadius: "6px",
-              bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-              border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
+              borderRadius: "8px",
+              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
+              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
             }}
           >
-            <CardContent sx={{ p: 2.5 }}>
+            <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
               {/* Filter Controls & Search */}
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1.5, mb: 2 }}>
                 <TextField
@@ -3417,7 +1781,7 @@ export default function TradingJournalView({
                     input: {
                       startAdornment: (
                         <InputAdornment position="start">
-                          <SearchIcon sx={{ fontSize: 18, color: "#3B82F6" }} />
+                          <SearchIcon sx={{ fontSize: 18, color: "#38BDF8" }} />
                         </InputAdornment>
                       ),
                     },
@@ -3465,7 +1829,7 @@ export default function TradingJournalView({
               </Box>
 
               {/* Table */}
-              <Paper elevation={0} sx={{ overflowX: "auto", border: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0", borderRadius: "6px" }}>
+              <Paper elevation={0} sx={{ overflowX: "auto", border: isDark ? "1px solid rgba(56, 189, 248, 0.15)" : "1px solid #E2E8F0", borderRadius: "6px" }}>
                 <Box
                   component="table"
                   sx={{
@@ -3476,21 +1840,21 @@ export default function TradingJournalView({
                     "& th": {
                       py: 1.2,
                       px: 1.5,
-                      bgcolor: isDark ? "#0E162B" : "#F1F5F9",
+                      bgcolor: isDark ? "#0A1124" : "#F1F5F9",
                       color: isDark ? "#94A3B8" : "#475569",
-                      fontWeight: 700,
+                      fontWeight: 600,
                       textTransform: "uppercase",
                       letterSpacing: "0.05em",
                       fontSize: "0.72rem",
-                      borderBottom: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
+                      borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.2)" : "1px solid #E2E8F0",
                     },
                     "& td": {
                       py: 1.2,
                       px: 1.5,
-                      borderBottom: isDark ? "1px solid rgba(59, 130, 246, 0.08)" : "1px solid #F1F5F9",
+                      borderBottom: isDark ? "1px solid rgba(56, 189, 248, 0.08)" : "1px solid #F1F5F9",
                     },
                     "& tr:hover": {
-                      bgcolor: isDark ? "rgba(59, 130, 246, 0.06)" : "rgba(37, 99, 235, 0.04)",
+                      bgcolor: isDark ? "rgba(56, 189, 248, 0.06)" : "rgba(2, 132, 199, 0.04)",
                     },
                   }}
                 >
@@ -3529,7 +1893,7 @@ export default function TradingJournalView({
                             <Chip
                               label={`#${t.trade_num || t.id.slice(-3)}`}
                               size="small"
-                              sx={{ height: 20, fontSize: "0.68rem", fontWeight: 800, bgcolor: "rgba(59, 130, 246, 0.15)", color: "#3B82F6" }}
+                              sx={{ height: 20, fontSize: "0.68rem", fontWeight: 600, bgcolor: "rgba(56, 189, 248, 0.15)", color: "#38BDF8" }}
                             />
                           </td>
                           <td>
@@ -3555,7 +1919,7 @@ export default function TradingJournalView({
                               sx={{
                                 height: 20,
                                 fontSize: "0.68rem",
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 bgcolor: t.direction === "BUY" ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
                                 color: t.direction === "BUY" ? "#34D399" : "#F87171",
                               }}
@@ -3578,7 +1942,7 @@ export default function TradingJournalView({
                               <Typography
                                 variant="body2"
                                 sx={{
-                                  fontWeight: 800,
+                                  fontWeight: 600,
                                   color: t.net_pnl >= 0 ? "#10B981" : "#EF4444",
                                 }}
                               >
@@ -3590,7 +1954,7 @@ export default function TradingJournalView({
                           </td>
                           <td>
                             {t.actual_r !== null ? (
-                              <Typography variant="body2" sx={{ fontWeight: 700, color: "#8B5CF6" }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, color: "#8B5CF6" }}>
                                 {t.actual_r}R
                               </Typography>
                             ) : (
@@ -3604,7 +1968,7 @@ export default function TradingJournalView({
                               sx={{
                                 height: 20,
                                 fontSize: "0.68rem",
-                                fontWeight: 800,
+                                fontWeight: 600,
                                 bgcolor:
                                   t.result === "WIN" || (t.net_pnl && t.net_pnl > 0)
                                     ? "rgba(16, 185, 129, 0.15)"
@@ -3627,7 +1991,7 @@ export default function TradingJournalView({
                               sx={{
                                 height: 20,
                                 fontSize: "0.68rem",
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 bgcolor: t.mistake_flag ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.15)",
                                 color: t.mistake_flag ? "#EF4444" : "#10B981",
                               }}
@@ -3659,23 +2023,17 @@ export default function TradingJournalView({
         {activeTab === 3 && (
           <Card
             sx={{
-              borderRadius: "6px",
-              bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-              border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-              p: 2.5,
+              borderRadius: "8px",
+              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
+              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
+              p: 2,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-              Trading Performance Calendar
-            </Typography>
-            <Typography variant="body2" sx={{ color: isDark ? "#94A3B8" : "#64748B", mb: 3 }}>
-              Daily realized P&L aggregated strictly from verified closed trade records in PostgreSQL.
-            </Typography>
 
             <Grid container spacing={1.5}>
               {["Mon", "Tue", "Wed", "Thu", "Fri"].map((day) => (
                 <Grid key={day} size={{ xs: 2.4 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, textAlign: "center", display: "block", color: isDark ? "#94A3B8" : "#64748B" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, textAlign: "center", display: "block", color: isDark ? "#94A3B8" : "#64748B" }}>
                     {day}
                   </Typography>
                 </Grid>
@@ -3698,13 +2056,13 @@ export default function TradingJournalView({
                       borderRadius: "6px",
                       bgcolor:
                         dayItem.count === 0
-                          ? isDark ? "#070B16" : "#F8FAFC"
+                          ? isDark ? "#050912" : "#F8FAFC"
                           : dayItem.pnl > 0
                           ? isDark ? "rgba(16, 185, 129, 0.12)" : "#ECFDF5"
                           : isDark ? "rgba(239, 68, 68, 0.12)" : "#FEF2F2",
                       border:
                         dayItem.count === 0
-                          ? isDark ? "1px solid rgba(59, 130, 246, 0.1)" : "1px solid #E2E8F0"
+                          ? isDark ? "1px solid rgba(56, 189, 248, 0.1)" : "1px solid #E2E8F0"
                           : dayItem.pnl > 0
                           ? "1px solid rgba(16, 185, 129, 0.3)"
                           : "1px solid rgba(239, 68, 68, 0.3)",
@@ -3713,7 +2071,7 @@ export default function TradingJournalView({
                       justifyContent: "space-between",
                     }}
                   >
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? "#94A3B8" : "#64748B" }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: isDark ? "#94A3B8" : "#64748B" }}>
                       {dayItem.date}
                     </Typography>
                     {dayItem.count > 0 ? (
@@ -3721,7 +2079,7 @@ export default function TradingJournalView({
                         <Typography
                           variant="subtitle2"
                           sx={{
-                            fontWeight: 800,
+                            fontWeight: 600,
                             color: dayItem.pnl > 0 ? "#10B981" : "#EF4444",
                           }}
                         >
@@ -3746,61 +2104,13 @@ export default function TradingJournalView({
         {/* ============================================================ */}
         {/* TAB 4: ANALYTICS & ALGORITHMS (SECTION 7 SPECIFICATION)      */}
         {/* ============================================================ */}
-        {activeTab === 4 && analytics && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Card sx={{ p: 3, borderRadius: "6px", bgcolor: isDark ? "#0B1226" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0" }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-                Section 7: Core Financial Formula Specifications
-              </Typography>
-              <Typography variant="body2" sx={{ color: isDark ? "#94A3B8" : "#64748B", mb: 3 }}>
-                Every metric is strictly calculated from real database records with documented mathematical explanations:
-              </Typography>
-
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0" }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#38BDF8" }}>
-                      Win Rate: {analytics.winRate}%
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: "block", color: isDark ? "#94A3B8" : "#64748B", my: 0.5 }}>
-                      Formula: W / (W + L) * 100
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8" }}>
-                      Excludes break-even trades ({analytics.breakEvenTrades}) from the decisive denominator.
-                    </Typography>
-                  </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0" }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#10B981" }}>
-                      Profit Factor: {analytics.profitFactor ?? "N/A"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: "block", color: isDark ? "#94A3B8" : "#64748B", my: 0.5 }}>
-                      Formula: Gross Profit / Gross Loss
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8" }}>
-                      Gross Profit: ${analytics.grossProfit} | Gross Loss: ${analytics.grossLoss}.
-                    </Typography>
-                  </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 4 }}>
-                  <Paper elevation={0} sx={{ p: 2, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0" }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#8B5CF6" }}>
-                      Expectancy: ${analytics.expectancy ?? "N/A"}
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: "block", color: isDark ? "#94A3B8" : "#64748B", my: 0.5 }}>
-                      Formula: (W_rate * Avg Win) - (L_rate * Avg Loss)
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: isDark ? "#64748B" : "#94A3B8" }}>
-                      Expected dollar gain per decisive executed trade.
-                    </Typography>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </Card>
-          </Box>
+        {activeTab === 4 && (
+          <AnalyticsView
+            trades={accountTrades}
+            currencySymbol={activeCurrencySymbol}
+            startingBalance={activeStartingBalance}
+            isDark={isDark}
+          />
         )}
 
         {/* ============================================================ */}
@@ -3808,27 +2118,21 @@ export default function TradingJournalView({
         {/* ============================================================ */}
         {activeTab === 5 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Card sx={{ p: 3, borderRadius: "6px", bgcolor: isDark ? "#0B1226" : "#FFFFFF", border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0" }}>
-              <Typography variant="h6" sx={{ fontWeight: 800, mb: 1 }}>
-                Trading Psychology & Daily Reviews
-              </Typography>
-              <Typography variant="body2" sx={{ color: isDark ? "#94A3B8" : "#64748B", mb: 3 }}>
-                Reflective journal logs documenting emotional state, rule adherence, and key lessons learned.
-              </Typography>
+            <Card sx={{ p: 2, borderRadius: "8px", bgcolor: isDark ? "#0A1124" : "#FFFFFF", border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0" }}>
 
               <Grid container spacing={2}>
                 {reviews.map((r) => (
                   <Grid key={r.id} size={{ xs: 12, md: 6 }}>
-                    <Paper elevation={0} sx={{ p: 2.5, borderRadius: "6px", bgcolor: isDark ? "#070B16" : "#F8FAFC", border: isDark ? "1px solid rgba(59, 130, 246, 0.15)" : "1px solid #E2E8F0" }}>
+                    <Paper elevation={0} sx={{ p: 2.5, borderRadius: "6px", bgcolor: isDark ? "#050912" : "#F8FAFC", border: isDark ? "1px solid rgba(56, 189, 248, 0.15)" : "1px solid #E2E8F0" }}>
                       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1.5 }}>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#38BDF8" }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#38BDF8" }}>
                           Review Date: {new Date(r.review_date).toLocaleDateString()}
                         </Typography>
                         <Rating value={r.daily_rating || 4} readOnly size="small" />
                       </Box>
 
                       <Box sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "#10B981", display: "block" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: "#10B981", display: "block" }}>
                           WHAT WENT WELL:
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
@@ -3837,7 +2141,7 @@ export default function TradingJournalView({
                       </Box>
 
                       <Box sx={{ mb: 1.5 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "#EF4444", display: "block" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: "#EF4444", display: "block" }}>
                           WHAT WENT WRONG / MISTAKES:
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
@@ -3846,7 +2150,7 @@ export default function TradingJournalView({
                       </Box>
 
                       <Box>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: "#8B5CF6", display: "block" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: "#8B5CF6", display: "block" }}>
                           LESSONS & NEXT SESSION PLAN:
                         </Typography>
                         <Typography variant="body2" sx={{ fontSize: "0.82rem" }}>
@@ -3866,48 +2170,6 @@ export default function TradingJournalView({
         {/* ============================================================ */}
         {activeTab === 6 && (
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* Top Toolbar */}
-            <Card
-              sx={{
-                p: 1.5,
-                borderRadius: "8px",
-                bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                flexWrap: "wrap",
-                gap: 1.2,
-              }}
-            >
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, fontSize: "0.98rem" }}>
-                  Trading Accounts Management
-                </Typography>
-                <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                  Manage multiple accounts, initial balances, currencies, and track live capital growth.
-                </Typography>
-              </Box>
-
-              <Button
-                variant="contained"
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={handleOpenCreateAccount}
-                sx={{
-                  bgcolor: "#2563EB",
-                  fontWeight: 700,
-                  fontSize: "0.78rem",
-                  borderRadius: "6px",
-                  height: 32,
-                  px: 2,
-                  "&:hover": { bgcolor: "#1D4ED8" },
-                }}
-              >
-                Create Account
-              </Button>
-            </Card>
-
             {/* Accounts Grid */}
             <Grid container spacing={2}>
               {accounts.map((acc) => {
@@ -3923,13 +2185,12 @@ export default function TradingJournalView({
                       sx={{
                         p: 2,
                         borderRadius: "8px",
-                        bgcolor: isDark ? "#0E162B" : "#FFFFFF",
+                        bgcolor: isDark ? "#0A1124" : "#FFFFFF",
                         border: isActive
-                          ? "2px solid #2563EB"
+                          ? "2px solid #0284C7"
                           : isDark
-                          ? "1px solid rgba(59, 130, 246, 0.2)"
+                          ? "1px solid rgba(56, 189, 248, 0.2)"
                           : "1px solid #E2E8F0",
-                        boxShadow: isActive ? "0 8px 30px rgba(37,99,235,0.18)" : "none",
                         position: "relative",
                       }}
                     >
@@ -3940,23 +2201,23 @@ export default function TradingJournalView({
                             label={acc.account_type.toUpperCase()}
                             size="small"
                             sx={{
-                              fontWeight: 800,
+                              fontWeight: 600,
                               fontSize: "0.65rem",
                               height: 20,
                               bgcolor:
                                 acc.account_type === "live"
                                   ? "rgba(16, 185, 129, 0.2)"
-                                  : "rgba(59, 130, 246, 0.2)",
+                                  : "rgba(56, 189, 248, 0.2)",
                               color:
                                 acc.account_type === "live"
                                   ? "#10B981"
-                                  : "#3B82F6",
+                                  : "#38BDF8",
                             }}
                           />
                           <Chip
                             label={acc.currency}
                             size="small"
-                            sx={{ fontWeight: 700, fontSize: "0.65rem", height: 20 }}
+                            sx={{ fontWeight: 600, fontSize: "0.65rem", height: 20 }}
                           />
                         </Box>
 
@@ -3965,9 +2226,9 @@ export default function TradingJournalView({
                             label="ACTIVE"
                             size="small"
                             sx={{
-                              bgcolor: "#2563EB",
+                              bgcolor: "#0284C7",
                               color: "#FFF",
-                              fontWeight: 800,
+                              fontWeight: 600,
                               fontSize: "0.62rem",
                               height: 18,
                             }}
@@ -3976,7 +2237,7 @@ export default function TradingJournalView({
                       </Box>
 
                       {/* Account Name & Description */}
-                      <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.05rem", mt: 0.5 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: "1.05rem", mt: 0.5 }}>
                         {acc.name}
                       </Typography>
                       <Typography variant="caption" sx={{ color: "text.secondary", display: "block", minHeight: 32, fontSize: "0.72rem" }}>
@@ -3988,7 +2249,7 @@ export default function TradingJournalView({
                       {/* Balances */}
                       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.6 }}>
                         <Typography variant="caption" sx={{ color: "text.secondary" }}>Starting Capital:</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
                           {currSymbol}{starting.toLocaleString()}
                         </Typography>
                       </Box>
@@ -3998,7 +2259,7 @@ export default function TradingJournalView({
                         <Typography
                           variant="body2"
                           sx={{
-                            fontWeight: 800,
+                            fontWeight: 600,
                             color: current >= starting ? "#10B981" : "#EF4444",
                           }}
                         >
@@ -4011,7 +2272,7 @@ export default function TradingJournalView({
                         <Typography
                           variant="caption"
                           sx={{
-                            fontWeight: 800,
+                            fontWeight: 600,
                             color: netProfit >= 0 ? "#10B981" : "#EF4444",
                           }}
                         >
@@ -4030,7 +2291,7 @@ export default function TradingJournalView({
                             fontSize: "0.72rem",
                             height: 26,
                             textTransform: "none",
-                            fontWeight: 700,
+                            fontWeight: 600,
                           }}
                         >
                           {isActive ? "Active Account" : "Set as Active"}
@@ -4043,7 +2304,7 @@ export default function TradingJournalView({
                               onClick={() => handleOpenEditAccount(acc)}
                               sx={{ border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #E2E8F0" }}
                             >
-                              <EditIcon sx={{ fontSize: 15, color: "#3B82F6" }} />
+                              <EditIcon sx={{ fontSize: 15, color: "#38BDF8" }} />
                             </IconButton>
                           </Tooltip>
 
@@ -4069,866 +2330,6 @@ export default function TradingJournalView({
           </Box>
         )}
 
-        {/* ============================================================ */}
-        {/* TAB 7: PRE-MARKET ROUTINE & MINDFULNESS                      */}
-        {/* ============================================================ */}
-        {activeTab === 7 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {/* 1. TOP COMMAND BAR */}
-            <Card
-              sx={{
-                p: 2,
-                borderRadius: "8px",
-                bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
-                display: "flex",
-                flexDirection: { xs: "column", md: "row" },
-                justifyContent: "space-between",
-                alignItems: { xs: "flex-start", md: "center" },
-                gap: 1.5,
-              }}
-            >
-              <Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                  <Typography variant="h6" sx={{ fontWeight: 800, fontSize: "1.1rem" }}>
-                    🌅 Pre-Market Routine & Mindfulness
-                  </Typography>
-                  {routineStreak > 0 && (
-                    <Chip
-                      icon={<FireIcon sx={{ fontSize: "15px !important", color: "#F97316 !important" }} />}
-                      label={`${routineStreak} Day Streak`}
-                      size="small"
-                      sx={{
-                        fontWeight: 800,
-                        bgcolor: isDark ? "rgba(249, 115, 22, 0.15)" : "#FFEDD5",
-                        color: "#EA580C",
-                      }}
-                    />
-                  )}
-                  {routineIsAllComplete ? (
-                    <Chip
-                      label="All 4 Steps Complete ✅ Ready to Trade"
-                      size="small"
-                      sx={{
-                        bgcolor: isDark ? "rgba(16, 185, 129, 0.15)" : "#DCFCE7",
-                        color: "#10B981",
-                        fontWeight: 800,
-                      }}
-                    />
-                  ) : (
-                    <Chip
-                      label={`${routineCompletedCount} of 4 Complete`}
-                      size="small"
-                      sx={{
-                        bgcolor: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7",
-                        color: "#D97706",
-                        fontWeight: 800,
-                      }}
-                    />
-                  )}
-                </Box>
-                <Typography variant="body2" sx={{ color: "text.secondary", mt: 0.4, fontSize: "0.8rem" }}>
-                  Review calendar, commit to your plan, map your charts, and complete 10 mins meditation before taking any positions.
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, flexWrap: "wrap" }}>
-                <TextField
-                  type="date"
-                  size="small"
-                  label="Routine Date"
-                  value={routineDate}
-                  onChange={(e) => setRoutineDate(e.target.value)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ width: 155, "& .MuiInputBase-root": { height: 32, fontSize: "0.78rem" } }}
-                />
-
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={handleSaveRoutine}
-                  disabled={routineSaving}
-                  startIcon={routineSaving ? <CircularProgress size={14} color="inherit" /> : <CheckCircleIcon sx={{ fontSize: 16 }} />}
-                  sx={{
-                    bgcolor: routineIsAllComplete ? "#10B981" : "#2563EB",
-                    fontWeight: 700,
-                    fontSize: "0.78rem",
-                    height: 32,
-                    px: 2,
-                    textTransform: "none",
-                    "&:hover": { bgcolor: routineIsAllComplete ? "#059669" : "#1D4ED8" },
-                  }}
-                >
-                  {routineSaving ? "Saving..." : routineIsAllComplete ? "Save & Lock In (100% Ready)" : "Save Routine"}
-                </Button>
-              </Box>
-            </Card>
-
-            {/* 2. READINESS PROGRESS & QUICK STEPS BAR */}
-            <Card
-              sx={{
-                p: 1.5,
-                borderRadius: "8px",
-                bgcolor: isDark ? "#0E172E" : "#F8FAFC",
-                border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-              }}
-            >
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.8, flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: isDark ? "#94A3B8" : "#64748B" }}>
-                  Session Readiness: {routineCompletedCount} of 4 Completed ({routineCompletedCount * 25}%)
-                </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: routineIsAllComplete ? "#10B981" : "#3B82F6" }}>
-                  {routineIsAllComplete ? "🎯 State: Peak Discipline & Mental Clarity" : "⚡ State: Complete Routine Before Trading"}
-                </Typography>
-              </Box>
-
-              <LinearProgress
-                variant="determinate"
-                value={routineCompletedCount * 25}
-                sx={{
-                  height: 8,
-                  borderRadius: 4,
-                  bgcolor: isDark ? "rgba(255,255,255,0.08)" : "#E2E8F0",
-                  mb: 1.2,
-                  "& .MuiLinearProgress-bar": {
-                    bgcolor: routineIsAllComplete ? "#10B981" : "#2563EB",
-                    borderRadius: 4,
-                  },
-                }}
-              />
-
-              <Grid container spacing={1}>
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <Paper
-                    elevation={0}
-                    onClick={() => setRoutine((r) => ({ ...r, economicCalendarReviewed: !r.economicCalendarReviewed }))}
-                    sx={{
-                      p: 1,
-                      cursor: "pointer",
-                      borderRadius: "6px",
-                      bgcolor: routine.economicCalendarReviewed
-                        ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5")
-                        : (isDark ? "#0B1226" : "#FFFFFF"),
-                      border: routine.economicCalendarReviewed
-                        ? "1px solid rgba(16, 185, 129, 0.4)"
-                        : (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0"),
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.8,
-                    }}
-                  >
-                    <Checkbox
-                      size="small"
-                      checked={routine.economicCalendarReviewed}
-                      sx={{ p: 0, color: "#10B981", "&.Mui-checked": { color: "#10B981" } }}
-                    />
-                    <Box>
-                      <Typography variant="caption" sx={{ fontWeight: 800, display: "block", fontSize: "0.72rem" }}>
-                        1. Economic Calendar
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontSize: "0.66rem", color: routine.economicCalendarReviewed ? "#10B981" : "text.secondary" }}>
-                        {routine.economicCalendarReviewed ? "✅ Reviewed" : "Pending"}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <Paper
-                    elevation={0}
-                    onClick={() => setRoutine((r) => ({ ...r, tradePlanReviewed: !r.tradePlanReviewed }))}
-                    sx={{
-                      p: 1,
-                      cursor: "pointer",
-                      borderRadius: "6px",
-                      bgcolor: routine.tradePlanReviewed
-                        ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5")
-                        : (isDark ? "#0B1226" : "#FFFFFF"),
-                      border: routine.tradePlanReviewed
-                        ? "1px solid rgba(16, 185, 129, 0.4)"
-                        : (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0"),
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.8,
-                    }}
-                  >
-                    <Checkbox
-                      size="small"
-                      checked={routine.tradePlanReviewed}
-                      sx={{ p: 0, color: "#10B981", "&.Mui-checked": { color: "#10B981" } }}
-                    />
-                    <Box>
-                      <Typography variant="caption" sx={{ fontWeight: 800, display: "block", fontSize: "0.72rem" }}>
-                        2. Trade Plan
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontSize: "0.66rem", color: routine.tradePlanReviewed ? "#10B981" : "text.secondary" }}>
-                        {routine.tradePlanReviewed ? "✅ Committed" : "Pending"}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <Paper
-                    elevation={0}
-                    onClick={() => setRoutine((r) => ({ ...r, chartsAnalyzed: !r.chartsAnalyzed }))}
-                    sx={{
-                      p: 1,
-                      cursor: "pointer",
-                      borderRadius: "6px",
-                      bgcolor: routine.chartsAnalyzed
-                        ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5")
-                        : (isDark ? "#0B1226" : "#FFFFFF"),
-                      border: routine.chartsAnalyzed
-                        ? "1px solid rgba(16, 185, 129, 0.4)"
-                        : (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0"),
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.8,
-                    }}
-                  >
-                    <Checkbox
-                      size="small"
-                      checked={routine.chartsAnalyzed}
-                      sx={{ p: 0, color: "#10B981", "&.Mui-checked": { color: "#10B981" } }}
-                    />
-                    <Box>
-                      <Typography variant="caption" sx={{ fontWeight: 800, display: "block", fontSize: "0.72rem" }}>
-                        3. Chart Analysis
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontSize: "0.66rem", color: routine.chartsAnalyzed ? "#10B981" : "text.secondary" }}>
-                        {routine.chartsAnalyzed ? "✅ Mapped" : "Pending"}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 6, md: 3 }}>
-                  <Paper
-                    elevation={0}
-                    onClick={() => setRoutine((r) => ({ ...r, meditationCompleted: !r.meditationCompleted }))}
-                    sx={{
-                      p: 1,
-                      cursor: "pointer",
-                      borderRadius: "6px",
-                      bgcolor: routine.meditationCompleted
-                        ? (isDark ? "rgba(16, 185, 129, 0.15)" : "#ECFDF5")
-                        : (isDark ? "#0B1226" : "#FFFFFF"),
-                      border: routine.meditationCompleted
-                        ? "1px solid rgba(16, 185, 129, 0.4)"
-                        : (isDark ? "1px solid rgba(255,255,255,0.08)" : "1px solid #E2E8F0"),
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.8,
-                    }}
-                  >
-                    <Checkbox
-                      size="small"
-                      checked={routine.meditationCompleted}
-                      sx={{ p: 0, color: "#10B981", "&.Mui-checked": { color: "#10B981" } }}
-                    />
-                    <Box>
-                      <Typography variant="caption" sx={{ fontWeight: 800, display: "block", fontSize: "0.72rem" }}>
-                        4. 10m Meditation
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontSize: "0.66rem", color: routine.meditationCompleted ? "#10B981" : "text.secondary" }}>
-                        {routine.meditationCompleted ? "✅ Completed" : "Pending"}
-                      </Typography>
-                    </Box>
-                  </Paper>
-                </Grid>
-              </Grid>
-            </Card>
-
-            {/* 3. THE 4 COMPREHENSIVE ROUTINE WORKFLOW CARDS */}
-            <Grid container spacing={2}>
-              {/* ============================================================ */}
-              {/* STEP 1: REVIEW ECONOMIC CALENDAR                             */}
-              {/* ============================================================ */}
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card
-                  sx={{
-                    p: 2,
-                    height: "100%",
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                    border: routine.economicCalendarReviewed
-                      ? (isDark ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid #A7F3D0")
-                      : (isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0"),
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "6px",
-                          bgcolor: routine.economicCalendarReviewed ? "#10B981" : "#2563EB",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <CalendarIcon sx={{ fontSize: 18 }} />
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.92rem" }}>
-                          1. Review Economic Calendar
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                          Identify high-impact news & volatility drivers
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Button
-                      size="small"
-                      variant={routine.economicCalendarReviewed ? "contained" : "outlined"}
-                      onClick={() => setRoutine((r) => ({ ...r, economicCalendarReviewed: !r.economicCalendarReviewed }))}
-                      startIcon={routine.economicCalendarReviewed ? <CheckIcon sx={{ fontSize: 14 }} /> : null}
-                      sx={{
-                        fontSize: "0.72rem",
-                        height: 26,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        bgcolor: routine.economicCalendarReviewed ? "#10B981" : "transparent",
-                        borderColor: routine.economicCalendarReviewed ? "#10B981" : undefined,
-                        color: routine.economicCalendarReviewed ? "#FFF" : undefined,
-                      }}
-                    >
-                      {routine.economicCalendarReviewed ? "Reviewed" : "Mark as Done"}
-                    </Button>
-                  </Box>
-
-                  {/* Calendar Quick Links */}
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.8, fontSize: "0.7rem" }}>
-                    QUICK ECONOMIC CALENDARS:
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 0.8, flexWrap: "wrap", mb: 1.5 }}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      component="a"
-                      href="https://www.forexfactory.com/calendar"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
-                      sx={{ fontSize: "0.7rem", height: 26, textTransform: "none", fontWeight: 600 }}
-                    >
-                      ForexFactory
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      component="a"
-                      href="https://www.tradingview.com/economic-calendar/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
-                      sx={{ fontSize: "0.7rem", height: 26, textTransform: "none", fontWeight: 600 }}
-                    >
-                      TradingView Calendar
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      component="a"
-                      href="https://www.investing.com/economic-calendar/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      endIcon={<OpenInNewIcon sx={{ fontSize: 12 }} />}
-                      sx={{ fontSize: "0.7rem", height: 26, textTransform: "none", fontWeight: 600 }}
-                    >
-                      Investing.com
-                    </Button>
-                  </Box>
-
-                  {/* Quick Event Tags */}
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5, fontSize: "0.7rem" }}>
-                    TODAY'S HIGH IMPACT EVENTS / RED FOLDERS:
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 1 }}>
-                    {["FOMC", "CPI", "NFP", "PPI", "Rate Decision", "PMI", "Unemployment", "None Today"].map((ev) => (
-                      <Chip
-                        key={ev}
-                        label={ev}
-                        size="small"
-                        clickable
-                        onClick={() => {
-                          const curr = routine.economicCalendarNotes;
-                          const addition = curr ? `${curr}, ${ev}` : ev;
-                          setRoutine((r) => ({ ...r, economicCalendarNotes: addition }));
-                        }}
-                        sx={{
-                          height: 22,
-                          fontSize: "0.66rem",
-                          fontWeight: 600,
-                          bgcolor: routine.economicCalendarNotes.includes(ev)
-                            ? (isDark ? "rgba(59, 130, 246, 0.3)" : "#DBEAFE")
-                            : (isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9"),
-                        }}
-                      />
-                    ))}
-                  </Box>
-
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={2.5}
-                    size="small"
-                    placeholder="Enter notes on news events, expected release times, and restricted trading windows..."
-                    value={routine.economicCalendarNotes}
-                    onChange={(e) => setRoutine((r) => ({ ...r, economicCalendarNotes: e.target.value }))}
-                    sx={{ "& .MuiInputBase-root": { fontSize: "0.78rem" } }}
-                  />
-                </Card>
-              </Grid>
-
-              {/* ============================================================ */}
-              {/* STEP 2: REVIEW TRADE PLAN                                    */}
-              {/* ============================================================ */}
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card
-                  sx={{
-                    p: 2,
-                    height: "100%",
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                    border: routine.tradePlanReviewed
-                      ? (isDark ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid #A7F3D0")
-                      : (isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0"),
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "6px",
-                          bgcolor: routine.tradePlanReviewed ? "#10B981" : "#8B5CF6",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <ChecklistIcon sx={{ fontSize: 18 }} />
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.92rem" }}>
-                          2. Review Trade Plan & Risk
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                          Daily bias, max risk boundaries & rules commitment
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Button
-                      size="small"
-                      variant={routine.tradePlanReviewed ? "contained" : "outlined"}
-                      onClick={() => setRoutine((r) => ({ ...r, tradePlanReviewed: !r.tradePlanReviewed }))}
-                      startIcon={routine.tradePlanReviewed ? <CheckIcon sx={{ fontSize: 14 }} /> : null}
-                      sx={{
-                        fontSize: "0.72rem",
-                        height: 26,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        bgcolor: routine.tradePlanReviewed ? "#10B981" : "transparent",
-                        borderColor: routine.tradePlanReviewed ? "#10B981" : undefined,
-                        color: routine.tradePlanReviewed ? "#FFF" : undefined,
-                      }}
-                    >
-                      {routine.tradePlanReviewed ? "Committed" : "Commit to Plan"}
-                    </Button>
-                  </Box>
-
-                  {/* Daily Bias Selector */}
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.6, fontSize: "0.7rem" }}>
-                    DAILY MARKET BIAS:
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 0.8, mb: 1.5 }}>
-                    {[
-                      { label: "BULLISH", color: "#10B981" },
-                      { label: "BEARISH", color: "#EF4444" },
-                      { label: "NEUTRAL / RANGE", color: "#3B82F6" },
-                    ].map((b) => (
-                      <Chip
-                        key={b.label}
-                        label={b.label}
-                        clickable
-                        onClick={() => setRoutine((r) => ({ ...r, dailyBias: b.label }))}
-                        sx={{
-                          fontWeight: 800,
-                          fontSize: "0.7rem",
-                          height: 26,
-                          flex: 1,
-                          bgcolor: routine.dailyBias === b.label ? b.color : isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9",
-                          color: routine.dailyBias === b.label ? "#FFF" : "inherit",
-                          border: routine.dailyBias === b.label ? `1px solid ${b.color}` : "1px solid transparent",
-                        }}
-                      />
-                    ))}
-                  </Box>
-
-                  {/* Risk & Rules Controls */}
-                  <Grid container spacing={1} sx={{ mb: 1.2 }}>
-                    <Grid size={{ xs: 6 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="Max Daily Loss Limit ($)"
-                        type="number"
-                        value={routine.maxDailyLoss}
-                        onChange={(e) => setRoutine((r) => ({ ...r, maxDailyLoss: e.target.value }))}
-                        slotProps={{
-                          input: {
-                            startAdornment: <InputAdornment position="start">$</InputAdornment>,
-                          },
-                        }}
-                        sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.78rem" } }}
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 6 }}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="Min Planned R:R"
-                        defaultValue="1:2"
-                        sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.78rem" } }}
-                      />
-                    </Grid>
-                  </Grid>
-
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={2}
-                    size="small"
-                    placeholder="Trade plan details: specific setups to take, rules adherence, maximum allowed positions today..."
-                    value={routine.tradePlanNotes}
-                    onChange={(e) => setRoutine((r) => ({ ...r, tradePlanNotes: e.target.value }))}
-                    sx={{ "& .MuiInputBase-root": { fontSize: "0.78rem" } }}
-                  />
-                </Card>
-              </Grid>
-
-              {/* ============================================================ */}
-              {/* STEP 3: ANALYZE CHARTS                                       */}
-              {/* ============================================================ */}
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card
-                  sx={{
-                    p: 2,
-                    height: "100%",
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                    border: routine.chartsAnalyzed
-                      ? (isDark ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid #A7F3D0")
-                      : (isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0"),
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "6px",
-                          bgcolor: routine.chartsAnalyzed ? "#10B981" : "#0284C7",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <ShowChartIcon sx={{ fontSize: 18 }} />
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.92rem" }}>
-                          3. Analyze Charts & Zones
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                          Map HTF levels, market structure & setup triggers
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Button
-                      size="small"
-                      variant={routine.chartsAnalyzed ? "contained" : "outlined"}
-                      onClick={() => setRoutine((r) => ({ ...r, chartsAnalyzed: !r.chartsAnalyzed }))}
-                      startIcon={routine.chartsAnalyzed ? <CheckIcon sx={{ fontSize: 14 }} /> : null}
-                      sx={{
-                        fontSize: "0.72rem",
-                        height: 26,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        bgcolor: routine.chartsAnalyzed ? "#10B981" : "transparent",
-                        borderColor: routine.chartsAnalyzed ? "#10B981" : undefined,
-                        color: routine.chartsAnalyzed ? "#FFF" : undefined,
-                      }}
-                    >
-                      {routine.chartsAnalyzed ? "Analyzed" : "Mark Charts Done"}
-                    </Button>
-                  </Box>
-
-                  {/* Watchlist Symbol Selection (12 Requested Symbols) */}
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.6, fontSize: "0.7rem" }}>
-                    SELECT SYMBOLS ON TODAY'S RADAR:
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", mb: 1.5 }}>
-                    {TRADING_SYMBOLS.map((sym) => {
-                      const isSelected = routine.watchlist.includes(sym);
-                      return (
-                        <Chip
-                          key={sym}
-                          label={sym}
-                          size="small"
-                          clickable
-                          onClick={() => {
-                            setRoutine((r) => ({
-                              ...r,
-                              watchlist: isSelected
-                                ? r.watchlist.filter((s) => s !== sym)
-                                : [...r.watchlist, sym],
-                            }));
-                          }}
-                          sx={{
-                            height: 22,
-                            fontSize: "0.68rem",
-                            fontWeight: 700,
-                            bgcolor: isSelected ? "#2563EB" : isDark ? "rgba(255,255,255,0.05)" : "#F1F5F9",
-                            color: isSelected ? "#FFF" : "inherit",
-                            border: isSelected ? "1px solid #3B82F6" : "1px solid transparent",
-                          }}
-                        />
-                      );
-                    })}
-                  </Box>
-
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", display: "block", mb: 0.5, fontSize: "0.7rem" }}>
-                    CHART STRUCTURE & KEY PRICE ZONES:
-                  </Typography>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3.5}
-                    size="small"
-                    placeholder="e.g. XAUUSD: 2680 resistance orderblock; EURUSD: liquidity sweep at 1.0820; NIFTY: previous day high retest..."
-                    value={routine.chartNotes}
-                    onChange={(e) => setRoutine((r) => ({ ...r, chartNotes: e.target.value }))}
-                    sx={{ "& .MuiInputBase-root": { fontSize: "0.78rem" } }}
-                  />
-                </Card>
-              </Grid>
-
-              {/* ============================================================ */}
-              {/* STEP 4: 10 MINS MEDITATIONS & MINDFULNESS TIMER             */}
-              {/* ============================================================ */}
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Card
-                  sx={{
-                    p: 2,
-                    height: "100%",
-                    borderRadius: "8px",
-                    bgcolor: isDark ? "#0B1226" : "#FFFFFF",
-                    border: routine.meditationCompleted
-                      ? (isDark ? "1px solid rgba(16, 185, 129, 0.4)" : "1px solid #A7F3D0")
-                      : (isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0"),
-                  }}
-                >
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "6px",
-                          bgcolor: routine.meditationCompleted ? "#10B981" : "#10B981",
-                          color: "#FFF",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <MeditationIcon sx={{ fontSize: 18 }} />
-                      </Box>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: "0.92rem" }}>
-                          4. 10 Mins Meditation & Focus
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "text.secondary", fontSize: "0.72rem" }}>
-                          Center your breathing, dissolve FOMO & build discipline
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Button
-                      size="small"
-                      variant={routine.meditationCompleted ? "contained" : "outlined"}
-                      onClick={() => setRoutine((r) => ({ ...r, meditationCompleted: !r.meditationCompleted }))}
-                      startIcon={routine.meditationCompleted ? <CheckIcon sx={{ fontSize: 14 }} /> : null}
-                      sx={{
-                        fontSize: "0.72rem",
-                        height: 26,
-                        textTransform: "none",
-                        fontWeight: 700,
-                        bgcolor: routine.meditationCompleted ? "#10B981" : "transparent",
-                        borderColor: routine.meditationCompleted ? "#10B981" : undefined,
-                        color: routine.meditationCompleted ? "#FFF" : undefined,
-                      }}
-                    >
-                      {routine.meditationCompleted ? "Completed" : "Mark as Done"}
-                    </Button>
-                  </Box>
-
-                  {/* Interactive Meditation Timer Display */}
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 1.8,
-                      borderRadius: "8px",
-                      bgcolor: isDark ? "#070B16" : "#F8FAFC",
-                      border: isDark ? "1px solid rgba(59, 130, 246, 0.2)" : "1px solid #E2E8F0",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      mb: 1.5,
-                    }}
-                  >
-                    {/* Digital Countdown Timer */}
-                    <Box sx={{ display: "flex", alignItems: "baseline", gap: 1, mb: 1 }}>
-                      <Typography
-                        variant="h3"
-                        sx={{
-                          fontWeight: 900,
-                          letterSpacing: 2,
-                          fontFamily: "monospace",
-                          color: meditationIsRunning ? "#10B981" : isDark ? "#F8FAFC" : "#0F172A",
-                        }}
-                      >
-                        {String(Math.floor(meditationTimeLeft / 60)).padStart(2, "0")}:
-                        {String(meditationTimeLeft % 60).padStart(2, "0")}
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary" }}>
-                        / 10:00 MINS
-                      </Typography>
-                    </Box>
-
-                    {/* Box Breathing Prompt */}
-                    <Box
-                      sx={{
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "20px",
-                        bgcolor: meditationIsRunning
-                          ? (isDark ? "rgba(16, 185, 129, 0.2)" : "#DCFCE7")
-                          : (isDark ? "rgba(255,255,255,0.05)" : "#E2E8F0"),
-                        color: meditationIsRunning ? "#10B981" : "text.secondary",
-                        fontSize: "0.74rem",
-                        fontWeight: 800,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.6,
-                        mb: 1.2,
-                      }}
-                    >
-                      <SpaIcon sx={{ fontSize: 14 }} />
-                      {meditationIsRunning
-                        ? `Box Breathing: ${breathingPhase.toUpperCase()} (${breathingTimer}s)`
-                        : "Ready for 10-Minute Guided Box Breathing"}
-                    </Box>
-
-                    {/* Timer Controls */}
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setMeditationTimeLeft((prev) => Math.max(60, prev - 60))}
-                        sx={{ minWidth: 32, px: 1, height: 28, fontSize: "0.72rem" }}
-                      >
-                        -1m
-                      </Button>
-
-                      <Button
-                        size="small"
-                        variant="contained"
-                        onClick={() => setMeditationIsRunning(!meditationIsRunning)}
-                        startIcon={meditationIsRunning ? <PauseIcon sx={{ fontSize: 16 }} /> : <PlayIcon sx={{ fontSize: 16 }} />}
-                        sx={{
-                          height: 32,
-                          px: 2,
-                          fontSize: "0.78rem",
-                          fontWeight: 800,
-                          bgcolor: meditationIsRunning ? "#F59E0B" : "#10B981",
-                          "&:hover": { bgcolor: meditationIsRunning ? "#D97706" : "#059669" },
-                        }}
-                      >
-                        {meditationIsRunning ? "Pause" : meditationTimeLeft === 0 ? "Restart" : "Start Meditation"}
-                      </Button>
-
-                      <Tooltip title="Reset timer to 10:00">
-                        <IconButton
-                          size="small"
-                          onClick={() => {
-                            setMeditationIsRunning(false);
-                            setMeditationTimeLeft(600);
-                          }}
-                          sx={{ border: isDark ? "1px solid rgba(255,255,255,0.1)" : "1px solid #CBD5E1", width: 28, height: 28 }}
-                        >
-                          <ResetIcon sx={{ fontSize: 15 }} />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setMeditationTimeLeft((prev) => Math.min(1800, prev + 60))}
-                        sx={{ minWidth: 32, px: 1, height: 28, fontSize: "0.72rem" }}
-                      >
-                        +1m
-                      </Button>
-                    </Box>
-                  </Paper>
-
-                  {/* Mindset Rating & Trader Affirmation */}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.8 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", fontSize: "0.72rem" }}>
-                      RATE YOUR MENTAL CLARITY (1-5):
-                    </Typography>
-                    <Rating
-                      value={routine.mindsetRating}
-                      onChange={(_, val) => setRoutine((r) => ({ ...r, mindsetRating: val || 5 }))}
-                      size="small"
-                    />
-                  </Box>
-
-                  <Paper
-                    elevation={0}
-                    sx={{
-                      p: 1.2,
-                      borderRadius: "6px",
-                      bgcolor: isDark ? "rgba(16, 185, 129, 0.08)" : "#F0FDF4",
-                      border: isDark ? "1px solid rgba(16, 185, 129, 0.2)" : "1px solid #DCFCE7",
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ fontWeight: 800, color: "#10B981", display: "block", mb: 0.2, fontSize: "0.68rem" }}>
-                      TRADER DISCIPLINE AFFIRMATION:
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontSize: "0.74rem", fontStyle: "italic", color: isDark ? "#E2E8F0" : "#334155" }}>
-                      &ldquo;I trade with complete patience. I accept the risk on every execution without fear or greed. The market owes me nothing. I follow my plan.&rdquo;
-                    </Typography>
-                  </Paper>
-                </Card>
-              </Grid>
-            </Grid>
-          </Box>
-        )}
       </Box>
 
       {/* ============================================================== */}
@@ -4942,15 +2343,15 @@ export default function TradingJournalView({
         slotProps={{
           paper: {
             sx: {
-              bgcolor: isDark ? "#0E162B" : "#FFFFFF",
+              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
               borderRadius: "8px",
-              border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
+              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
               p: 1.5,
             },
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, fontSize: "1.1rem" }}>
+        <DialogTitle sx={{ fontWeight: 600, fontSize: "1.1rem" }}>
           {editingAccount ? "Edit Trading Account" : "Create New Trading Account"}
         </DialogTitle>
         <DialogContent dividers>
@@ -5032,8 +2433,8 @@ export default function TradingJournalView({
             onClick={handleSaveAccount}
             disabled={accountActionLoading}
             sx={{
-              bgcolor: "#2563EB",
-              fontWeight: 700,
+              bgcolor: "#0284C7",
+              fontWeight: 600,
               borderRadius: "6px",
               px: 3,
             }}
@@ -5054,7 +2455,7 @@ export default function TradingJournalView({
         slotProps={{
           paper: {
             sx: {
-              bgcolor: isDark ? "#0E162B" : "#FFFFFF",
+              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
               borderRadius: "8px",
               border: "1px solid rgba(239, 68, 68, 0.3)",
               p: 1.5,
@@ -5062,7 +2463,7 @@ export default function TradingJournalView({
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, color: "#EF4444", display: "flex", alignItems: "center", gap: 1 }}>
+        <DialogTitle sx={{ fontWeight: 600, color: "#EF4444", display: "flex", alignItems: "center", gap: 1 }}>
           <WarningIcon sx={{ color: "#EF4444" }} />
           Delete Account?
         </DialogTitle>
@@ -5087,7 +2488,7 @@ export default function TradingJournalView({
             color="error"
             onClick={handleDeleteAccount}
             disabled={accountActionLoading}
-            sx={{ fontWeight: 700, borderRadius: "6px" }}
+            sx={{ fontWeight: 600, borderRadius: "6px" }}
           >
             {accountActionLoading ? "Deleting..." : "Delete Permanently"}
           </Button>
@@ -5105,24 +2506,24 @@ export default function TradingJournalView({
         slotProps={{
           paper: {
             sx: {
-              bgcolor: isDark ? "#0E162B" : "#FFFFFF",
+              bgcolor: isDark ? "#0A1124" : "#FFFFFF",
               borderRadius: "8px",
-              border: isDark ? "1px solid rgba(59, 130, 246, 0.25)" : "1px solid #E2E8F0",
+              border: isDark ? "1px solid rgba(56, 189, 248, 0.14)" : "1px solid #E2E8F0",
               p: 2,
             },
           },
         }}
       >
-        <DialogTitle sx={{ fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <DialogTitle sx={{ fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <BookIcon sx={{ color: "#3B82F6" }} />
+            <BookIcon sx={{ color: "#38BDF8" }} />
             Trade #{selectedTrade?.trade_num || selectedTrade?.id.slice(-4)}: {selectedTrade?.symbol} ({selectedTrade?.direction})
           </Box>
           <Chip
             label={selectedTrade?.result || (selectedTrade?.net_pnl && selectedTrade.net_pnl > 0 ? "WIN" : "LOSS")}
             size="small"
             sx={{
-              fontWeight: 800,
+              fontWeight: 600,
               bgcolor: (selectedTrade?.net_pnl || 0) >= 0 ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)",
               color: (selectedTrade?.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444",
             }}
@@ -5133,29 +2534,29 @@ export default function TradingJournalView({
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
               {/* Part 1: Trade Setup & Execution (Fields 1-8) */}
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#38BDF8", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
                   PART 1 — Trade Setup & Execution
                 </Typography>
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>1. Trade #:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>#{selectedTrade.trade_num || "1"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>#{selectedTrade.trade_num || "1"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>2. Date:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{new Date(selectedTrade.opened_at).toLocaleDateString()}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(selectedTrade.opened_at).toLocaleDateString()}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>3. Time:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{new Date(selectedTrade.opened_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(selectedTrade.opened_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>4. Symbol:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "#3B82F6" }}>{selectedTrade.symbol}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#38BDF8" }}>{selectedTrade.symbol}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>5. Direction:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: selectedTrade.direction === "BUY" ? "#10B981" : "#EF4444" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: selectedTrade.direction === "BUY" ? "#10B981" : "#EF4444" }}>
                       {selectedTrade.direction}
                     </Typography>
                   </Grid>
@@ -5174,29 +2575,29 @@ export default function TradingJournalView({
 
               {/* Part 2: Price Levels & Sizing (Fields 9-13) */}
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#10B981", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#10B981", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
                   PART 2 — Price Levels & Sizing (Fields 8 – 12)
                 </Typography>
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 6, sm: 2.4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Entry Price:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedTrade.entry_price}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.entry_price}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 2.4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Stop Loss (SL):</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#EF4444" }}>{selectedTrade.stop_loss ?? "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#EF4444" }}>{selectedTrade.stop_loss ?? "-"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 2.4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Take Profit (TP):</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#10B981" }}>{selectedTrade.take_profit ?? "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#10B981" }}>{selectedTrade.take_profit ?? "-"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 2.4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Exit Price:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedTrade.exit_price ?? "OPEN"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.exit_price ?? "OPEN"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 2.4 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Lots / Quantity:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedTrade.volume ?? "1"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.volume ?? "1"}</Typography>
                   </Grid>
                 </Grid>
               </Box>
@@ -5205,13 +2606,13 @@ export default function TradingJournalView({
 
               {/* Part 3: Risk & Financial Engine (Fields 14-20) */}
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#D97706", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#D97706", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
                   PART 3 — Risk, Reward & Financial Engine
                 </Typography>
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 6, sm: 1.7 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Risk Amount:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#EF4444" }}>${selectedTrade.planned_risk_amount ?? "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#EF4444" }}>${selectedTrade.planned_risk_amount ?? "-"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.7 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>SL Points:</Typography>
@@ -5223,21 +2624,21 @@ export default function TradingJournalView({
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.7 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Planned R:R:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedTrade.planned_rr_ratio ? `1 : ${selectedTrade.planned_rr_ratio}` : "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>{selectedTrade.planned_rr_ratio ? `1 : ${selectedTrade.planned_rr_ratio}` : "-"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 2 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Realized P&L:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 900, color: (selectedTrade.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: (selectedTrade.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444" }}>
                       {(selectedTrade.net_pnl || 0) >= 0 ? `+$${selectedTrade.net_pnl}` : `-$${Math.abs(selectedTrade.net_pnl || 0)}`}
                     </Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Actual R:R:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "#8B5CF6" }}>{selectedTrade.actual_r ? `${selectedTrade.actual_r}R` : "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#8B5CF6" }}>{selectedTrade.actual_r ? `${selectedTrade.actual_r}R` : "-"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Result:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: (selectedTrade.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: (selectedTrade.net_pnl || 0) >= 0 ? "#10B981" : "#EF4444" }}>
                       {selectedTrade.result || ((selectedTrade.net_pnl || 0) > 0 ? "WIN" : "LOSS")}
                     </Typography>
                   </Grid>
@@ -5248,7 +2649,7 @@ export default function TradingJournalView({
 
               {/* Part 4: Psychology & Mindset */}
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#8B5CF6", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#8B5CF6", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
                   PART 4 — Trading Psychology & Mindset
                 </Typography>
                 <Grid container spacing={1.5}>
@@ -5262,15 +2663,15 @@ export default function TradingJournalView({
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.5 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Confidence (1-5):</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#38BDF8" }}>{selectedTrade.confidence_rating || 5}/5</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#38BDF8" }}>{selectedTrade.confidence_rating || 5}/5</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.5 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Discipline (1-5):</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "#10B981" }}>{selectedTrade.discipline_rating || 5}/5</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#10B981" }}>{selectedTrade.discipline_rating || 5}/5</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 3 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Mistake Flag:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: selectedTrade.mistake_flag ? "#EF4444" : "#10B981" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: selectedTrade.mistake_flag ? "#EF4444" : "#10B981" }}>
                       {selectedTrade.mistake_flag ? "YES" : "NO"}
                     </Typography>
                   </Grid>
@@ -5287,7 +2688,7 @@ export default function TradingJournalView({
 
               {/* Part 5: Context & Retrospective */}
               <Box>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: "#06B6D4", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 600, color: "#22D3EE", textTransform: "uppercase", letterSpacing: "0.06em", display: "block", mb: 1 }}>
                   PART 5 — Market Context & Retrospective Journal
                 </Typography>
                 <Grid container spacing={1.5}>

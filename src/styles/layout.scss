@@ -19,9 +19,23 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: var(--bg-app);
+  background-color: transparent;
   color: var(--text-primary);
   position: relative;
+}
+
+/* Sidebar variant: rail on the left, main column on the right */
+.app-shell--sidebar {
+  flex-direction: row;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ==========================================
@@ -46,7 +60,7 @@
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-app);
+  background-color: transparent;
 
   /* Modern Slim Scrollbar */
   scrollbar-width: thin;
@@ -84,6 +98,7 @@
   flex-direction: column;
   gap: var(--content-gap);
   flex: 1;
+  animation: view-enter 0.35s ease-out both;
 }
 
 /* Standardized Page Header across ALL pages */
@@ -101,7 +116,7 @@
     align-items: center;
     gap: 8px;
     font-size: 0.95rem;
-    font-weight: 800;
+    font-weight: 600;
     color: var(--text-primary);
   }
 
@@ -130,9 +145,10 @@
 .app-footer {
   flex-shrink: 0;
   width: 100%;
-  background-color: var(--bg-surface);
+  background-color: color-mix(in srgb, var(--bg-surface) 82%, transparent);
+  backdrop-filter: blur(14px);
   border-top: 1px solid var(--border-color);
-  padding: 8px var(--layout-px);
+  padding: 6px var(--layout-px);
   color: var(--text-secondary);
   font-size: 0.74rem;
   z-index: 1000;
@@ -141,7 +157,6 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.03);
 
   .app-footer-brand {
     display: flex;
@@ -155,8 +170,27 @@
       height: 7px;
       border-radius: 50%;
       background-color: #10B981;
-      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+      animation: brand-pulse 2.4s ease-in-out infinite;
     }
+
+    .app-footer-pill {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      color: var(--profit);
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 4px;
+      padding: 1px 6px;
+    }
+  }
+
+  .app-footer-clock {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-blue);
+    font-weight: 600;
   }
 
   .app-footer-meta {

@@ -139,7 +139,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
       return { bg: "rgba(168, 85, 247, 0.2)", text: "#C084FC", border: "rgba(168, 85, 247, 0.4)" };
     }
     if (n.includes("ADMIN")) {
-      return { bg: "rgba(59, 130, 246, 0.2)", text: "#60A5FA", border: "rgba(59, 130, 246, 0.4)" };
+      return { bg: "rgba(56, 189, 248, 0.2)", text: "#7DD3FC", border: "rgba(56, 189, 248, 0.4)" };
     }
     if (n.includes("MANAGER")) {
       return { bg: "rgba(6, 182, 212, 0.2)", text: "#22D3EE", border: "rgba(6, 182, 212, 0.4)" };
@@ -159,7 +159,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
           p: 2.5,
           mb: 2,
           backgroundColor: "#111A2E",
-          border: "1px solid rgba(59, 130, 246, 0.25)",
+          border: "1px solid rgba(56, 189, 248, 0.25)",
           borderRadius: "6px",
           display: "flex",
           flexWrap: "wrap",
@@ -173,7 +173,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
             sx={{
               p: 1,
               borderRadius: "6px",
-              backgroundColor: "rgba(59, 130, 246, 0.15)",
+              backgroundColor: "rgba(56, 189, 248, 0.15)",
               color: "#38BDF8",
               display: "flex",
             }}
@@ -181,7 +181,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
             <SecurityIcon />
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "#F8FAFC", fontSize: "1.05rem" }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "#F8FAFC", fontSize: "1.05rem" }}>
               Roles & Permissions Architecture
             </Typography>
             <Typography variant="caption" sx={{ color: "#94A3B8" }}>
@@ -199,7 +199,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
             disabled={loading}
             sx={{
               borderRadius: "6px",
-              borderColor: "rgba(59, 130, 246, 0.3)",
+              borderColor: "rgba(56, 189, 248, 0.3)",
               color: "#94A3B8",
               fontSize: "0.8rem",
             }}
@@ -213,7 +213,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
             onClick={() => setIsAddRoleOpen(true)}
             sx={{
               borderRadius: "6px",
-              backgroundColor: "#2563EB",
+              backgroundColor: "#0284C7",
               fontWeight: 600,
               fontSize: "0.8rem",
             }}
@@ -230,7 +230,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
         sx={{
           mb: 2,
           minHeight: 38,
-          "& .MuiTabs-indicator": { backgroundColor: "#3B82F6", height: 2 },
+          "& .MuiTabs-indicator": { backgroundColor: "#38BDF8", height: 2 },
         }}
       >
         <Tab
@@ -268,7 +268,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
         <Card
           sx={{
             backgroundColor: "#111A2E",
-            border: "1px solid rgba(59, 130, 246, 0.2)",
+            border: "1px solid rgba(56, 189, 248, 0.2)",
             borderRadius: "6px",
           }}
         >
@@ -277,19 +277,19 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
               <Table size="small">
                 <TableHead sx={{ backgroundColor: "rgba(10, 15, 28, 0.7)" }}>
                   <TableRow>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Role ID
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Role Name
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Description
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Assigned Permissions
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Assigned Users
                     </TableCell>
                   </TableRow>
@@ -298,7 +298,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
                   {loading ? (
                     <TableRow>
                       <TableCell colSpan={5} sx={{ textAlign: "center", py: 4 }}>
-                        <CircularProgress size={26} sx={{ color: "#3B82F6" }} />
+                        <CircularProgress size={26} sx={{ color: "#38BDF8" }} />
                       </TableCell>
                     </TableRow>
                   ) : roles.length === 0 ? (
@@ -329,7 +329,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
                                 backgroundColor: style.bg,
                                 color: style.text,
                                 border: `1px solid ${style.border}`,
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 fontSize: "0.72rem",
                                 borderRadius: "6px",
                               }}
@@ -352,9 +352,9 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
                                     size="small"
                                     sx={{
                                       fontSize: "0.68rem",
-                                      backgroundColor: "rgba(59, 130, 246, 0.1)",
+                                      backgroundColor: "rgba(56, 189, 248, 0.1)",
                                       color: "#38BDF8",
-                                      border: "1px solid rgba(59, 130, 246, 0.25)",
+                                      border: "1px solid rgba(56, 189, 248, 0.25)",
                                       borderRadius: "6px",
                                     }}
                                   />
@@ -391,7 +391,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
         <Card
           sx={{
             backgroundColor: "#111A2E",
-            border: "1px solid rgba(59, 130, 246, 0.2)",
+            border: "1px solid rgba(56, 189, 248, 0.2)",
             borderRadius: "6px",
           }}
         >
@@ -400,16 +400,16 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
               <Table size="small">
                 <TableHead sx={{ backgroundColor: "rgba(10, 15, 28, 0.7)" }}>
                   <TableRow>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Permission ID
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Permission Key
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Description
                     </TableCell>
-                    <TableCell sx={{ color: "#94A3B8", fontWeight: 700, fontSize: "0.78rem", py: 1.2 }}>
+                    <TableCell sx={{ color: "#94A3B8", fontWeight: 600, fontSize: "0.78rem", py: 1.2 }}>
                       Inherited By Roles
                     </TableCell>
                   </TableRow>
@@ -418,7 +418,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
                   {loading ? (
                     <TableRow>
                       <TableCell colSpan={4} sx={{ textAlign: "center", py: 4 }}>
-                        <CircularProgress size={26} sx={{ color: "#3B82F6" }} />
+                        <CircularProgress size={26} sx={{ color: "#38BDF8" }} />
                       </TableCell>
                     </TableRow>
                   ) : permissions.length === 0 ? (
@@ -503,7 +503,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
           paper: {
             sx: {
               backgroundColor: "#111A2E",
-              border: "1px solid rgba(59, 130, 246, 0.25)",
+              border: "1px solid rgba(56, 189, 248, 0.25)",
               borderRadius: "6px",
               p: 2,
             },
@@ -512,7 +512,7 @@ export default function RolesAndPermissionsView({ onShowToast }: RolesAndPermiss
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
           <SecurityIcon sx={{ color: "#38BDF8" }} />
-          <Box component="span" sx={{ fontWeight: 700, color: "#F8FAFC" }}>
+          <Box component="span" sx={{ fontWeight: 600, color: "#F8FAFC" }}>
             Add New Role to App DB
           </Box>
         </DialogTitle>

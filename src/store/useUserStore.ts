@@ -72,7 +72,7 @@ export const useUserStore = create<UserState>((set) => ({
   selectedUserIds: [],
   
   viewMode: "virtualized",
-  rowDensity: "standard",
+  rowDensity: "compact",
   virtualOverscan: 10,
   mockDataCount: 0,
   

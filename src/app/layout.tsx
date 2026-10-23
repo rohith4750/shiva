@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@/styles/main.scss";
+import { APP_FULL_NAME, APP_DESCRIPTION } from "@/lib/brand";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "App User Management & Auth Portal",
-  description: "Next.js App with Material UI, Prisma ORM App DB, User CRUD, Login, Forgot & Reset Password",
+  title: APP_FULL_NAME,
+  description: APP_DESCRIPTION,
 };
 
 import ThemeRegistry from "@/components/ThemeRegistry";

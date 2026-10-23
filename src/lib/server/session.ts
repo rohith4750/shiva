@@ -1,13 +1,14 @@
 import { randomBytes, createHash, randomUUID } from "crypto";
+import { STORAGE_PREFIX } from "@/lib/brand";
 import prisma from "@/lib/prisma";
 
 const SESSION_DAYS = 7;
 
 export const SESSION_COOKIE_NAME =
-  process.env.NODE_ENV === "production" ? "__Host-session" : "nexvanta_session";
+  process.env.NODE_ENV === "production" ? "__Host-session" : `${STORAGE_PREFIX}_session`;
 
 export const CSRF_COOKIE_NAME =
-  process.env.NODE_ENV === "production" ? "__Host-csrf" : "nexvanta_csrf";
+  process.env.NODE_ENV === "production" ? "__Host-csrf" : `${STORAGE_PREFIX}_csrf`;
 
 export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");

@@ -126,8 +126,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
     }
     if (n.includes("ADMIN")) {
       return isDark
-        ? { bg: "rgba(59, 130, 246, 0.2)", text: "#60A5FA", border: "rgba(59, 130, 246, 0.4)" }
-        : { bg: "#EFF6FF", text: "#1D4ED8", border: "#BFDBFE" };
+        ? { bg: "rgba(56, 189, 248, 0.2)", text: "#7DD3FC", border: "rgba(56, 189, 248, 0.4)" }
+        : { bg: "#F0F9FF", text: "#0369A1", border: "#BAE6FD" };
     }
     if (n.includes("MANAGER")) {
       return isDark
@@ -154,8 +154,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
         <Box className="app-stat-card">
           <Avatar
             sx={{
-              bgcolor: isDark ? "rgba(59, 130, 246, 0.2)" : "#DBEAFE",
-              color: isDark ? "#3B82F6" : "#2563EB",
+              bgcolor: isDark ? "rgba(56, 189, 248, 0.2)" : "#E0F2FE",
+              color: isDark ? "#38BDF8" : "#0284C7",
               width: 32,
               height: 32,
               borderRadius: "6px",
@@ -173,7 +173,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
           <Avatar
             sx={{
               bgcolor: isDark ? "rgba(6, 182, 212, 0.2)" : "#CFFAFE",
-              color: isDark ? "#06B6D4" : "#0891B2",
+              color: isDark ? "#22D3EE" : "#0891B2",
               width: 32,
               height: 32,
               borderRadius: "6px",
@@ -217,13 +217,13 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
             <SecurityIcon
               sx={{
                 color: (theme) =>
-                  theme.palette.mode === "dark" ? "#38BDF8" : "#2563EB",
+                  theme.palette.mode === "dark" ? "#38BDF8" : "#0284C7",
                 fontSize: 20,
               }}
             />
             <Typography
               variant="subtitle1"
-              sx={{ fontWeight: 800, color: "text.primary", fontSize: "0.95rem" }}
+              sx={{ fontWeight: 600, color: "text.primary", fontSize: "0.95rem" }}
             >
               Roles Management
             </Typography>
@@ -233,10 +233,10 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
               sx={{
                 height: 20,
                 fontSize: "0.7rem",
-                fontWeight: 700,
-                backgroundColor: isDark ? "rgba(59, 130, 246, 0.15)" : "#EFF6FF",
-                color: isDark ? "#60A5FA" : "#2563EB",
-                border: `1px solid ${isDark ? "rgba(59, 130, 246, 0.3)" : "#BFDBFE"}`,
+                fontWeight: 600,
+                backgroundColor: isDark ? "rgba(56, 189, 248, 0.15)" : "#F0F9FF",
+                color: isDark ? "#7DD3FC" : "#0284C7",
+                border: `1px solid ${isDark ? "rgba(56, 189, 248, 0.3)" : "#BAE6FD"}`,
                 borderRadius: "6px",
               }}
             />
@@ -252,7 +252,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
               sx={{
                 height: 30,
                 borderRadius: "6px",
-                borderColor: isDark ? "rgba(59, 130, 246, 0.3)" : "#CBD5E1",
+                borderColor: isDark ? "rgba(56, 189, 248, 0.3)" : "#CBD5E1",
                 color: isDark ? "#94A3B8" : "#475569",
                 fontSize: "0.78rem",
                 px: 1.2,
@@ -268,7 +268,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
               sx={{
                 height: 30,
                 borderRadius: "6px",
-                backgroundColor: "#2563EB",
+                backgroundColor: "#0284C7",
                 fontWeight: 600,
                 fontSize: "0.78rem",
                 px: 1.5,
@@ -282,19 +282,19 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
             <Table stickyHeader size="small" className="app-table">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 65 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 65 }}>
                     ROLE ID
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 180 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 180 }}>
                     ROLE NAME
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2 }}>
                     DESCRIPTION
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2 }}>
                     ASSIGNED PERMISSIONS
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 700, fontSize: "0.75rem", py: 1.2, width: 140 }}>
+                  <TableCell sx={{ fontWeight: 600, fontSize: "0.75rem", py: 1.2, width: 140 }}>
                     ASSIGNED USERS
                   </TableCell>
                 </TableRow>
@@ -303,7 +303,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} sx={{ textAlign: "center", py: 3 }}>
-                      <CircularProgress size={22} sx={{ color: "#3B82F6" }} />
+                      <CircularProgress size={22} sx={{ color: "#38BDF8" }} />
                     </TableCell>
                   </TableRow>
                 ) : roles.length === 0 ? (
@@ -334,7 +334,7 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                               backgroundColor: style.bg,
                               color: style.text,
                               border: `1px solid ${style.border}`,
-                              fontWeight: 700,
+                              fontWeight: 600,
                               fontSize: "0.72rem",
                               borderRadius: "6px",
                               height: 22,
@@ -360,9 +360,9 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
                                     height: 20,
                                     fontSize: "0.68rem",
                                     fontWeight: 600,
-                                    backgroundColor: isDark ? "rgba(59, 130, 246, 0.1)" : "#EFF6FF",
-                                    color: isDark ? "#38BDF8" : "#2563EB",
-                                    border: `1px solid ${isDark ? "rgba(59, 130, 246, 0.25)" : "#BFDBFE"}`,
+                                    backgroundColor: isDark ? "rgba(56, 189, 248, 0.1)" : "#F0F9FF",
+                                    color: isDark ? "#38BDF8" : "#0284C7",
+                                    border: `1px solid ${isDark ? "rgba(56, 189, 248, 0.25)" : "#BAE6FD"}`,
                                     borderRadius: "6px",
                                   }}
                                 />
@@ -413,8 +413,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
         slotProps={{
           paper: {
             sx: {
-              backgroundColor: isDark ? "#0E162B" : "#FFFFFF",
-              border: `1px solid ${isDark ? "rgba(59, 130, 246, 0.25)" : "#E2E8F0"}`,
+              backgroundColor: isDark ? "#0A1124" : "#FFFFFF",
+              border: `1px solid ${isDark ? "rgba(56, 189, 248, 0.25)" : "#E2E8F0"}`,
               borderRadius: "6px",
               p: 2,
             },
@@ -422,8 +422,8 @@ export default function RolesView({ onShowToast }: RolesViewProps) {
         }}
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.2, pb: 1, fontSize: "1rem" }}>
-          <SecurityIcon sx={{ color: isDark ? "#38BDF8" : "#2563EB" }} />
-          <Box component="span" sx={{ fontWeight: 700, color: "text.primary" }}>
+          <SecurityIcon sx={{ color: isDark ? "#38BDF8" : "#0284C7" }} />
+          <Box component="span" sx={{ fontWeight: 600, color: "text.primary" }}>
             Add New Role
           </Box>
         </DialogTitle>
