@@ -129,7 +129,7 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
     isLoading: isUsersLoading,
     isFetching,
     refetch: fetchUsers,
-  } = useUsersQuery();
+  } = useUsersQuery(Boolean(currentUser));
 
   const createUserMutation = useCreateUserMutation();
   const updateUserMutation = useUpdateUserMutation();

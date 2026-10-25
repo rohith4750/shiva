@@ -13,9 +13,11 @@ interface ApiResponse<T> {
 /**
  * Fetch all users with TanStack Query caching
  */
-export function useUsersQuery() {
+export function useUsersQuery(enabled = true) {
   return useQuery({
     queryKey: queryKeys.users.lists(),
+    // The API requires a session, so don't fetch on the login screen
+    enabled,
     queryFn: async (): Promise<User[]> => {
       const res = await fetch("/api/users");
       if (!res.ok) {

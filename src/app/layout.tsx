@@ -19,6 +19,7 @@ export const metadata: Metadata = {
   description: APP_DESCRIPTION,
 };
 
+import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import QueryProvider from "@/providers/QueryProvider";
 
@@ -30,9 +31,12 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dark" style={{ colorScheme: "dark" }} className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
-        <ThemeRegistry>
-          <QueryProvider>{children}</QueryProvider>
-        </ThemeRegistry>
+        {/* Collects MUI/Emotion styles during server rendering so they hydrate without a mismatch */}
+        <AppRouterCacheProvider>
+          <ThemeRegistry>
+            <QueryProvider>{children}</QueryProvider>
+          </ThemeRegistry>
+        </AppRouterCacheProvider>
       </body>
     </html>
   );
