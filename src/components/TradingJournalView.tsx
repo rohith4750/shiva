@@ -50,6 +50,7 @@ import {
   Visibility as ViewIcon,
 } from "@mui/icons-material";
 import { useColorMode } from "@/components/ThemeRegistry";
+import { STORAGE_PREFIX } from "@/lib/brand";
 import { TradeRecord } from "@/lib/tradingAnalytics";
 import AdvancedTradingDashboard from "./AdvancedTradingDashboard";
 import WaveAnalyticsView from "./WaveAnalyticsView";
@@ -150,6 +151,8 @@ const MARKET_BY_SYMBOL: Record<string, string> = {
   "S&P500": "US Indices",
 };
 
+const ACTIVE_ACCOUNT_KEY = `${STORAGE_PREFIX}_active_account`;
+
 const RATING_OPTIONS = [
   { value: 1, label: "Very low" },
   { value: 2, label: "Low" },
@@ -186,7 +189,19 @@ export default function TradingJournalView({
   const [activeTab, setActiveTab] = useState<number>(initialTab);
 
   // Selected Account Filter
-  const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
+  // Active account survives reloads; "" means nothing chosen yet (resolved once accounts load)
+  const [selectedAccountId, setSelectedAccountId] = useState<string>(() => {
+    try {
+      return localStorage.getItem(ACTIVE_ACCOUNT_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  useEffect(() => {
+    try {
+      if (selectedAccountId) localStorage.setItem(ACTIVE_ACCOUNT_KEY, selectedAccountId);
+    } catch {}
+  }, [selectedAccountId]);
 
   // Server Data
   const [loading, setLoading] = useState<boolean>(true);
@@ -222,6 +237,11 @@ export default function TradingJournalView({
         return;
       }
       if (data.success) {
+        const loaded: { id: string; is_archived?: boolean }[] = data.accounts || [];
+        const activeIds = loaded.filter((a) => !a.is_archived).map((a) => a.id);
+        const fallback = activeIds[0] ?? "all";
+        setSelectedAccountId((prev) => (prev === "all" || activeIds.includes(prev) ? prev : fallback));
+        setTradeForm((prev) => (prev.accountId && activeIds.includes(prev.accountId) ? prev : { ...prev, accountId: activeIds.includes(selectedAccountId) ? selectedAccountId : activeIds[0] ?? "" }));
         setAccounts(data.accounts || []);
         setStrategies(data.strategies || []);
         setTags(data.tags || []);
@@ -341,9 +361,14 @@ export default function TradingJournalView({
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          showToast("Account created successfully!", "success");
+          showToast("Account created and set as active", "success");
           setAccountDialogOpen(false);
-          fetchJournalData();
+          if (data.account?.id) {
+            setSelectedAccountId(data.account.id);
+            setTradeForm((prev) => ({ ...prev, accountId: data.account.id }));
+          } else {
+            fetchJournalData();
+          }
         } else {
           showToast(data.error || "Failed to create account", "error");
         }
@@ -364,18 +389,38 @@ export default function TradingJournalView({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        showToast("Account deleted successfully!", "success");
+        showToast(`${accountToDelete.name} is now inactive`, "success");
         setDeleteAccountDialogOpen(false);
         setAccountToDelete(null);
+        const next = activeAccounts.find((a) => a.id !== accountToDelete.id)?.id ?? "all";
         if (selectedAccountId === accountToDelete.id) {
-          setSelectedAccountId("all");
+          setSelectedAccountId(next);
+        } else {
+          fetchJournalData();
         }
-        fetchJournalData();
       } else {
-        showToast(data.error || "Failed to delete account", "error");
+        showToast(data.error || "Failed to deactivate account", "error");
       }
     } catch {
-      showToast("Server error deleting account", "error");
+      showToast("Server error deactivating account", "error");
+    } finally {
+      setAccountActionLoading(false);
+    }
+  };
+
+  const handleReactivateAccount = async (acc: any) => {
+    setAccountActionLoading(true);
+    try {
+      const res = await fetch(`/api/journal/accounts?id=${acc.id}`, { method: "PATCH" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`${acc.name} is active again`, "success");
+        fetchJournalData();
+      } else {
+        showToast(data.error || "Failed to reactivate account", "error");
+      }
+    } catch {
+      showToast("Server error reactivating account", "error");
     } finally {
       setAccountActionLoading(false);
     }
@@ -384,6 +429,8 @@ export default function TradingJournalView({
   // --- TRADE ENTRY FORM STATE ---
   const [tradeForm, setTradeForm] = useState(EMPTY_TRADE_FORM);
 
+  const activeAccounts = accounts.filter((a) => !a.is_archived);
+  const inactiveAccounts = accounts.filter((a) => a.is_archived);
   const currencyOfAccount = (accountId: string) => currencySymbol(accounts.find((a) => a.id === accountId)?.currency);
   const formCurrencySymbol = currencyOfAccount(tradeForm.accountId);
   const ACCOUNT_TYPE_COLOR: Record<string, string> = { live: tk.pos, funded: tk.indigo, backtest: tk.accent };
@@ -646,8 +693,8 @@ export default function TradingJournalView({
   };
 
   // --- OVERVIEW ANALYTICS COMPUTATION ---
-  const activeAccount = selectedAccountId === "all" ? null : accounts.find((a) => a.id === selectedAccountId) ?? null;
-  const scopeAccounts = activeAccount ? [activeAccount] : accounts;
+  const activeAccount = activeAccounts.find((a) => a.id === selectedAccountId) ?? null;
+  const scopeAccounts = activeAccount ? [activeAccount] : activeAccounts;
   const scopeCurrencies = Array.from(new Set(scopeAccounts.map((a) => String(a.currency || "USD").toUpperCase())));
   const mixedCurrencies = scopeCurrencies.length > 1;
   // Mixed currencies can't share one symbol, so amounts are shown unlabelled and flagged in the dashboard
@@ -735,7 +782,7 @@ export default function TradingJournalView({
     { label: "Calendar", icon: <CalendarIcon />, color: "#F59E0B" },
     { label: "Analytics", icon: <AnalyticsIcon />, color: "#22D3EE" },
     { label: "Psychology", icon: <PsychologyIcon />, color: "#A78BFA" },
-    { label: "Accounts", badge: accounts.length, icon: <AccountsIcon />, color: "#10B981" },
+    { label: "Accounts", badge: activeAccounts.length, icon: <AccountsIcon />, color: "#10B981" },
   ];
 
   return (
@@ -848,8 +895,8 @@ export default function TradingJournalView({
                   "& .MuiSelect-select": { py: 0.4, pl: 0, pr: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
                 }}
               >
-                <MenuItem value="all" sx={{ fontSize: "0.78rem" }}>All Accounts ({accounts.length})</MenuItem>
-                {accounts.map((acc) => (
+                <MenuItem value="all" sx={{ fontSize: "0.78rem" }}>All Accounts ({activeAccounts.length})</MenuItem>
+                {activeAccounts.map((acc) => (
                   <MenuItem key={acc.id} value={acc.id} sx={{ fontSize: "0.78rem" }}>
                     {acc.name} ({acc.currency})
                   </MenuItem>
@@ -1147,7 +1194,7 @@ export default function TradingJournalView({
                     <FormControl fullWidth size="small" required>
                       <InputLabel>Trading Account</InputLabel>
                       <Select value={tradeForm.accountId} label="Trading Account" onChange={(e) => updateTradeField("accountId", e.target.value)}>
-                        {accounts.map((a) => (
+                        {activeAccounts.map((a) => (
                           <MenuItem key={a.id} value={a.id}>
                             {a.name} ({a.account_type.toUpperCase()} - {a.currency})
                           </MenuItem>
@@ -1767,7 +1814,7 @@ export default function TradingJournalView({
         {/* ============================================================ */}
         {activeTab === 6 && (
           <Grid container spacing={1.5}>
-            {accounts.map((acc) => {
+            {activeAccounts.map((acc) => {
               const isActive = selectedAccountId === acc.id;
               const starting = Number(acc.starting_balance) || 0;
               const current = acc.current_balance != null ? Number(acc.current_balance) : starting;
@@ -1879,7 +1926,7 @@ export default function TradingJournalView({
                             <EditIcon sx={{ fontSize: 15 }} />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete account" arrow>
+                        <Tooltip title="Deactivate account" arrow>
                           <IconButton
                             size="small"
                             onClick={() => {
@@ -1928,6 +1975,43 @@ export default function TradingJournalView({
                 <Typography sx={{ fontSize: "0.68rem", color: tk.textMuted }}>Live, funded or backtest</Typography>
               </Box>
             </Grid>
+
+            {inactiveAccounts.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <Paper elevation={0} sx={{ ...cardSx(tk), height: "auto", p: 1.4 }}>
+                  <Typography sx={{ fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: tk.textMuted, mb: 0.8 }}>
+                    Inactive accounts ({inactiveAccounts.length})
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.6 }}>
+                    {inactiveAccounts.map((acc) => (
+                      <Box
+                        key={acc.id}
+                        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1, px: 1.2, py: 0.8, borderRadius: "6px", border: `1px solid ${tk.border}`, bgcolor: tk.tint }}
+                      >
+                        <Box sx={{ minWidth: 0, display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box component="span" sx={{ px: 0.7, py: 0.1, borderRadius: "4px", fontSize: "0.6rem", fontWeight: 700, color: tk.textMuted, border: `1px solid ${tk.border}` }}>
+                            INACTIVE
+                          </Box>
+                          <Typography noWrap sx={{ fontSize: "0.82rem", fontWeight: 600, color: tk.textSec }}>{acc.name}</Typography>
+                          <Typography noWrap sx={{ fontSize: "0.7rem", color: tk.textMuted, fontFamily: MONO }}>
+                            {acc.account_type?.toUpperCase()} · {acc.currency}
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          disabled={accountActionLoading}
+                          onClick={() => handleReactivateAccount(acc)}
+                          sx={{ fontSize: "0.72rem", height: 28, px: 1.4, textTransform: "none", fontWeight: 600, borderRadius: "6px", flexShrink: 0 }}
+                        >
+                          Reactivate
+                        </Button>
+                      </Box>
+                    ))}
+                  </Box>
+                </Paper>
+              </Grid>
+            )}
           </Grid>
         )}
 
@@ -2067,14 +2151,14 @@ export default function TradingJournalView({
       >
         <DialogTitle sx={{ fontWeight: 600, color: "#EF4444", display: "flex", alignItems: "center", gap: 1 }}>
           <WarningIcon sx={{ color: "#EF4444" }} />
-          Delete Account?
+          Deactivate Account?
         </DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" sx={{ mb: 1 }}>
-            Are you sure you want to delete <strong>{accountToDelete?.name}</strong>?
+            Deactivate <strong>{accountToDelete?.name}</strong>?
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary" }}>
-            This will permanently remove the account and its associated trades from the database.
+            It is hidden from the journal and its trades leave your totals, but nothing is erased. You can reactivate it any time from Inactive accounts.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ pt: 1.5 }}>
@@ -2092,7 +2176,7 @@ export default function TradingJournalView({
             disabled={accountActionLoading}
             sx={{ fontWeight: 600, borderRadius: "6px" }}
           >
-            {accountActionLoading ? "Deleting..." : "Delete Permanently"}
+            {accountActionLoading ? "Deactivating..." : "Deactivate"}
           </Button>
         </DialogActions>
       </Dialog>

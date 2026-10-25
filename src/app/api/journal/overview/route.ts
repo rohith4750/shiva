@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       SELECT id, name, account_type, currency, starting_balance::float, current_balance::float, description, is_archived
       FROM trading_accounts
       WHERE user_id = $1
-      ORDER BY created_at ASC
+      ORDER BY is_archived ASC, created_at ASC
     `,
       [userId]
     );
@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
         j.confidence_rating, j.discipline_rating, j.rule_adherence,
         j.mistake_flag, j.mistake_type, j.mistakes, j.lessons_learned
       FROM trades t
+      JOIN trading_accounts acc ON acc.id = t.account_id AND acc.is_archived = false
       LEFT JOIN strategies s ON t.strategy_id = s.id
       LEFT JOIN trade_journals j ON t.id = j.trade_id
       WHERE t.user_id = $1

@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
       LEFT JOIN trades t ON a.id = t.account_id
       WHERE a.user_id = $1
       GROUP BY a.id
-      ORDER BY a.created_at ASC
+      ORDER BY a.is_archived ASC, a.created_at ASC
     `, [userId]);
 
     return NextResponse.json({
@@ -192,16 +192,17 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check count of remaining accounts; prevent deleting the last account if desired, or allow with prompt
-    const countCheck = await tradePool.query("SELECT COUNT(*) FROM trading_accounts WHERE user_id = $1", [userId]);
+    const countCheck = await tradePool.query("SELECT COUNT(*) FROM trading_accounts WHERE user_id = $1 AND is_archived = false", [userId]);
     if (parseInt(countCheck.rows[0].count) <= 1) {
       return NextResponse.json(
-        { success: false, error: "Cannot delete the only remaining account. Please create another account first." },
+        { success: false, error: "Cannot deactivate your only active account. Create another account first." },
         { status: 400 }
       );
     }
 
     const deleteResult = await tradePool.query(
-      `DELETE FROM trading_accounts WHERE id = $1 AND user_id = $2 RETURNING id`,
+      `UPDATE trading_accounts SET is_archived = true, updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 AND is_archived = false RETURNING id`,
       [id, userId]
     );
 
@@ -214,12 +215,43 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "Account deleted successfully",
+      message: "Account deactivated",
     });
   } catch (error: any) {
     console.error("DELETE /api/journal/accounts error:", error);
     return NextResponse.json(
       { success: false, error: error.message || "Failed to delete account" },
+      { status: 500 }
+    );
+  }
+}
+
+// Reactivates an inactive (soft-deleted) account: PATCH /api/journal/accounts?id=<id>
+export async function PATCH(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
+  try {
+    const id = request.nextUrl.searchParams.get("id");
+    if (!id) {
+      return NextResponse.json({ success: false, error: "Account ID is required" }, { status: 400 });
+    }
+
+    const result = await tradePool.query(
+      `UPDATE trading_accounts SET is_archived = false, updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 RETURNING id`,
+      [id, userId]
+    );
+    if (result.rowCount === 0) {
+      return NextResponse.json({ success: false, error: "Account not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: "Account reactivated" });
+  } catch (error: any) {
+    console.error("PATCH /api/journal/accounts error:", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to reactivate account" },
       { status: 500 }
     );
   }

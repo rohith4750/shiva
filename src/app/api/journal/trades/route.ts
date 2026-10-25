@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const tradeId = `trd-${randomUUID().slice(0, 8)}`;
 
     // The account must belong to the signed-in user
-    const ownedAccount = await tradePool.query(`SELECT 1 FROM trading_accounts WHERE id = $1 AND user_id = $2`, [accountId, userId]);
+    const ownedAccount = await tradePool.query(`SELECT 1 FROM trading_accounts WHERE id = $1 AND user_id = $2 AND is_archived = false`, [accountId, userId]);
     if (ownedAccount.rowCount === 0) {
       return NextResponse.json({ success: false, error: "Trading account not found" }, { status: 404 });
     }
