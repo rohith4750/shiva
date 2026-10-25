@@ -43,12 +43,58 @@ export interface MonthRow {
   key: string; // YYYY-MM
   label: string;
   trades: number;
+  wins: number;
+  losses: number;
   winRate: number | null;
   net: number;
   profitFactor: number | null;
+  avgR: number | null;
+  best: number | null;
+  worst: number | null;
   returnPct: number; // net ÷ equity at start of month
   maxDdPct: number; // deepest drop from that month's running peak
   endEquity: number;
+  mistakes: number; // trades flagged with a mistake
+  topMistake: MistakeRow | null;
+}
+
+export interface MistakeRow {
+  type: string;
+  count: number;
+  net: number; // combined P&L of the trades with this mistake
+  share: number; // % of the reviewed trades
+}
+
+/**
+ * R:R in the journal's 1:x format: 1.8 → "1:1.80" (made 1.80 per 1 risked), −0.5 → "−1:0.50".
+ */
+export function formatRR(r: number | null | undefined): string {
+  if (r === null || r === undefined || !isFinite(Number(r))) return "—";
+  const v = Number(r);
+  return `${v < 0 ? "−" : ""}1:${Math.abs(v).toFixed(2)}`;
+}
+
+/**
+ * Mistake types ranked by how often they recur (then by cost), over the last `lastN`
+ * closed trades — the "review every 20–30 trades" routine. Pass no lastN for all trades.
+ */
+export function topMistakes(trades: TradeRecord[], lastN?: number): { rows: MistakeRow[]; reviewed: number } {
+  const closed = closedTrades(trades);
+  const window = lastN ? closed.slice(-lastN) : closed;
+  const groups = new Map<string, { count: number; net: number }>();
+  window
+    .filter((t) => t.mistake_flag)
+    .forEach((t) => {
+      const type = t.mistake_type?.trim() || "Mistake (unspecified)";
+      const g = groups.get(type) || { count: 0, net: 0 };
+      g.count += 1;
+      g.net += pnlOf(t);
+      groups.set(type, g);
+    });
+  const rows = Array.from(groups.entries())
+    .map(([type, g]) => ({ type, count: g.count, net: g.net, share: window.length ? (g.count / window.length) * 100 : 0 }))
+    .sort((a, b) => b.count - a.count || a.net - b.net);
+  return { rows, reviewed: window.length };
 }
 
 export interface RiskAudit {
@@ -207,16 +253,25 @@ export function monthly(trades: TradeRecord[], startingBalance: number): MonthRo
     if (!current) return;
     const s = summarize(current.key, current.list);
     const [y, m] = current.key.split("-").map(Number);
+    const pnls = current.list.map(pnlOf);
+    const mistakeRank = topMistakes(current.list);
     rows.push({
       key: current.key,
       label: new Date(y, m - 1, 1).toLocaleDateString([], { month: "short", year: "numeric" }),
       trades: s.trades,
+      wins: s.wins,
+      losses: s.losses,
       winRate: s.winRate,
       net: s.net,
       profitFactor: s.profitFactor,
+      avgR: s.avgR,
+      best: pnls.length ? Math.max(...pnls) : null,
+      worst: pnls.length ? Math.min(...pnls) : null,
       returnPct: current.startEq !== 0 ? (s.net / current.startEq) * 100 : 0,
       maxDdPct: current.maxDd,
       endEquity: equity,
+      mistakes: current.list.filter((t) => t.mistake_flag).length,
+      topMistake: mistakeRank.rows[0] ?? null,
     });
   };
 

@@ -3,7 +3,7 @@
 import React, { useMemo } from "react";
 import { Box, Typography, Paper, Grid, Tooltip } from "@mui/material";
 import { TradeRecord } from "@/lib/tradingAnalytics";
-import { closedTrades as getClosedTrades } from "@/lib/tradeBreakdown";
+import { closedTrades as getClosedTrades, formatRR, topMistakes } from "@/lib/tradeBreakdown";
 import TradingInsightsPanel, { MONO, Tokens, Formatters, makeTokens, makeFormatters, signColor, cardSx, CardTitle, Meter } from "./TradingInsightsPanel";
 
 interface AdvancedTradingDashboardProps {
@@ -238,6 +238,8 @@ export default function AdvancedTradingDashboard({
     () => groupRows(closed, (t) => (t.emotion_before?.trim() ? titleCase(t.emotion_before.trim()) : null)).sort((a, b) => b.count - a.count || b.net - a.net),
     [closed]
   );
+  // Guide routine: review the last 20–30 trades and fix the top 1–2 recurring mistakes
+  const mistakeReview = useMemo(() => topMistakes(closed, 30), [closed]);
   const untaggedEmotion = closed.length - emotions.reduce((a, r) => a + r.count, 0);
 
   const ledger = useMemo(() => {
@@ -283,11 +285,11 @@ export default function AdvancedTradingDashboard({
 
             <SectionLabel tk={tk}>Reward : risk</SectionLabel>
             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 0.8, mb: 1.4 }}>
-              <StatCell tk={tk} label="Planned R:R" value={fmtOpt(metrics.plannedRR, (v) => `1 : ${v.toFixed(2)}`)} />
+              <StatCell tk={tk} label="Planned R:R" value={fmtOpt(metrics.plannedRR, formatRR)} />
               <StatCell
                 tk={tk}
-                label="Actual R (avg)"
-                value={fmtOpt(metrics.actualR, (v) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}R`)}
+                label="Actual R:R (avg)"
+                value={fmtOpt(metrics.actualR, formatRR)}
                 color={metrics.actualR === null ? undefined : signColor(tk, metrics.actualR)}
                 hint={rrGap === null ? undefined : `${rrGap >= 0 ? "+" : ""}${rrGap.toFixed(2)}R vs plan`}
               />
@@ -370,7 +372,7 @@ export default function AdvancedTradingDashboard({
         </Grid>
 
         {/* Emotion vs result */}
-        <Grid size={{ xs: 12, md: 6, lg: 5 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
           <Paper elevation={0} sx={card}>
             <CardTitle
               tk={tk}
@@ -399,7 +401,53 @@ export default function AdvancedTradingDashboard({
         </Grid>
 
         {/* Trade ledger */}
-        <Grid size={{ xs: 12, lg: 7 }}>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Paper elevation={0} sx={card}>
+            <CardTitle
+              tk={tk}
+              title="Recurring Mistakes"
+              subtitle={`Last ${mistakeReview.reviewed} closed trade${mistakeReview.reviewed === 1 ? "" : "s"} · fix the top 1–2 first`}
+            />
+            {mistakeReview.rows.length === 0 ? (
+              <Typography sx={{ fontSize: "0.76rem", color: tk.textMuted }}>
+                {mistakeReview.reviewed ? "No mistakes flagged in your recent trades. Keep logging them honestly." : "No closed trades yet."}
+              </Typography>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.6 }}>
+                {mistakeReview.rows.slice(0, 5).map((m, i) => {
+                  const focus = i < 2;
+                  return (
+                    <Box
+                      key={m.type}
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "22px minmax(0, 1fr) auto",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 1,
+                        py: 0.8,
+                        borderRadius: "6px",
+                        border: `1px solid ${focus ? "rgba(248, 113, 113, 0.35)" : tk.border}`,
+                        bgcolor: focus ? "rgba(239, 68, 68, 0.06)" : tk.tint,
+                      }}
+                    >
+                      <Typography sx={{ fontFamily: MONO, fontSize: "0.72rem", fontWeight: 700, color: focus ? tk.neg : tk.textMuted }}>{i + 1}</Typography>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography noWrap sx={{ fontSize: "0.78rem", fontWeight: 600, color: tk.text }}>{m.type}</Typography>
+                        <Typography sx={{ fontSize: "0.64rem", color: tk.textMuted }}>
+                          {m.count}× · {m.share.toFixed(0)}% of trades{focus ? " · focus" : ""}
+                        </Typography>
+                      </Box>
+                      <Typography sx={{ fontFamily: MONO, fontSize: "0.76rem", fontWeight: 600, color: signColor(tk, m.net) }}>{f.fmtCompact(m.net, { sign: true })}</Typography>
+                    </Box>
+                  );
+                })}
+              </Box>
+            )}
+          </Paper>
+        </Grid>
+
+        <Grid size={{ xs: 12 }}>
           <Paper elevation={0} sx={{ ...card, p: 0, overflow: "hidden" }}>
             <Box sx={{ p: 1.6, pb: 0 }}>
               <CardTitle

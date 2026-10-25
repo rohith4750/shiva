@@ -17,7 +17,7 @@ import {
   TableSortLabel,
 } from "@mui/material";
 import { TradeRecord } from "@/lib/tradingAnalytics";
-import { breakdown, monthly, riskAudit, summarize, closedTrades, DIMENSIONS, Dimension, BreakdownRow } from "@/lib/tradeBreakdown";
+import { breakdown, monthly, riskAudit, summarize, closedTrades, formatRR, DIMENSIONS, Dimension, BreakdownRow } from "@/lib/tradeBreakdown";
 import { computeWaveAnalytics } from "@/lib/waveAnalytics";
 import { MONO, Tokens, makeTokens, makeFormatters, signColor, cardSx, CardTitle } from "./TradingInsightsPanel";
 
@@ -123,7 +123,7 @@ export default function AnalyticsView({ trades, currencySymbol = "$", startingBa
     { k: "Profit factor", v: fmtNum(total.profitFactor), c: tk.text },
     { k: "Expectancy", v: f.fmt(total.expectancy, { sign: true }), c: signColor(tk, total.expectancy) },
     { k: "Payoff ratio", v: fmtNum(total.payoff), c: tk.text },
-    { k: "Avg R", v: total.avgR === null ? "—" : `${total.avgR >= 0 ? "+" : ""}${total.avgR.toFixed(2)}R`, c: total.avgR === null ? tk.text : signColor(tk, total.avgR) },
+    { k: "Avg R:R", v: formatRR(total.avgR), c: total.avgR === null ? tk.text : signColor(tk, total.avgR) },
     { k: "Max drawdown", v: edge.maxDdAbs > 0 ? `−${edge.maxDdPct.toFixed(2)}%` : "0%", c: edge.maxDdAbs > 0 ? tk.neg : tk.text },
   ];
 
@@ -229,7 +229,7 @@ export default function AnalyticsView({ trades, currencySymbol = "$", startingBa
                   {head("expectancy", "Exp. / trade")}
                   {head("profitFactor", "PF")}
                   {head("payoff", "Payoff")}
-                  {head("avgR", "Avg R")}
+                  {head("avgR", "Avg R:R")}
                   {head("best", "Best")}
                   {head("worst", "Worst")}
                 </TableRow>
@@ -251,7 +251,7 @@ export default function AnalyticsView({ trades, currencySymbol = "$", startingBa
                     <TableCell align="right" sx={{ ...numCell, color: signColor(tk, r.expectancy) }}>{f.fmt(r.expectancy, { sign: true })}</TableCell>
                     <TableCell align="right" sx={numCell}>{fmtNum(r.profitFactor)}</TableCell>
                     <TableCell align="right" sx={numCell}>{fmtNum(r.payoff)}</TableCell>
-                    <TableCell align="right" sx={numCell}>{r.avgR === null ? "—" : `${r.avgR >= 0 ? "+" : ""}${r.avgR.toFixed(2)}`}</TableCell>
+                    <TableCell align="right" sx={numCell}>{formatRR(r.avgR)}</TableCell>
                     <TableCell align="right" sx={{ ...numCell, color: tk.pos }}>{f.fmtCompact(r.best, { sign: true })}</TableCell>
                     <TableCell align="right" sx={{ ...numCell, color: r.worst < 0 ? tk.neg : tk.textMuted }}>{f.fmtCompact(r.worst, { sign: true })}</TableCell>
                   </TableRow>
@@ -264,7 +264,7 @@ export default function AnalyticsView({ trades, currencySymbol = "$", startingBa
                   <TableCell align="right" sx={{ ...numCell, color: signColor(tk, total.expectancy) }}>{f.fmt(total.expectancy, { sign: true })}</TableCell>
                   <TableCell align="right" sx={numCell}>{fmtNum(total.profitFactor)}</TableCell>
                   <TableCell align="right" sx={numCell}>{fmtNum(total.payoff)}</TableCell>
-                  <TableCell align="right" sx={numCell}>{total.avgR === null ? "—" : `${total.avgR >= 0 ? "+" : ""}${total.avgR.toFixed(2)}`}</TableCell>
+                  <TableCell align="right" sx={numCell}>{formatRR(total.avgR)}</TableCell>
                   <TableCell align="right" sx={{ ...numCell, color: tk.pos }}>{f.fmtCompact(total.best, { sign: true })}</TableCell>
                   <TableCell align="right" sx={{ ...numCell, color: total.worst < 0 ? tk.neg : tk.textMuted }}>{f.fmtCompact(total.worst, { sign: true })}</TableCell>
                 </TableRow>

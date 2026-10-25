@@ -35,6 +35,7 @@ import {
   AddCircle as AddTradeIcon,
   History as HistoryIcon,
   CalendarMonth as CalendarIcon,
+  EventNote as MonthlyIcon,
   QueryStats as AnalyticsIcon,
   Psychology as PsychologyIcon,
   AccountBalanceWallet as AccountsIcon,
@@ -57,6 +58,8 @@ import WaveAnalyticsView from "./WaveAnalyticsView";
 import AnalyticsView from "./AnalyticsView";
 import { MONO, makeTokens, signColor, cardSx } from "./TradingInsightsPanel";
 import TradingCalendarView from "./TradingCalendarView";
+import MonthlyReviewView from "./MonthlyReviewView";
+import { formatRR } from "@/lib/tradeBreakdown";
 
 export const TRADING_SYMBOLS = [
   "XAUUSD",
@@ -198,7 +201,7 @@ export default function TradingJournalView({
   const isDark = mode === "dark";
   const tk = useMemo(() => makeTokens(isDark), [isDark]);
 
-  // Navigation State: 0 = Overview, 1 = Add Trade, 2 = History, 3 = Calendar, 4 = Analytics, 5 = Journal, 6 = Accounts
+  // Navigation State: 0 = Overview, 1 = Add Trade, 2 = History, 3 = Calendar, 4 = Analytics, 5 = Journal, 6 = Accounts, 7 = Monthly Review
   const [activeTab, setActiveTab] = useState<number>(initialTab);
 
   // Selected Account Filter
@@ -480,8 +483,6 @@ export default function TradingJournalView({
       const sl = parseFloat(field === "stopLoss" ? val : next.stopLoss);
       const tp = parseFloat(field === "takeProfit" ? val : next.takeProfit);
       const exit = parseFloat(field === "exitPrice" ? val : next.exitPrice);
-      const lots = parseFloat(field === "volume" ? val : next.volume) || 1;
-      const dir = field === "direction" ? val : next.direction;
 
       // 15. SL Points
       let slPts = next.slPoints;
@@ -504,46 +505,21 @@ export default function TradingJournalView({
         next.plannedRR = `1 : ${(numTp / numSl).toFixed(2)}`;
       }
 
-      // 14. Risk (auto calculate: SL Points * Lots if not manually overriding)
-      if (!isNaN(numSl) && !isNaN(lots) && field !== "plannedRiskAmount") {
-        next.plannedRiskAmount = (numSl * lots).toFixed(0);
-      }
+      // Risk and P&L are typed in by the trader (prices × lots can't know contract size).
+      // Actual R = P&L ÷ Risk, shown in the same 1:x format as Planned R:R.
+      const pnl = parseFloat(next.netPnl);
+      const risk = parseFloat(next.plannedRiskAmount);
+      next.actualRR = !isNaN(pnl) && !isNaN(risk) && risk > 0 ? formatRR(pnl / risk) : "-";
 
-      // 18. P&L & 19. Actual R:R & 20. Result
-      if (!isNaN(entry) && !isNaN(exit) && field !== "netPnl") {
-        const mult = dir === "BUY" ? 1 : -1;
-        const calcPnl = (exit - entry) * mult * lots;
-        next.netPnl = calcPnl.toFixed(0);
-
-        const riskNum = parseFloat(next.plannedRiskAmount);
-        if (!isNaN(riskNum) && riskNum > 0) {
-          const rScore = (calcPnl / riskNum).toFixed(2);
-          next.actualRR = (calcPnl >= 0 ? "+" : "") + `${rScore}R`;
-        } else {
-          next.actualRR = "-";
-        }
-
-        if (calcPnl > 0) next.result = "WIN";
-        else if (calcPnl < 0) next.result = "LOSS";
-        else next.result = "BREAK_EVEN";
-
-        next.status = "CLOSED";
-      } else if (field === "netPnl") {
-        const customPnl = parseFloat(val);
-        const riskNum = parseFloat(next.plannedRiskAmount);
-        if (!isNaN(customPnl) && !isNaN(riskNum) && riskNum > 0) {
-          const rScore = (customPnl / riskNum).toFixed(2);
-          next.actualRR = (customPnl >= 0 ? "+" : "") + `${rScore}R`;
-        }
-        if (!isNaN(customPnl)) {
-          next.result = customPnl > 0 ? "WIN" : customPnl < 0 ? "LOSS" : "BREAK_EVEN";
+      // Result follows the P&L once there is one; a trade without an exit stays OPEN
+      if (field === "netPnl" || field === "exitPrice") {
+        if (isNaN(exit)) {
+          next.result = "OPEN";
+          next.status = "OPEN";
+        } else if (!isNaN(pnl)) {
+          next.result = pnl > 0 ? "WIN" : pnl < 0 ? "LOSS" : "BREAK_EVEN";
           next.status = "CLOSED";
         }
-      } else if (isNaN(exit)) {
-        next.result = "OPEN";
-        next.actualRR = "-";
-        next.netPnl = "";
-        next.status = "OPEN";
       }
 
       // Mistake Sync: any type other than "None" marks the trade as a mistake
@@ -565,6 +541,10 @@ export default function TradingJournalView({
     }
     if (!tradeForm.symbol || !tradeForm.entryPrice) {
       showToast("Symbol and Entry Price are required", "error");
+      return;
+    }
+    if (tradeForm.exitPrice && tradeForm.netPnl === "") {
+      showToast("Enter the trade's P&L to close it (or clear the Exit Price to log it as open)", "error");
       return;
     }
 
@@ -807,19 +787,22 @@ export default function TradingJournalView({
   }, []);
 
   // Single source of truth for every journal tab: nav label, icon and page header
+  // `value` is the tab's stable id (activeTab); array order is the display order
   const journalTabs: {
+    value: number;
     label: string;
     badge?: string | number;
     icon: React.ReactElement;
     color: string;
   }[] = [
-    { label: "Dashboard", icon: <DashboardIcon />, color: "#38BDF8" },
-    { label: "Add Trade", icon: <AddTradeIcon />, color: "#10B981" },
-    { label: "History", badge: trades.length, icon: <HistoryIcon />, color: "#818CF8" },
-    { label: "Calendar", icon: <CalendarIcon />, color: "#F59E0B" },
-    { label: "Analytics", icon: <AnalyticsIcon />, color: "#22D3EE" },
-    { label: "Psychology", icon: <PsychologyIcon />, color: "#A78BFA" },
-    { label: "Accounts", badge: activeAccounts.length, icon: <AccountsIcon />, color: "#10B981" },
+    { value: 0, label: "Dashboard", icon: <DashboardIcon />, color: "#38BDF8" },
+    { value: 1, label: "Add Trade", icon: <AddTradeIcon />, color: "#10B981" },
+    { value: 2, label: "History", badge: trades.length, icon: <HistoryIcon />, color: "#818CF8" },
+    { value: 3, label: "Calendar", icon: <CalendarIcon />, color: "#F59E0B" },
+    { value: 7, label: "Monthly", icon: <MonthlyIcon />, color: "#F472B6" },
+    { value: 4, label: "Analytics", icon: <AnalyticsIcon />, color: "#22D3EE" },
+    { value: 5, label: "Psychology", icon: <PsychologyIcon />, color: "#A78BFA" },
+    { value: 6, label: "Accounts", badge: activeAccounts.length, icon: <AccountsIcon />, color: "#10B981" },
   ];
 
   return (
@@ -891,14 +874,15 @@ export default function TradingJournalView({
               },
             }}
           >
-            {journalTabs.map((t, i) => (
+            {journalTabs.map((t) => (
               <Tab
                 key={t.label}
+                value={t.value}
                 iconPosition="start"
                 icon={React.cloneElement(t.icon as React.ReactElement<{ sx?: object }>, {
                   sx: {
                     fontSize: 17,
-                    color: activeTab === i ? (isDark ? "#38BDF8" : "#0284C7") : undefined,
+                    color: activeTab === t.value ? (isDark ? "#38BDF8" : "#0284C7") : undefined,
                   },
                 })}
                 label={
@@ -1001,7 +985,7 @@ export default function TradingJournalView({
       >
         {loading && <LinearProgress sx={{ mb: 1, borderRadius: 1 }} />}
 
-        {mixedCurrencies && [0, 3, 4].includes(activeTab) && (
+        {mixedCurrencies && [0, 3, 4, 7].includes(activeTab) && (
           <Alert severity="info" sx={{ mb: 1.5, py: 0.2, fontSize: "0.76rem", alignItems: "center" }}>
             All Accounts mixes {scopeCurrencies.join(" and ")} accounts, so totals add amounts in different currencies. Pick a single account for exact figures.
           </Alert>
@@ -1399,7 +1383,7 @@ export default function TradingJournalView({
                     />
                   </Grid>
                   <Grid size={FIELD}>
-                    <TextField fullWidth size="small" label="Actual R (Auto)" value={tradeForm.actualRR} onChange={(e) => updateTradeField("actualRR", e.target.value)} sx={autoFieldSx} />
+                    <TextField fullWidth size="small" label="Actual R:R (Auto)" value={tradeForm.actualRR} onChange={(e) => updateTradeField("actualRR", e.target.value)} sx={autoFieldSx} />
                   </Grid>
                   <Grid size={FIELD}>
                     <FormControl fullWidth size="small">
@@ -1684,7 +1668,7 @@ export default function TradingJournalView({
                     <th className="num">SL / TP pts</th>
                     <th className="num">Risk</th>
                     <th className="num">P&L</th>
-                    <th className="num">R</th>
+                    <th className="num">Actual R:R</th>
                     <th>Result</th>
                     <th>Mistake</th>
                     <th />
@@ -1738,7 +1722,7 @@ export default function TradingJournalView({
                             {closed ? `${Number(t.net_pnl) >= 0 ? "+" : "−"}${cur}${Math.abs(Number(t.net_pnl)).toLocaleString()}` : "–"}
                           </td>
                           <td className="num" style={{ color: t.actual_r != null ? signColor(tk, Number(t.actual_r)) : tk.textMuted }}>
-                            {t.actual_r != null ? `${Number(t.actual_r) > 0 ? "+" : ""}${t.actual_r}R` : "–"}
+                            {t.actual_r != null ? formatRR(Number(t.actual_r)) : "–"}
                           </td>
                           <td>
                             <Box component="span" className="pill" sx={{ color: resultColor, border: `1px solid ${resultColor}` }}>
@@ -1796,6 +1780,13 @@ export default function TradingJournalView({
             isDark={isDark}
             onSelectTrade={(trade) => setSelectedTrade(trade)}
           />
+        )}
+
+        {/* ============================================================ */}
+        {/* TAB 7: MONTHLY REVIEW                                         */}
+        {/* ============================================================ */}
+        {activeTab === 7 && (
+          <MonthlyReviewView trades={accountTrades} currencySymbol={activeCurrencySymbol} startingBalance={activeStartingBalance} isDark={isDark} />
         )}
 
         {/* ============================================================ */}
@@ -2428,7 +2419,7 @@ export default function TradingJournalView({
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Actual R:R:</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#8B5CF6" }}>{selectedTrade.actual_r ? `${selectedTrade.actual_r}R` : "-"}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#8B5CF6" }}>{selectedTrade.actual_r != null ? formatRR(Number(selectedTrade.actual_r)) : "—"}</Typography>
                   </Grid>
                   <Grid size={{ xs: 6, sm: 1.6 }}>
                     <Typography variant="caption" sx={{ color: "text.secondary" }}>Result:</Typography>
