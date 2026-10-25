@@ -26,6 +26,13 @@ export interface AuthSession {
   permissions?: string[];
 }
 
+/** Result of the server-side session check made before the app renders. */
+export type ServerAuth =
+  | { status: "authenticated"; user: AuthSession }
+  | { status: "anonymous" }
+  // The session store didn't answer in time; the client re-checks before showing anything private
+  | { status: "unknown" };
+
 export interface Permission {
   id: number;
   name: string;
