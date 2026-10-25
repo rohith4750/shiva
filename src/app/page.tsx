@@ -81,6 +81,33 @@ const TAB_TO_HASH: Record<number, string> = {
 const DEFAULT_TAB = 6;
 const VALID_TABS = [1, 2, 3, 6];
 
+// Last signed-in user, cached so a refresh renders the app immediately while the session is
+// re-verified in the background. Only display data is stored; every API still checks the session cookie.
+const USER_CACHE_KEY = `${STORAGE_PREFIX}_user`;
+
+const readCachedUser = (): AuthSession | null => {
+  try {
+    const raw = localStorage.getItem(USER_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as AuthSession) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedUser = (user: AuthSession | null) => {
+  try {
+    if (user) localStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+    else localStorage.removeItem(USER_CACHE_KEY);
+  } catch {}
+};
+
+// A slow or hung request must never hold the UI hostage
+const fetchWithTimeout = (url: string, ms = 8000, init?: RequestInit) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
 const getInitialTab = (): number => {
   if (typeof window === "undefined") return DEFAULT_TAB;
   try {
@@ -194,42 +221,44 @@ export default function Home() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  // Initialize CSRF token and verify existing session cookie
+  // Render immediately from the cached user (or the login form), then verify the session in the background
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const csrfRes = await fetch("/api/auth/csrf");
-        const csrfData = await csrfRes.json();
-        if (csrfData.csrfToken) {
-          setCsrfToken(csrfData.csrfToken);
-        }
-      } catch {
-        // CSRF init silent
-      }
-
-      try {
-        const meRes = await fetch("/api/auth/me");
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          if (meData.authenticated && meData.user) {
-            setCurrentUser(meData.user);
-            // Stay on the user's active tab rather than forcing them to the landing page
-            const currentTab = getInitialTab();
-            setLandingTab(currentTab);
-            if (typeof window !== "undefined") {
-              const hash = TAB_TO_HASH[currentTab] || "overview";
-              window.history.replaceState(null, "", `#${hash}`);
-            }
-          }
-        }
-      } catch {
-        // No active session
-      } finally {
-        setAuthChecking(false);
-      }
+    const cached = readCachedUser();
+    const enterApp = (user: AuthSession) => {
+      setCurrentUser(user);
+      // Stay on the user's active tab rather than forcing them to the landing page
+      const currentTab = getInitialTab();
+      setLandingTab(currentTab);
+      window.history.replaceState(null, "", `#${TAB_TO_HASH[currentTab] || "overview"}`);
     };
 
-    initAuth();
+    if (cached) enterApp(cached);
+    setAuthChecking(false);
+
+    fetchWithTimeout("/api/auth/csrf")
+      .then((res) => res.json())
+      .then((data) => data.csrfToken && setCsrfToken(data.csrfToken))
+      .catch(() => {});
+
+    fetchWithTimeout("/api/auth/me")
+      .then(async (res) => {
+        if (res.status === 401) {
+          // Session is gone: drop the cached user and show the login form
+          writeCachedUser(null);
+          setCurrentUser(null);
+          return;
+        }
+        if (!res.ok) return; // transient server error: keep the cached view, APIs still enforce auth
+        const data = await res.json();
+        if (data.authenticated && data.user) {
+          writeCachedUser(data.user);
+          if (cached) setCurrentUser(data.user);
+          else enterApp(data.user);
+        }
+      })
+      .catch(() => {
+        // Timeout or offline: keep whatever is on screen
+      });
   }, []);
 
   // --- 1. LOGIN SUBMIT ---
@@ -248,6 +277,7 @@ export default function Home() {
       const data = await res.json();
 
       if (res.ok && data.success) {
+        writeCachedUser(data.user);
         setCurrentUser(data.user);
         showToast(`Welcome, ${data.user.name}! Navigating to Customer Portal.`, "success");
         const targetTab = getInitialTab();
@@ -279,6 +309,7 @@ export default function Home() {
     } catch {
       // Ignored
     } finally {
+      writeCachedUser(null);
       setCurrentUser(null);
       setAuthMode("login");
       if (typeof window !== "undefined") {
