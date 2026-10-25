@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useSyncExternalStore } from "react";
 import { Box, Typography, Tooltip, IconButton, Drawer } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -39,6 +39,24 @@ function isSessionOpen(now: Date, open: number, close: number) {
 }
 
 const COLLAPSE_KEY = `${STORAGE_PREFIX}_sidebar_collapsed`;
+const COLLAPSE_EVENT = `${STORAGE_PREFIX}:sidebar-collapse`;
+
+// Sidebar collapse preference, read from localStorage as an external store
+const subscribeCollapse = (onChange: () => void) => {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(COLLAPSE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(COLLAPSE_EVENT, onChange);
+  };
+};
+const readCollapse = () => {
+  try {
+    return localStorage.getItem(COLLAPSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
 
 export default function AppLayout({
   children,
@@ -53,13 +71,8 @@ export default function AppLayout({
   const isDark = mode === "dark";
   const [now, setNow] = useState<Date | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState<boolean>(() => {
-    try {
-      return typeof window !== "undefined" && localStorage.getItem(COLLAPSE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  });
+  // Server renders expanded; the stored preference applies right after hydration (no mismatch)
+  const collapsed = useSyncExternalStore(subscribeCollapse, readCollapse, () => false);
 
   // Terminal-style live clock (status bar + market sessions)
   useEffect(() => {
@@ -70,14 +83,12 @@ export default function AppLayout({
   }, []);
 
   const toggleCollapsed = () => {
-    setCollapsed((prev) => {
-      try {
-        localStorage.setItem(COLLAPSE_KEY, prev ? "0" : "1");
-      } catch {
-        /* storage unavailable: keep in-memory state */
-      }
-      return !prev;
-    });
+    try {
+      localStorage.setItem(COLLAPSE_KEY, collapsed ? "0" : "1");
+    } catch {
+      /* storage unavailable: preference can't be kept */
+    }
+    window.dispatchEvent(new Event(COLLAPSE_EVENT));
   };
 
   if (!currentUser) {

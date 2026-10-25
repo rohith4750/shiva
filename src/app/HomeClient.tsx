@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Container,
@@ -54,32 +54,7 @@ import {
 } from "@/hooks/useUsers";
 import { useUserStore } from "@/store/useUserStore";
 import TradingJournalView from "@/components/TradingJournalView";
-
-// Mapping between tab indices and clean URL hash slugs
-const TAB_MAP: Record<string, number> = {
-  overview: 6,
-  users: 1,
-  roles: 2,
-  permissions: 3,
-  services: 4,
-  analytics: 5,
-  journal: 6,
-  trading: 6,
-};
-
-const TAB_TO_HASH: Record<number, string> = {
-  0: "overview",
-  1: "users",
-  2: "roles",
-  3: "permissions",
-  4: "services",
-  5: "analytics",
-  6: "journal",
-};
-
-// Landing page after sign-in (the old Home overview, tab 0, was removed)
-const DEFAULT_TAB = 6;
-const VALID_TABS = [1, 2, 3, 6];
+import { AppRoute, parsePathname, routePath, routeFromLegacyHash } from "@/lib/routes";
 
 // A slow or hung request must never hold the UI hostage
 const fetchWithTimeout = (url: string, ms = 8000, init?: RequestInit) => {
@@ -88,27 +63,7 @@ const fetchWithTimeout = (url: string, ms = 8000, init?: RequestInit) => {
   return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
 };
 
-const getInitialTab = (): number => {
-  if (typeof window === "undefined") return DEFAULT_TAB;
-  try {
-    const hash = window.location.hash.replace("#", "").toLowerCase();
-    if (hash && TAB_MAP[hash] !== undefined) {
-      return TAB_MAP[hash];
-    }
-    const saved = localStorage.getItem(`${STORAGE_PREFIX}_active_tab`);
-    if (saved !== null) {
-      const parsed = parseInt(saved, 10);
-      if (VALID_TABS.includes(parsed)) {
-        return parsed;
-      }
-    }
-  } catch {
-    // Safe fallback
-  }
-  return DEFAULT_TAB;
-};
-
-export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth }) {
+export default function HomeClient({ initialAuth, initialRoute }: { initialAuth: ServerAuth; initialRoute: AppRoute }) {
   const { mode } = useColorMode();
   // The session is verified on the server before this renders; nothing private shows without it
   const [currentUser, setCurrentUser] = useState<AuthSession | null>(initialAuth.status === "authenticated" ? initialAuth.user : null);
@@ -120,8 +75,13 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
   const [authMode, setAuthMode] = useState<"login" | "forgot" | "reset">("login");
   const [sharedEmail, setSharedEmail] = useState("");
 
-  // Active view tab state (persisted across page refresh via localStorage & URL hash)
-  const [landingTab, setLandingTab] = useState<number>(DEFAULT_TAB);
+  // Current section + journal tab; mirrored in the URL path (/journal/history, /users, …)
+  const [route, setRoute] = useState<AppRoute>(initialRoute);
+  const routeRef = useRef(route);
+  useEffect(() => {
+    routeRef.current = route;
+  }, [route]);
+  const landingTab = route.section;
 
   // --- TanStack Query: Caching, Invalidation, Optimistic Updates ---
   const {
@@ -169,37 +129,26 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
     setSnackbar({ open: true, message, severity });
   };
 
-  // Tab change handler that keeps state, localStorage, and URL hash synchronized
-  const handleTabChange = useCallback((newTab: number) => {
-    setLandingTab(newTab);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(`${STORAGE_PREFIX}_active_tab`, String(newTab));
-        const hash = TAB_TO_HASH[newTab] || "overview";
-        window.history.replaceState(null, "", `#${hash}`);
-      } catch {
-        // Safe fallback
-      }
+  // Moves to a route and records it in the address bar (push = new history entry for back/forward)
+  const navigate = useCallback((next: AppRoute, mode: "push" | "replace" = "push") => {
+    setRoute(next);
+    const path = routePath(next);
+    if (window.location.pathname !== path || window.location.hash) {
+      window.history[mode === "push" ? "pushState" : "replaceState"](null, "", path);
     }
   }, []);
 
-  // Synchronize initial tab from URL hash / localStorage and listen for browser back/forward
+  const handleTabChange = useCallback((section: number) => navigate({ section, journalTab: routeRef.current.journalTab }), [navigate]);
+  const handleJournalTabChange = useCallback((journalTab: number) => navigate({ section: 6, journalTab }), [navigate]);
+
+  // Browser back/forward
   useEffect(() => {
-    const initTab = getInitialTab();
-    setLandingTab(initTab);
-
-    const onHashChange = () => {
-      const hash = window.location.hash.replace("#", "").toLowerCase();
-      if (hash && TAB_MAP[hash] !== undefined) {
-        setLandingTab(TAB_MAP[hash]);
-        try {
-          localStorage.setItem(`${STORAGE_PREFIX}_active_tab`, String(TAB_MAP[hash]));
-        } catch {}
-      }
+    const onPopState = () => {
+      const next = parsePathname(window.location.pathname);
+      if (next) setRoute(next);
     };
-
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, []);
 
   // CSRF token, landing tab, and a client-side session check only when the server result was inconclusive
@@ -211,10 +160,9 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
 
     const enterApp = (user: AuthSession) => {
       setCurrentUser(user);
-      // Stay on the user's active tab rather than forcing them to the landing page
-      const currentTab = getInitialTab();
-      setLandingTab(currentTab);
-      window.history.replaceState(null, "", `#${TAB_TO_HASH[currentTab] || "overview"}`);
+      // Old #journal / #users links become paths; "/" settles on the canonical path of the current view
+      const legacy = routeFromLegacyHash(window.location.hash);
+      navigate(legacy ?? routeRef.current, "replace");
     };
 
     fetchWithTimeout("/api/auth/csrf")
@@ -235,7 +183,7 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
         .catch(() => {})
         .finally(() => setAuthChecking(false));
     }
-  }, [initialAuth]);
+  }, [initialAuth, navigate]);
 
   // --- 1. LOGIN SUBMIT ---
   const handleLoginSubmit = async (values: Record<string, any>) => {
@@ -255,14 +203,8 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
       if (res.ok && data.success) {
         setCurrentUser(data.user);
         showToast(`Welcome, ${data.user.name}! Navigating to Customer Portal.`, "success");
-        const targetTab = getInitialTab();
-        setLandingTab(targetTab);
-        if (typeof window !== "undefined") {
-          try {
-            localStorage.setItem(`${STORAGE_PREFIX}_active_tab`, String(targetTab));
-            window.history.replaceState(null, "", `#${TAB_TO_HASH[targetTab] || "overview"}`);
-          } catch {}
-        }
+        // Stay on the path the user signed in from (e.g. a shared /journal/history link)
+        navigate(routeFromLegacyHash(window.location.hash) ?? routeRef.current, "replace");
         fetchUsers();
       } else {
         showToast(data.error || "Invalid email or password", "error");
@@ -286,12 +228,7 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
     } finally {
       setCurrentUser(null);
       setAuthMode("login");
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.removeItem(`${STORAGE_PREFIX}_active_tab`);
-          window.history.replaceState(null, "", window.location.pathname);
-        } catch {}
-      }
+      window.history.replaceState(null, "", "/");
       showToast("Signed out successfully. Server session revoked.", "info");
     }
   };
@@ -1181,7 +1118,7 @@ export default function HomeClient({ initialAuth }: { initialAuth: ServerAuth })
           {/* TAB 6: MANUAL TRADING JOURNAL PLATFORM */}
           {landingTab === 6 && (
             <Box sx={{ width: "100%", mt: -1 }}>
-              <TradingJournalView />
+              <TradingJournalView activeTab={route.journalTab} onActiveTabChange={handleJournalTabChange} />
             </Box>
           )}
         </Box>

@@ -190,11 +190,16 @@ const autoFieldSx = {
 
 interface TradingJournalViewProps {
   initialTab?: number;
+  /** Controlled tab (the page keeps it in the URL); falls back to internal state when omitted */
+  activeTab?: number;
+  onActiveTabChange?: (tab: number) => void;
   onBackToHome?: () => void;
 }
 
 export default function TradingJournalView({
   initialTab = 0,
+  activeTab: controlledTab,
+  onActiveTabChange,
   onBackToHome,
 }: TradingJournalViewProps) {
   const { mode } = useColorMode();
@@ -202,17 +207,14 @@ export default function TradingJournalView({
   const tk = useMemo(() => makeTokens(isDark), [isDark]);
 
   // Navigation State: 0 = Overview, 1 = Add Trade, 2 = History, 3 = Calendar, 4 = Analytics, 5 = Journal, 6 = Accounts, 7 = Monthly Review
-  const [activeTab, setActiveTab] = useState<number>(initialTab);
+  const [internalTab, setInternalTab] = useState<number>(initialTab);
+  const activeTab = controlledTab ?? internalTab;
+  const setActiveTab = (tab: number) => (onActiveTabChange ? onActiveTabChange(tab) : setInternalTab(tab));
 
   // Selected Account Filter
-  // Active account survives reloads; "" means nothing chosen yet (resolved once accounts load)
-  const [selectedAccountId, setSelectedAccountId] = useState<string>(() => {
-    try {
-      return localStorage.getItem(ACTIVE_ACCOUNT_KEY) ?? "";
-    } catch {
-      return "";
-    }
-  });
+  // Active account survives reloads; "" means not resolved yet. The saved choice is applied once
+  // accounts load (not in the initial render), so server and client render the same HTML.
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   useEffect(() => {
     try {
       if (selectedAccountId) localStorage.setItem(ACTIVE_ACCOUNT_KEY, selectedAccountId);
@@ -255,8 +257,13 @@ export default function TradingJournalView({
       if (data.success) {
         const loaded: { id: string; is_archived?: boolean }[] = data.accounts || [];
         const activeIds = loaded.filter((a) => !a.is_archived).map((a) => a.id);
-        const fallback = activeIds[0] ?? "all";
-        setSelectedAccountId((prev) => (prev === "all" || activeIds.includes(prev) ? prev : fallback));
+        let saved = "";
+        try {
+          saved = localStorage.getItem(ACTIVE_ACCOUNT_KEY) ?? "";
+        } catch {}
+        const isValid = (id: string) => id === "all" || activeIds.includes(id);
+        const fallback = isValid(saved) ? saved : activeIds[0] ?? "all";
+        setSelectedAccountId((prev) => (prev && isValid(prev) ? prev : fallback));
         setTradeForm((prev) => (prev.accountId && activeIds.includes(prev.accountId) ? prev : { ...prev, accountId: activeIds.includes(selectedAccountId) ? selectedAccountId : activeIds[0] ?? "" }));
         setAccounts(data.accounts || []);
         setStrategies(data.strategies || []);
