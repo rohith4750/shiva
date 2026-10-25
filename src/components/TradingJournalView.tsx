@@ -151,6 +151,19 @@ const MARKET_BY_SYMBOL: Record<string, string> = {
   "S&P500": "US Indices",
 };
 
+// Standard setups offered in Add Trade; "Other" lets the trader name a custom one
+const STRATEGY_PRESETS = [
+  "Breakout",
+  "Pullback",
+  "Trend Following",
+  "Reversal",
+  "Scalping",
+  "Support/Resistance",
+  "Liquidity Sweep",
+  "Range Trading",
+  "News Trade",
+];
+
 const ACTIVE_ACCOUNT_KEY = `${STORAGE_PREFIX}_active_account`;
 
 const RATING_OPTIONS = [
@@ -544,8 +557,9 @@ export default function TradingJournalView({
       }
       const payload = {
         accountId: tradeForm.accountId,
-        strategyId: tradeForm.strategyId === "other" ? null : (tradeForm.strategyId || null),
-        customStrategy: tradeForm.strategyId === "other" ? tradeForm.customStrategy : null,
+        strategyId: null,
+        // Strategy is sent by name; the API links it to the user's strategy (creating it on first use)
+        customStrategy: tradeForm.strategyId === "other" ? tradeForm.customStrategy : tradeForm.strategyId || null,
         symbol: tradeForm.symbol.toUpperCase().trim(),
         direction: tradeForm.direction,
         status: tradeForm.exitPrice ? "CLOSED" : "OPEN",
@@ -1252,13 +1266,21 @@ export default function TradingJournalView({
                       <InputLabel>Strategy / Setup</InputLabel>
                       <Select value={tradeForm.strategyId} label="Strategy / Setup" onChange={(e) => updateTradeField("strategyId", e.target.value)}>
                         <MenuItem value="" sx={{ color: "text.secondary" }}>No strategy</MenuItem>
-                        {strategies.map((s) => (
-                          <MenuItem key={s.id} value={s.id}>
-                            {s.name}
+                        {STRATEGY_PRESETS.map((name) => (
+                          <MenuItem key={name} value={name}>
+                            {name}
                           </MenuItem>
                         ))}
+                        {/* Custom strategies the user created earlier via "Other" */}
+                        {strategies
+                          .filter((st) => !STRATEGY_PRESETS.some((name) => name.toLowerCase() === String(st.name).toLowerCase()))
+                          .map((st) => (
+                            <MenuItem key={st.id} value={st.name}>
+                              {st.name}
+                            </MenuItem>
+                          ))}
                         <MenuItem value="other" sx={{ fontWeight: 600, color: "#38BDF8" }}>
-                          + New strategy (type a name)
+                          Other
                         </MenuItem>
                       </Select>
                     </FormControl>
@@ -1296,8 +1318,8 @@ export default function TradingJournalView({
                       <TextField
                         fullWidth
                         size="small"
-                        label="Custom Strategy Details"
-                        placeholder="Describe your strategy manually..."
+                        label="Strategy name"
+                        placeholder="Name your setup, e.g. Opening Range Fade"
                         value={tradeForm.customStrategy}
                         onChange={(e) => updateTradeField("customStrategy", e.target.value)}
                         required
