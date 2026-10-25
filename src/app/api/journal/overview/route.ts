@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       JOIN trading_accounts acc ON acc.id = t.account_id AND acc.is_archived = false
       LEFT JOIN strategies s ON t.strategy_id = s.id
       LEFT JOIN trade_journals j ON t.id = j.trade_id
-      WHERE t.user_id = $1
+      WHERE t.user_id = $1 AND t.deleted_at IS NULL
     `;
 
     const queryParams: string[] = [userId];

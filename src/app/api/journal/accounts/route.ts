@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
         COUNT(t.id)::int as total_trades,
         COALESCE(SUM(CASE WHEN t.status = 'CLOSED' THEN t.net_pnl ELSE 0 END), 0)::float as total_pnl
       FROM trading_accounts a
-      LEFT JOIN trades t ON a.id = t.account_id
+      LEFT JOIN trades t ON a.id = t.account_id AND t.deleted_at IS NULL
       WHERE a.user_id = $1
       GROUP BY a.id
       ORDER BY a.is_archived ASC, a.created_at ASC

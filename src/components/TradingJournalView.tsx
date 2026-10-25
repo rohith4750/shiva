@@ -439,6 +439,29 @@ export default function TradingJournalView({
     }
   };
 
+  const [tradeToDelete, setTradeToDelete] = useState<TradeRecord | null>(null);
+  const [deletingTrade, setDeletingTrade] = useState(false);
+
+  const handleDeleteTrade = async () => {
+    if (!tradeToDelete) return;
+    setDeletingTrade(true);
+    try {
+      const res = await fetch(`/api/journal/trades?id=${tradeToDelete.id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Trade ${tradeToDelete.trade_num ? `#${tradeToDelete.trade_num} ` : ""}deleted`, "success");
+        setTradeToDelete(null);
+        fetchJournalData();
+      } else {
+        showToast(data.error || "Failed to delete trade", "error");
+      }
+    } catch {
+      showToast("Server error deleting trade", "error");
+    } finally {
+      setDeletingTrade(false);
+    }
+  };
+
   // --- TRADE ENTRY FORM STATE ---
   const [tradeForm, setTradeForm] = useState(EMPTY_TRADE_FORM);
 
@@ -1735,6 +1758,19 @@ export default function TradingJournalView({
                                 <ViewIcon sx={{ fontSize: 16 }} />
                               </IconButton>
                             </Tooltip>
+                            <Tooltip title="Delete trade" arrow>
+                              <IconButton
+                                size="small"
+                                aria-label="Delete trade"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTradeToDelete(t);
+                                }}
+                                sx={{ p: 0.3, ml: 0.3, color: tk.textMuted, "&:hover": { color: tk.neg } }}
+                              >
+                                <DeleteIcon sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Tooltip>
                           </td>
                         </tr>
                       );
@@ -2038,6 +2074,54 @@ export default function TradingJournalView({
         )}
 
       </Box>
+
+      {/* ============================================================== */}
+      {/* DELETE TRADE CONFIRMATION                                      */}
+      {/* ============================================================== */}
+      <Dialog
+        open={Boolean(tradeToDelete)}
+        onClose={() => !deletingTrade && setTradeToDelete(null)}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{ paper: { sx: { bgcolor: tk.surface, borderRadius: "8px", border: `1px solid ${tk.border}` } } }}
+      >
+        <DialogTitle sx={{ fontWeight: 600, fontSize: "1rem", display: "flex", alignItems: "center", gap: 1 }}>
+          <DeleteIcon sx={{ color: tk.neg, fontSize: 20 }} />
+          Delete trade{tradeToDelete?.trade_num ? ` #${tradeToDelete.trade_num}` : ""}?
+        </DialogTitle>
+        <DialogContent dividers>
+          {tradeToDelete && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Typography sx={{ fontSize: "0.85rem", color: tk.text }}>
+                <strong>{tradeToDelete.symbol}</strong> {["BUY", "LONG"].includes(tradeToDelete.direction) ? "BUY" : "SELL"} ·{" "}
+                {new Date(tradeToDelete.opened_at).toLocaleString([], { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+              </Typography>
+              {tradeToDelete.status === "CLOSED" && tradeToDelete.net_pnl != null && (
+                <Typography sx={{ fontSize: "0.78rem", color: tk.textSec }}>
+                  Its P&L of{" "}
+                  <Box component="span" sx={{ fontFamily: MONO, fontWeight: 600, color: signColor(tk, Number(tradeToDelete.net_pnl)) }}>
+                    {Number(tradeToDelete.net_pnl) >= 0 ? "+" : "−"}
+                    {currencyOfAccount(tradeToDelete.account_id)}
+                    {Math.abs(Number(tradeToDelete.net_pnl)).toLocaleString()}
+                  </Box>{" "}
+                  will be removed from the account balance.
+                </Typography>
+              )}
+              <Typography sx={{ fontSize: "0.74rem", color: tk.textMuted }}>
+                The trade disappears from your history, dashboard and analytics.
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 2, py: 1.2 }}>
+          <Button onClick={() => setTradeToDelete(null)} disabled={deletingTrade} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="error" onClick={handleDeleteTrade} disabled={deletingTrade} sx={{ textTransform: "none", fontWeight: 600, borderRadius: "6px" }}>
+            {deletingTrade ? "Deleting..." : "Delete trade"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ============================================================== */}
       {/* CREATE / EDIT ACCOUNT DIALOG                                   */}

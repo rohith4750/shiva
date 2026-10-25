@@ -248,3 +248,48 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// Deletes a trade: DELETE /api/journal/trades?id=<id>
+// Soft delete (deleted_at) so the row is recoverable; a closed trade's P&L is taken back off the account balance.
+export async function DELETE(request: NextRequest) {
+  const auth = await requireUserId(request);
+  if (auth.response) return auth.response;
+  const { userId } = auth;
+
+  const id = request.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ success: false, error: "Trade ID is required" }, { status: 400 });
+  }
+
+  const client = await tradePool.connect();
+  try {
+    await client.query("BEGIN");
+    const deleted = await client.query(
+      `UPDATE trades SET deleted_at = NOW(), updated_at = NOW()
+       WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL
+       RETURNING account_id, status, net_pnl::float, trade_num`,
+      [id, userId]
+    );
+    if (deleted.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return NextResponse.json({ success: false, error: "Trade not found" }, { status: 404 });
+    }
+
+    const trade = deleted.rows[0];
+    if (trade.status === "CLOSED" && trade.net_pnl !== null) {
+      await client.query(
+        `UPDATE trading_accounts SET current_balance = current_balance - $1, updated_at = NOW() WHERE id = $2 AND user_id = $3`,
+        [trade.net_pnl, trade.account_id, userId]
+      );
+    }
+    await client.query("COMMIT");
+
+    return NextResponse.json({ success: true, message: "Trade deleted", tradeNum: trade.trade_num });
+  } catch (error: any) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("DELETE /api/journal/trades error:", error);
+    return NextResponse.json({ success: false, error: error.message || "Failed to delete trade" }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}
